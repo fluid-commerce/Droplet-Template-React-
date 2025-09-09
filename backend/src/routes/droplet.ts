@@ -68,7 +68,7 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
       try {
         console.log('Creating new Fluid droplet installation...')
         realInstallation = await fluidApi.createDropletInstallation({
-          droplet_id: process.env.DROPLET_ID || 'your-droplet-id', // You'll need to set this
+          droplet_uuid: process.env.DROPLET_ID || 'your-droplet-id', // You'll need to set this
           company_id: companyInfo?.id || 'unknown',
           configuration: config
         })
@@ -173,7 +173,8 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
         integrationName: installation.configuration?.integrationName || 'My Integration',
         environment: installation.configuration?.environment || 'production',
         webhookUrl: installation.configuration?.webhookUrl || '',
-        fluidApiKey: installation.authentication_token
+        fluidApiKey: installation.authentication_token,
+        companyLogo: companyInfo?.logo_url || companyInfo?.logo || companyInfo?.avatar_url
       }
     })
 
@@ -217,7 +218,8 @@ router.post('/test-connection', async (req: Request, res: Response) => {
       message: 'Connection test successful',
       data: {
         companyName: companyInfo?.name || companyInfo?.company_name,
-        companyId: companyInfo?.id
+        companyId: companyInfo?.id,
+        companyLogo: companyInfo?.logo_url || companyInfo?.logo || companyInfo?.avatar_url
       }
     })
 

@@ -55,12 +55,44 @@ export function DropletConfig() {
       }
 
       if (!installationId) {
-        // If no installation ID, show basic form
-        setCompanyData({
-          companyName: 'Your Company',
-          id: 'new-installation',
-          status: 'pending'
-        })
+        // If no installation ID, try to get company info from Fluid API if we have a key
+        const fluidApiKey = searchParams.get('fluid_api_key')
+        if (fluidApiKey) {
+          try {
+            // Test the Fluid API key and get company info
+            const testResponse = await apiClient.post('/api/droplet/test-connection', {
+              fluidApiKey: fluidApiKey
+            })
+            
+            if (testResponse.data.success) {
+              setCompanyData({
+                companyName: testResponse.data.data.companyName || 'Your Company',
+                companyLogo: testResponse.data.data.companyLogo,
+                id: 'new-installation',
+                status: 'pending'
+              })
+            } else {
+              setCompanyData({
+                companyName: 'Your Company',
+                id: 'new-installation',
+                status: 'pending'
+              })
+            }
+          } catch (error) {
+            console.error('Failed to get company info:', error)
+            setCompanyData({
+              companyName: 'Your Company',
+              id: 'new-installation',
+              status: 'pending'
+            })
+          }
+        } else {
+          setCompanyData({
+            companyName: 'Your Company',
+            id: 'new-installation',
+            status: 'pending'
+          })
+        }
         setIsLoading(false)
         return
       }
@@ -84,6 +116,12 @@ export function DropletConfig() {
             fluidApiKey: response.data.data.fluidApiKey || ''
           }))
         }
+        
+        // Update company data with logo information
+        setCompanyData((prev: any) => ({
+          ...prev,
+          companyLogo: response.data.data.companyLogo
+        }))
       } catch (err: any) {
         console.error('Failed to load company data:', err)
         setError(err.response?.data?.message || 'Failed to load company data')
@@ -189,7 +227,7 @@ export function DropletConfig() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading...</h2>
-            <p className="text-gray-600">Fetching your company information</p>
+            <p className="text-gray-600">Fetching your company information from Fluid</p>
           </div>
         </div>
       </div>
@@ -220,7 +258,12 @@ export function DropletConfig() {
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
-            {isEditing ? 'Edit Configuration' : `Welcome${companyData?.companyName ? `, ${companyData.companyName}` : ''}!`}
+            {isEditing 
+              ? 'Edit Configuration' 
+              : companyData?.companyName && companyData.companyName !== 'Your Company'
+                ? `Welcome, ${companyData.companyName}!`
+                : 'Welcome!'
+            }
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             {isEditing 
@@ -228,9 +271,28 @@ export function DropletConfig() {
               : 'Configure your credentials to establish a secure connection'
             }
           </p>
-          {companyData?.companyName && (
+          {companyData?.companyName && companyData.companyName !== 'Your Company' && (
             <div className="mt-4 inline-flex items-center px-4 py-2 bg-primary-50 border border-primary-200 rounded-lg">
-              <FontAwesomeIcon icon="building" className="text-primary-600 mr-2" />
+              {companyData.companyLogo ? (
+                <img 
+                  src={companyData.companyLogo} 
+                  alt={`${companyData.companyName} logo`}
+                  className="w-6 h-6 rounded mr-2 object-contain"
+                  onError={(e) => {
+                    // Fallback to icon if image fails to load
+                    e.currentTarget.style.display = 'none'
+                    const nextElement = e.currentTarget.nextElementSibling as HTMLElement
+                    if (nextElement) {
+                      nextElement.style.display = 'inline'
+                    }
+                  }}
+                />
+              ) : null}
+              <FontAwesomeIcon 
+                icon="building" 
+                className="text-primary-600 mr-2"
+                style={{ display: companyData.companyLogo ? 'none' : 'inline' }}
+              />
               <span className="text-primary-800 font-medium">{companyData.companyName}</span>
               {isEditing && (
                 <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">

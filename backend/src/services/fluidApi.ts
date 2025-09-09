@@ -94,9 +94,7 @@ export class FluidApiService {
    * Create a new droplet installation
    */
   async createDropletInstallation(installationData: any): Promise<any> {
-    const response = await this.client.post('/droplet_installations', { 
-      droplet_installation: installationData 
-    })
+    const response = await this.client.post('/droplet_installations', installationData)
     return response.data.data
   }
 
