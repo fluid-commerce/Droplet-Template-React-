@@ -5,8 +5,8 @@ export class FluidApiService {
   private client: AxiosInstance
 
   constructor(apiKey: string, baseUrl?: string) {
-    // Use environment variable or fallback to default
-    const fluidApiUrl = baseUrl || process.env.FLUID_API_URL || 'https://pokey.fluid.app'
+    // Use environment variable or fallback to Fluid platform API
+    const fluidApiUrl = baseUrl || process.env.FLUID_API_URL || 'https://api.fluid.app'
     
     this.client = axios.create({
       baseURL: `${fluidApiUrl}/api`,
@@ -94,41 +94,62 @@ export class FluidApiService {
    * Get company information using authentication token
    */
   async getCompanyInfo(authToken: string): Promise<any> {
-    // Try to get company info from available endpoints
+    // Create a new client instance with the user's API key for company-specific requests
+    // Use the Fluid platform API URL, not the droplet's domain
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    const companyClient = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 30000,
+    })
+
     try {
-      // First try to get company users to verify the token works
-      const response = await this.client.get('/company/users', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      })
+      // Try to get company users first (this endpoint exists according to API docs)
+      const response = await companyClient.get('/company/users')
       
       // If successful, return company info
       return {
         id: 'company-verified',
-        name: 'Verified Company',
-        company_name: 'Verified Company',
+        name: 'Your Company',
+        company_name: 'Your Company',
         status: 'active',
-        users_count: response.data?.length || 0
+        users_count: response.data?.length || 0,
+        verified: true
       }
     } catch (error) {
-      // If that fails, try company tiles
+      // If users endpoint fails, try company tiles
       try {
-        const response = await this.client.get('/company/tiles', {
-          headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
-        })
+        const response = await companyClient.get('/company/tiles')
         
         return {
           id: 'company-verified',
-          name: 'Verified Company',
-          company_name: 'Verified Company',
+          name: 'Your Company',
+          company_name: 'Your Company',
           status: 'active',
-          tiles_count: response.data?.length || 0
+          tiles_count: response.data?.length || 0,
+          verified: true
         }
       } catch (tilesError) {
-        throw error // Throw the original error
+        // If both fail, try company pages as a fallback
+        try {
+          const response = await companyClient.get('/company/pages')
+          
+          return {
+            id: 'company-verified',
+            name: 'Your Company',
+            company_name: 'Your Company',
+            status: 'active',
+            pages_count: response.data?.length || 0,
+            verified: true
+          }
+        } catch (pagesError) {
+          // If all endpoints fail, throw the original error
+          throw error
+        }
       }
     }
   }

@@ -47,7 +47,7 @@ services:
       - key: FLUID_API_KEY
         sync: false  # Set this in Render dashboard - YOUR builder API key
       - key: FLUID_API_URL
-        value: https://droplet-backend.onrender.com
+        value: https://api.fluid.app
       - key: FLUID_WEBHOOK_SECRET
         sync: false  # Set this in Render dashboard
       
