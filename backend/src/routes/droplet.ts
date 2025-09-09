@@ -12,28 +12,20 @@ const router = Router()
 router.post('/configure', validateDropletConfig, async (req: Request, res: Response) => {
   try {
     const config: DropletConfig = req.body
-    const { installationId } = req.query
+    const { installationId } = req.body
 
-    if (!installationId) {
-      return res.status(400).json({
-        error: 'Missing installation ID',
-        message: 'Installation ID is required to configure the droplet'
-      })
-    }
+    // For new installations, we'll create a new installation record
+    // For existing installations, we'll update the existing record
 
     // Initialize Fluid API service with user's API key
     const fluidApi = new FluidApiService(config.fluidApiKey)
 
-    // Get droplet installation details
-    const installation = await fluidApi.getDropletInstallation(installationId as string)
-    
-    // Test Fluid API connection
+    // Test Fluid API connection first
     console.log('Testing Fluid API connection...')
     let companyInfo
     try {
-      companyInfo = await fluidApi.getCompanyInfo(installation.authentication_token)
+      companyInfo = await fluidApi.getCompanyInfo(config.fluidApiKey)
       console.log('✅ Fluid API connection successful:', { 
-        companyId: installation.company_id,
         companyName: companyInfo?.name || companyInfo?.company_name 
       })
     } catch (apiError: any) {
@@ -43,6 +35,19 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
         message: 'Unable to connect to Fluid platform with provided API key',
         details: apiError.message
       })
+    }
+
+    // Handle installation logic
+    let installation
+    if (installationId && installationId !== 'new-installation') {
+      // Existing installation - get details
+      try {
+        installation = await fluidApi.getDropletInstallation(installationId)
+      } catch (error: any) {
+        console.error('Failed to get existing installation:', error.message)
+        // Continue with new installation flow
+        installation = null
+      }
     }
 
     // Validate the configuration
@@ -58,10 +63,10 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
 
     // Store configuration (in production, you'd save this to a database)
     const dropletInstallation = {
-      id: installation.id,
-      dropletId: installation.droplet_id,
-      companyId: installation.company_id,
-      authenticationToken: installation.authentication_token,
+      id: installation?.id || `install_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      dropletId: installation?.droplet_id || 'your-droplet-id',
+      companyId: installation?.company_id || companyInfo?.id || 'unknown',
+      authenticationToken: installation?.authentication_token || config.fluidApiKey,
       configuration: config,
       status: 'active' as const,
       createdAt: new Date().toISOString(),

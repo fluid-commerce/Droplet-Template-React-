@@ -37,11 +37,11 @@ export function DropletConfig() {
   useEffect(() => {
     const loadCompanyData = async () => {
       if (!installationId) {
-        // If no installation ID, show demo mode
+        // If no installation ID, show basic form
         setCompanyData({
-          companyName: 'Demo Company',
-          id: 'demo-installation',
-          status: 'demo'
+          companyName: 'Your Company',
+          id: 'new-installation',
+          status: 'pending'
         })
         setIsLoading(false)
         return
@@ -109,22 +109,16 @@ export function DropletConfig() {
     setError(null)
 
     try {
-      if (!installationId) {
-        // Demo mode - just show success
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        alert('Demo configuration saved! In a real installation, this would connect to the Fluid API.')
-        return
-      }
-
       const response = await apiClient.post('/api/droplet/configure', {
         ...formData,
-        installationId
+        installationId: installationId || 'new-installation'
       })
 
-              if (response.data.success) {
-                // Navigate to success page
-                window.location.href = `/success?installation_id=${installationId}`
-              }
+      if (response.data.success) {
+        // Navigate to success page
+        const finalInstallationId = installationId || response.data.installationId || 'new-installation'
+        window.location.href = `/success?installation_id=${finalInstallationId}`
+      }
     } catch (err: any) {
       console.error('Configuration failed:', err)
       setError(err.response?.data?.message || 'Configuration failed')
@@ -180,11 +174,6 @@ export function DropletConfig() {
             <div className="mt-4 inline-flex items-center px-4 py-2 bg-primary-50 border border-primary-200 rounded-lg">
               <FontAwesomeIcon icon="building" className="text-primary-600 mr-2" />
               <span className="text-primary-800 font-medium">{companyData.companyName}</span>
-              {!installationId && (
-                <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                  Demo Mode
-                </span>
-              )}
             </div>
           )}
         </div>
