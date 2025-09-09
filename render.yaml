@@ -14,7 +14,7 @@ services:
       
       # Fluid Platform Configuration
       - key: VITE_FLUID_API_URL
-        value: https://pokey.fluid.app  # Change to your organization URL
+        value: https://droplet-backend.onrender.com
       - key: VITE_FLUID_ENVIRONMENT
         value: production
       
@@ -41,26 +41,23 @@ services:
       
       # Frontend URL (for CORS)
       - key: FRONTEND_URL
-        value: https://droplet-frontend.onrender.com
+        value: https://droplet-frontend-ya60.onrender.com
       
       # Fluid Platform Configuration (Builder's API Key)
       - key: FLUID_API_KEY
         sync: false  # Set this in Render dashboard - YOUR builder API key
       - key: FLUID_API_URL
-        value: https://pokey.fluid.app  # Change to your organization URL
+        value: https://droplet-backend.onrender.com
       - key: FLUID_WEBHOOK_SECRET
         sync: false  # Set this in Render dashboard
       
       # External Service API Credentials (for connecting to external services)
-      # These are YOUR API keys for external services (Shopify, Stripe, etc.)
-      - key: SHOPIFY_API_KEY
-        sync: false  # Set this in Render dashboard if using Shopify
-      - key: SHOPIFY_API_SECRET
-        sync: false  # Set this in Render dashboard if using Shopify
-      - key: STRIPE_API_KEY
-        sync: false  # Set this in Render dashboard if using Stripe
-      - key: STRIPE_API_SECRET
-        sync: false  # Set this in Render dashboard if using Stripe
+      # Add your own external service API keys here as needed
+      # Examples (uncomment and set in Render dashboard if using these services):
+      # - key: SHOPIFY_API_KEY
+      #   sync: false
+      # - key: STRIPE_API_KEY
+      #   sync: false
       
       # Database Configuration (will be set automatically by Render)
       - key: DATABASE_URL
