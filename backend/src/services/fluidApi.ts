@@ -91,6 +91,16 @@ export class FluidApiService {
   }
 
   /**
+   * Create a new droplet installation
+   */
+  async createDropletInstallation(installationData: any): Promise<any> {
+    const response = await this.client.post('/droplet_installations', { 
+      droplet_installation: installationData 
+    })
+    return response.data.data
+  }
+
+  /**
    * Get company information using authentication token
    */
   async getCompanyInfo(authToken: string): Promise<any> {

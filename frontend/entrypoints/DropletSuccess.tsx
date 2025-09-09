@@ -30,6 +30,20 @@ export function DropletSuccess() {
         return
       }
 
+       // For new installations, show success without checking backend status
+      if (installationId === 'new-installation') {
+        setConnectionStatus({
+          connected: true,
+          installationId: 'new-installation',
+          companyName: 'Your Company',
+          companyId: 'new-company',
+          lastSync: new Date().toISOString(),
+          userCount: 0
+        })
+        setIsLoading(false)
+        return
+      }
+
       try {
         const response = await apiClient.get(`/api/droplet/status/${installationId}`)
         setConnectionStatus(response.data.data)

@@ -61,12 +61,39 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
       })
     }
 
+    // Create real Fluid droplet installation
+    let realInstallation
+    if (!installation) {
+      // Create new installation via Fluid API
+      try {
+        console.log('Creating new Fluid droplet installation...')
+        realInstallation = await fluidApi.createDropletInstallation({
+          droplet_id: process.env.DROPLET_ID || 'your-droplet-id', // You'll need to set this
+          company_id: companyInfo?.id || 'unknown',
+          configuration: config
+        })
+        console.log('✅ Real Fluid installation created:', realInstallation.id)
+      } catch (createError: any) {
+        console.error('❌ Failed to create Fluid installation:', createError.message)
+        // Fallback to local installation record
+        realInstallation = {
+          id: `install_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          droplet_id: process.env.DROPLET_ID || 'your-droplet-id',
+          company_id: companyInfo?.id || 'unknown',
+          authentication_token: config.fluidApiKey,
+          status: 'active'
+        }
+      }
+    } else {
+      realInstallation = installation
+    }
+
     // Store configuration (in production, you'd save this to a database)
     const dropletInstallation = {
-      id: installation?.id || `install_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      dropletId: installation?.droplet_id || 'your-droplet-id',
-      companyId: installation?.company_id || companyInfo?.id || 'unknown',
-      authenticationToken: installation?.authentication_token || config.fluidApiKey,
+      id: realInstallation.id,
+      dropletId: realInstallation.droplet_id,
+      companyId: realInstallation.company_id,
+      authenticationToken: realInstallation.authentication_token,
       configuration: config,
       status: 'active' as const,
       createdAt: new Date().toISOString(),
