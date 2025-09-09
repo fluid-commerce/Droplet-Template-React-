@@ -27,6 +27,7 @@ interface DashboardData {
 export function DropletDashboard() {
   const [searchParams] = useSearchParams()
   const installationId = searchParams.get('installation_id')
+  const fluidApiKey = searchParams.get('fluid_api_key')
   
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -41,8 +42,14 @@ export function DropletDashboard() {
         return
       }
 
+      if (!fluidApiKey) {
+        setError('Missing Fluid API key')
+        setIsLoading(false)
+        return
+      }
+
       try {
-        const response = await apiClient.get(`/api/droplet/dashboard/${installationId}`)
+        const response = await apiClient.get(`/api/droplet/dashboard/${installationId}?fluidApiKey=${fluidApiKey}`)
         setDashboardData(response.data.data)
       } catch (err: any) {
         console.error('Failed to load dashboard data:', err)

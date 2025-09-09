@@ -33,10 +33,27 @@ export function DropletConfig() {
   const [error, setError] = useState<string | null>(null)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
 
   // Load company data on component mount
   useEffect(() => {
     const loadCompanyData = async () => {
+      // Check localStorage for existing session
+      const savedSession = localStorage.getItem('droplet_session')
+      if (savedSession && !installationId) {
+        try {
+          const sessionData = JSON.parse(savedSession)
+          if (sessionData.installationId && sessionData.fluidApiKey) {
+            // Redirect to the saved installation
+            navigate(`/?installation_id=${sessionData.installationId}&fluid_api_key=${sessionData.fluidApiKey}`)
+            return
+          }
+        } catch (error) {
+          console.error('Failed to parse saved session:', error)
+          localStorage.removeItem('droplet_session')
+        }
+      }
+
       if (!installationId) {
         // If no installation ID, show basic form
         setCompanyData({
@@ -53,11 +70,18 @@ export function DropletConfig() {
         const response = await apiClient.get(`/api/droplet/status/${installationId}`)
         setCompanyData(response.data.data)
         
-        // Pre-fill company name if available
-        if (response.data.data.companyName) {
+        // Check if this is an existing installation
+        if (response.data.data.connected && response.data.data.installationId !== 'new-installation') {
+          setIsEditing(true)
+          
+          // Pre-fill form data if available
           setFormData(prev => ({
             ...prev,
-            companyName: response.data.data.companyName
+            companyName: response.data.data.companyName,
+            integrationName: response.data.data.integrationName || 'My Integration',
+            environment: response.data.data.environment || 'production',
+            webhookUrl: response.data.data.webhookUrl || '',
+            fluidApiKey: response.data.data.fluidApiKey || ''
           }))
         }
       } catch (err: any) {
@@ -76,6 +100,26 @@ export function DropletConfig() {
       ...prev,
       [field]: value,
     }))
+  }
+
+  const handleDisconnect = async () => {
+    if (!window.confirm('Are you sure you want to disconnect this integration? This will remove all configuration data.')) {
+      return
+    }
+
+    try {
+      // TODO: Implement disconnect logic in backend
+      console.log('Disconnecting installation:', installationId)
+      
+      // Clear session from localStorage
+      localStorage.removeItem('droplet_session')
+      
+      // Redirect to the main page
+      navigate('/')
+    } catch (error) {
+      console.error('Failed to disconnect:', error)
+      setError('Failed to disconnect. Please try again.')
+    }
   }
 
   const testConnection = async () => {
@@ -116,9 +160,19 @@ export function DropletConfig() {
       })
 
       if (response.data.success) {
+        // Save session to localStorage
+        const sessionData = {
+          installationId: installationId || response.data.installationId || 'new-installation',
+          fluidApiKey: formData.fluidApiKey,
+          companyName: formData.companyName,
+          integrationName: formData.integrationName,
+          timestamp: new Date().toISOString()
+        }
+        localStorage.setItem('droplet_session', JSON.stringify(sessionData))
+
         // Navigate to success page using React Router
         const finalInstallationId = installationId || response.data.installationId || 'new-installation'
-        navigate(`/success?installation_id=${finalInstallationId}`)
+        navigate(`/success?installation_id=${finalInstallationId}&fluid_api_key=${formData.fluidApiKey}`)
       }
     } catch (err: any) {
       console.error('Configuration failed:', err)
@@ -166,15 +220,23 @@ export function DropletConfig() {
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
-            Welcome{companyData?.companyName ? `, ${companyData.companyName}` : ''}!
+            {isEditing ? 'Edit Configuration' : `Welcome${companyData?.companyName ? `, ${companyData.companyName}` : ''}!`}
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Configure your credentials to establish a secure connection
+            {isEditing 
+              ? 'Update your integration settings and configuration'
+              : 'Configure your credentials to establish a secure connection'
+            }
           </p>
           {companyData?.companyName && (
             <div className="mt-4 inline-flex items-center px-4 py-2 bg-primary-50 border border-primary-200 rounded-lg">
               <FontAwesomeIcon icon="building" className="text-primary-600 mr-2" />
               <span className="text-primary-800 font-medium">{companyData.companyName}</span>
+              {isEditing && (
+                <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                  Connected
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -257,11 +319,12 @@ export function DropletConfig() {
               <label className="label">API Token</label>
                         <input
                           type="password"
-                          className="input mt-1"
+                          className={`input mt-1 ${isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                           value={formData.fluidApiKey}
-                          onChange={(e) => setFormData(prev => ({ ...prev, fluidApiKey: e.target.value }))}
+                          onChange={(e) => !isEditing && setFormData(prev => ({ ...prev, fluidApiKey: e.target.value }))}
                           placeholder="Enter your Fluid API token"
                           required
+                          disabled={isEditing}
                         />
                         <p className="text-sm text-gray-500 mt-1">
                           Generate your API token in the Fluid dashboard under API Tokens
@@ -328,11 +391,36 @@ export function DropletConfig() {
 
           {/* Actions */}
           <div className="flex justify-end space-x-4 pt-8">
+            {isEditing && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="px-8"
+                onClick={() => navigate(`/dashboard?installation_id=${installationId}&fluid_api_key=${formData.fluidApiKey}`)}
+              >
+                <FontAwesomeIcon icon="tachometer-alt" className="mr-2" />
+                View Dashboard
+              </Button>
+            )}
             <Button type="button" variant="outline" className="px-8">
               Cancel
             </Button>
+            {isEditing && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="px-8 text-red-600 border-red-300 hover:bg-red-50"
+                onClick={handleDisconnect}
+              >
+                <FontAwesomeIcon icon="unlink" className="mr-2" />
+                Disconnect
+              </Button>
+            )}
             <Button type="submit" loading={isSubmitting} className="px-8">
-              {isSubmitting ? 'Connecting...' : 'Connect'}
+              {isSubmitting 
+                ? (isEditing ? 'Updating...' : 'Connecting...') 
+                : (isEditing ? 'Update Configuration' : 'Connect')
+              }
             </Button>
           </div>
         </form>

@@ -168,7 +168,12 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
         userCount: companyInfo?.users_count || 0,
         status: installation.status,
         createdAt: installation.created_at,
-        updatedAt: installation.updated_at
+        updatedAt: installation.updated_at,
+        // Include configuration data for editing
+        integrationName: installation.configuration?.integrationName || 'My Integration',
+        environment: installation.configuration?.environment || 'production',
+        webhookUrl: installation.configuration?.webhookUrl || '',
+        fluidApiKey: installation.authentication_token
       }
     })
 

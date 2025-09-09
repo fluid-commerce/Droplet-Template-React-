@@ -51,7 +51,19 @@ async function createDroplet() {
       droplet: {
         name: appName,
         embed_url: EMBED_URL,
-        active: true
+        active: true,
+        settings: {
+          marketplace_page: {
+            title: appName,
+            summary: appDescription,
+            logo_url: "https://via.placeholder.com/200x200/007bff/ffffff?text=FD"
+          },
+          details_page: {
+            title: appName,
+            summary: appDescription,
+            logo_url: "https://via.placeholder.com/400x400/007bff/ffffff?text=FD"
+          }
+        }
       }
     }, {
       headers: {

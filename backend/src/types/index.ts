@@ -33,6 +33,7 @@ export interface FluidDropletInstallation {
   status: string
   created_at: string
   updated_at: string
+  configuration?: DropletConfig
 }
 
 export interface WebhookEvent {

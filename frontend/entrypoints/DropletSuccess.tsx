@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/Card'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -16,7 +16,9 @@ interface ConnectionStatus {
 
 export function DropletSuccess() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const installationId = searchParams.get('installation_id')
+  const fluidApiKey = searchParams.get('fluid_api_key')
   
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -26,6 +28,12 @@ export function DropletSuccess() {
     const loadConnectionStatus = async () => {
       if (!installationId) {
         setError('Missing installation ID')
+        setIsLoading(false)
+        return
+      }
+
+      if (!fluidApiKey && installationId !== 'new-installation') {
+        setError('Missing Fluid API key')
         setIsLoading(false)
         return
       }
@@ -45,7 +53,7 @@ export function DropletSuccess() {
       }
 
       try {
-        const response = await apiClient.get(`/api/droplet/status/${installationId}`)
+        const response = await apiClient.get(`/api/droplet/status/${installationId}?fluidApiKey=${fluidApiKey}`)
         setConnectionStatus(response.data.data)
       } catch (err: any) {
         console.error('Failed to load connection status:', err)
@@ -191,7 +199,7 @@ export function DropletSuccess() {
           {connectionStatus?.connected ? (
             <>
               <Button 
-                onClick={() => window.location.href = `/dashboard?installation_id=${installationId}`}
+                onClick={() => navigate(`/dashboard?installation_id=${installationId}&fluid_api_key=${fluidApiKey}`)}
                 className="px-8"
               >
                 <FontAwesomeIcon icon="tachometer-alt" className="mr-2" />
