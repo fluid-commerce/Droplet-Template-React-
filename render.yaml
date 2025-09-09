@@ -47,7 +47,7 @@ services:
       - key: FLUID_API_KEY
         sync: false  # Set this in Render dashboard - YOUR builder API key
       - key: DROPLET_ID
-        sync: false  # Set this in Render dashboard - YOUR droplet UUID
+        value: drp_2jd94qffjmv1k3pifvvyeqxmtwtakbbr1  # Your droplet UUID
       - key: FLUID_API_URL
         value: https://api.fluid.app
       - key: FLUID_WEBHOOK_SECRET

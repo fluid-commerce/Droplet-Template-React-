@@ -32,27 +32,31 @@ Droplets are integrations between third-party services and Fluid. This template 
 ├── frontend/           # React frontend application
 │   ├── entrypoints/    # Iframe-embedded configuration pages
 │   │   ├── DropletConfig.tsx  # Main configuration form
-│   │   └── DropletSetup.tsx   # Setup progress page
+│   │   ├── DropletSetup.tsx   # Setup progress page
+│   │   ├── DropletSuccess.tsx # Success page
+│   │   └── DropletDashboard.tsx # Dashboard page
 │   ├── components/     # Reusable React components
 │   │   ├── Button.tsx  # Button component
 │   │   └── Card.tsx    # Card components
-│   ├── clients/        # API client libraries
-│   │   ├── fluidClient.ts  # Main Fluid platform client
-│   │   ├── droplets.ts     # Droplet resource handler
-│   │   └── index.ts        # Client factory
 │   ├── lib/            # Utility functions and helpers
 │   │   ├── utils.ts    # Common utilities
-│   │   └── fontawesome.ts  # Font Awesome configuration
-│   ├── types/          # TypeScript type definitions
-│   │   └── index.ts    # Core types
-│   ├── hooks/          # Custom React hooks
-│   ├── utils/          # Additional utilities
+│   │   ├── fontawesome.ts  # Font Awesome configuration
+│   │   └── api.ts      # API client
 │   └── test/           # Test setup and utilities
-│       └── setup.ts    # Jest test setup
-├── backend/            # Node.js backend API
+├── backend/            # Node.js API server
 │   ├── src/
-│   │   ├── routes/     # API route handlers
-│   │   │   ├── droplet.ts    # Droplet configuration routes
+│   │   ├── routes/     # API endpoints
+│   │   │   └── droplet.ts  # Droplet configuration routes
+│   │   ├── services/   # Business logic
+│   │   │   └── fluidApi.ts # Fluid API client
+│   │   └── middleware/ # Authentication, validation
+├── database/           # PostgreSQL database
+│   ├── migrations/     # Database schema migrations
+│   ├── migrate.cjs     # Migration runner
+│   └── config.js       # Database configuration
+├── scripts/            # Setup and utility scripts
+│   ├── create-droplet.js # Create droplet in Fluid platform
+│   └── README.md       # Script documentation
 │   │   │   └── webhook.ts    # Webhook handling routes
 │   │   ├── services/   # Business logic services
 │   │   │   └── fluidApi.ts   # Fluid API integration
@@ -102,7 +106,15 @@ npm run setup:db
 npm run migrate
 ```
 
-4. Start the development servers:
+4. Create your droplet in Fluid platform:
+```bash
+# Set your Fluid API key and run the setup script
+FLUID_API_KEY=your_api_key_here node scripts/create-droplet.js
+
+# The script will provide your droplet UUID for configuration
+```
+
+5. Start the development servers:
 ```bash
 # Start both frontend and backend
 npm run dev:full
@@ -205,6 +217,35 @@ npm run migrate:status
 # View detailed database documentation
 cat database/README.md
 ```
+
+## Setup Scripts
+
+The template includes helpful scripts in the `scripts/` directory to streamline droplet setup:
+
+### Creating Your Droplet
+
+Use the `create-droplet.js` script to create your droplet in the Fluid platform:
+
+```bash
+# Basic usage
+FLUID_API_KEY=your_api_key_here node scripts/create-droplet.js
+
+# With custom embed URL
+FLUID_API_KEY=your_api_key_here EMBED_URL=https://your-app.onrender.com/ node scripts/create-droplet.js
+```
+
+**What the script does:**
+- Creates a new droplet in Fluid with your app name and embed URL
+- Returns the droplet UUID needed for your `DROPLET_ID` environment variable
+- Provides step-by-step instructions for updating your configuration
+
+**After running the script:**
+1. Copy the returned droplet UUID
+2. Update your backend environment variables with `DROPLET_ID=your_uuid_here`
+3. Update your `render.yaml` file with the droplet UUID
+4. Redeploy your backend with the new configuration
+
+For more details, see [scripts/README.md](scripts/README.md).
 
 ## Configuration
 
