@@ -1,0 +1,92 @@
+# Render deployment configuration for Fluid Droplet Template
+
+services:
+  # Frontend service (React app)
+  - type: web
+    name: droplet-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      # Backend API Configuration
+      - key: VITE_API_BASE_URL
+        value: https://droplet-backend.onrender.com
+      
+      # Fluid Platform Configuration
+      - key: VITE_FLUID_API_URL
+        value: https://pokey.fluid.app  # Change to your organization URL
+      - key: VITE_FLUID_ENVIRONMENT
+        value: production
+      
+      # Optional: Custom configuration
+      - key: VITE_APP_NAME
+        value: Fluid Droplet Template
+      - key: VITE_APP_VERSION
+        value: 1.0.0
+
+  # Backend service (Node.js API)
+  - type: web
+    name: droplet-backend
+    env: node
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm start
+    # Note: Run migrations manually before deploying
+    # npm run migrate (from project root)
+    envVars:
+      # Server Configuration
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      
+      # Frontend URL (for CORS)
+      - key: FRONTEND_URL
+        value: https://droplet-frontend.onrender.com
+      
+      # Fluid Platform Configuration (Builder's API Key)
+      - key: FLUID_API_KEY
+        sync: false  # Set this in Render dashboard - YOUR builder API key
+      - key: FLUID_API_URL
+        value: https://pokey.fluid.app  # Change to your organization URL
+      - key: FLUID_WEBHOOK_SECRET
+        sync: false  # Set this in Render dashboard
+      
+      # External Service API Credentials (for connecting to external services)
+      # These are YOUR API keys for external services (Shopify, Stripe, etc.)
+      - key: SHOPIFY_API_KEY
+        sync: false  # Set this in Render dashboard if using Shopify
+      - key: SHOPIFY_API_SECRET
+        sync: false  # Set this in Render dashboard if using Shopify
+      - key: STRIPE_API_KEY
+        sync: false  # Set this in Render dashboard if using Stripe
+      - key: STRIPE_API_SECRET
+        sync: false  # Set this in Render dashboard if using Stripe
+      
+      # Database Configuration (will be set automatically by Render)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: droplet-db
+          property: connectionString
+      
+      # Logging
+      - key: LOG_LEVEL
+        value: info
+      
+      # Security (auto-generated)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      
+      # Optional: External Service URLs
+      - key: EXTERNAL_SERVICE_BASE_URL
+        value: https://api.external-service.com
+      - key: WEBHOOK_BASE_URL
+        value: https://droplet-backend.onrender.com
+
+databases:
+  # PostgreSQL database for storing configurations and data
+  - name: droplet-db
+    databaseName: droplet_db
+    user: droplet_user
+    plan: free  # Change to 'starter' or 'standard' for production
