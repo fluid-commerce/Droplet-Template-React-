@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/Card'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -15,6 +15,7 @@ interface ConfigFormData {
 
 export function DropletConfig() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const installationId = searchParams.get('installation_id')
   // const companyId = searchParams.get('company_id') // Available for future use
   
@@ -115,9 +116,9 @@ export function DropletConfig() {
       })
 
       if (response.data.success) {
-        // Navigate to success page
+        // Navigate to success page using React Router
         const finalInstallationId = installationId || response.data.installationId || 'new-installation'
-        window.location.href = `/success?installation_id=${finalInstallationId}`
+        navigate(`/success?installation_id=${finalInstallationId}`)
       }
     } catch (err: any) {
       console.error('Configuration failed:', err)
