@@ -28,7 +28,9 @@ export class FluidClient {
     // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
-        console.log(`Making request to ${config.method?.toUpperCase()} ${config.url}`)
+        if (import.meta.env.DEV) {
+          console.log(`Making request to ${config.method?.toUpperCase()} ${config.url}`)
+        }
         return config
       },
       (error) => {

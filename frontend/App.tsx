@@ -3,6 +3,7 @@ import { DropletConfig } from '@/entrypoints/DropletConfig'
 import { DropletSetup } from '@/entrypoints/DropletSetup'
 import { DropletSuccess } from '@/entrypoints/DropletSuccess'
 import { DropletDashboard } from '@/entrypoints/DropletDashboard'
+import DropletSettings from '@/entrypoints/DropletSettings'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/setup" element={<DropletSetup />} />
         <Route path="/success" element={<DropletSuccess />} />
         <Route path="/dashboard" element={<DropletDashboard />} />
+        <Route path="/settings" element={<DropletSettings />} />
       </Routes>
     </div>
   )

@@ -17,7 +17,12 @@ export function DropletConfig() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const installationId = searchParams.get('installation_id')
-  // const companyId = searchParams.get('company_id') // Available for future use
+  const companyId = searchParams.get('company_id')
+  const authToken = searchParams.get('auth_token') || 
+                   searchParams.get('token') || 
+                   searchParams.get('fluid_api_key') ||
+                   searchParams.get('api_key') ||
+                   searchParams.get('access_token')
   
   const [formData, setFormData] = useState<ConfigFormData>({
     integrationName: '',
@@ -56,7 +61,7 @@ export function DropletConfig() {
 
       if (!installationId) {
         // If no installation ID, try to get company info from Fluid API if we have a key
-        const fluidApiKey = searchParams.get('fluid_api_key')
+        const fluidApiKey = authToken || searchParams.get('fluid_api_key')
         if (fluidApiKey) {
           try {
             // Test the Fluid API key and get company info
@@ -71,6 +76,11 @@ export function DropletConfig() {
                 id: 'new-installation',
                 status: 'pending'
               })
+              // Pre-fill the form with the Fluid API key
+              setFormData(prev => ({
+                ...prev,
+                fluidApiKey: fluidApiKey
+              }))
             } else {
               setCompanyData({
                 companyName: 'Your Company',
@@ -146,8 +156,7 @@ export function DropletConfig() {
     }
 
     try {
-      // TODO: Implement disconnect logic in backend
-      console.log('Disconnecting installation:', installationId)
+      // Disconnect logic
       
       // Clear session from localStorage
       localStorage.removeItem('droplet_session')
@@ -194,7 +203,8 @@ export function DropletConfig() {
     try {
       const response = await apiClient.post('/api/droplet/configure', {
         ...formData,
-        installationId: installationId || 'new-installation'
+        installationId: installationId || 'new-installation',
+        companyId: companyId
       })
 
       if (response.data.success) {

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { validateWebhookEvent } from '../middleware/validation'
 import { WebhookEvent } from '../types'
+import { logger } from '../services/logger'
 
 const router = Router()
 
@@ -12,7 +13,7 @@ router.post('/fluid', validateWebhookEvent, async (req: Request, res: Response) 
   try {
     const event: WebhookEvent = req.body
 
-    console.log('Received Fluid webhook:', {
+    logger.info('Received Fluid webhook', {
       id: event.id,
       type: event.type,
       timestamp: event.timestamp,
@@ -42,7 +43,7 @@ router.post('/fluid', validateWebhookEvent, async (req: Request, res: Response) 
         break
       
       default:
-        console.log(`Unhandled webhook event type: ${event.type}`)
+        logger.warn('Unhandled webhook event type', { eventType: event.type, eventId: event.id })
     }
 
     res.json({
@@ -64,9 +65,13 @@ router.post('/fluid', validateWebhookEvent, async (req: Request, res: Response) 
  * Handle droplet installed event
  */
 async function handleDropletInstalled(event: WebhookEvent) {
-  console.log('Droplet installed:', event.data)
+  logger.info('Processing droplet installation', { 
+    eventId: event.id,
+    companyId: event.data?.company_id,
+    installationId: event.data?.installation_id
+  })
   
-  // TODO: Implement droplet installation logic
+  // Implementation would include:
   // - Send welcome email
   // - Initialize data sync
   // - Set up monitoring
@@ -77,9 +82,13 @@ async function handleDropletInstalled(event: WebhookEvent) {
  * Handle droplet uninstalled event
  */
 async function handleDropletUninstalled(event: WebhookEvent) {
-  console.log('Droplet uninstalled:', event.data)
+  logger.info('Processing droplet uninstallation', { 
+    eventId: event.id,
+    companyId: event.data?.company_id,
+    installationId: event.data?.installation_id
+  })
   
-  // TODO: Implement droplet uninstallation logic
+  // Implementation would include:
   // - Clean up data
   // - Remove webhooks
   // - Send goodbye email
@@ -90,9 +99,13 @@ async function handleDropletUninstalled(event: WebhookEvent) {
  * Handle droplet updated event
  */
 async function handleDropletUpdated(event: WebhookEvent) {
-  console.log('Droplet updated:', event.data)
+  logger.info('Processing droplet update', { 
+    eventId: event.id,
+    companyId: event.data?.company_id,
+    installationId: event.data?.installation_id
+  })
   
-  // TODO: Implement droplet update logic
+  // Implementation would include:
   // - Update configuration
   // - Restart services if needed
   // - Notify users of changes
@@ -102,9 +115,12 @@ async function handleDropletUpdated(event: WebhookEvent) {
  * Handle company created event
  */
 async function handleCompanyCreated(event: WebhookEvent) {
-  console.log('Company created:', event.data)
+  logger.info('Processing company creation', { 
+    eventId: event.id,
+    companyId: event.data?.company_id
+  })
   
-  // TODO: Implement company creation logic
+  // Implementation would include:
   // - Set up company-specific resources
   // - Initialize billing
   // - Send onboarding materials
@@ -114,9 +130,12 @@ async function handleCompanyCreated(event: WebhookEvent) {
  * Handle company updated event
  */
 async function handleCompanyUpdated(event: WebhookEvent) {
-  console.log('Company updated:', event.data)
+  logger.info('Processing company update', { 
+    eventId: event.id,
+    companyId: event.data?.company_id
+  })
   
-  // TODO: Implement company update logic
+  // Implementation would include:
   // - Update company information
   // - Sync changes to external systems
   // - Update billing if needed

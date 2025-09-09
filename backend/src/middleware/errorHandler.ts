@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { ApiError } from '../types'
+import { logger } from '../services/logger'
 
 /**
  * Global error handler middleware
@@ -10,13 +11,13 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ) {
-  console.error('Error occurred:', {
-    message: error.message,
-    stack: error.stack,
+  logger.error('Unhandled error occurred', {
     url: req.url,
     method: req.method,
-    timestamp: new Date().toISOString()
-  })
+    body: req.body,
+    query: req.query,
+    params: req.params
+  }, error)
 
   // Default error response
   let statusCode = 500

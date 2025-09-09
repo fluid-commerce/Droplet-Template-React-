@@ -11,10 +11,12 @@ export const apiClient = axios.create({
   },
 })
 
-// Request interceptor
+// Request interceptor - only log in development
 apiClient.interceptors.request.use(
   (config) => {
-    console.log(`Making API request: ${config.method?.toUpperCase()} ${config.url}`)
+    if (import.meta.env.DEV) {
+      console.log(`Making API request: ${config.method?.toUpperCase()} ${config.url}`)
+    }
     return config
   },
   (error) => {

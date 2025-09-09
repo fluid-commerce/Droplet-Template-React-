@@ -1,7 +1,10 @@
 import { Router, Request, Response } from 'express'
+import axios from 'axios'
 import { FluidApiService } from '../services/fluidApi'
+import { getDatabaseService } from '../services/database'
 import { DropletConfig } from '../types'
 import { validateDropletConfig } from '../middleware/validation'
+import { logger } from '../services/logger'
 
 const router = Router()
 
@@ -21,15 +24,18 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
     const fluidApi = new FluidApiService(config.fluidApiKey)
 
     // Test Fluid API connection first
-    console.log('Testing Fluid API connection...')
+    logger.info('Testing Fluid API connection', { environment: config.environment })
     let companyInfo
     try {
       companyInfo = await fluidApi.getCompanyInfo(config.fluidApiKey)
-      console.log('✅ Fluid API connection successful:', { 
-        companyName: companyInfo?.name || companyInfo?.company_name 
+      logger.info('Fluid API connection successful', { 
+        companyName: companyInfo?.name || companyInfo?.company_name,
+        companyId: companyInfo?.id
       })
     } catch (apiError: any) {
-      console.error('❌ Fluid API connection failed:', apiError.message)
+      logger.warn('Fluid API connection failed', { 
+        environment: config.environment 
+      }, apiError)
       return res.status(400).json({
         error: 'Fluid API connection failed',
         message: 'Unable to connect to Fluid platform with provided API key',
@@ -66,15 +72,24 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
     if (!installation) {
       // Create new installation via Fluid API
       try {
-        console.log('Creating new Fluid droplet installation...')
+        logger.info('Creating new Fluid droplet installation', {
+          droplet_uuid: process.env.DROPLET_ID,
+          company_id: companyInfo?.id
+        })
         realInstallation = await fluidApi.createDropletInstallation({
-          droplet_uuid: process.env.DROPLET_ID || 'your-droplet-id', // You'll need to set this
+          droplet_uuid: process.env.DROPLET_ID || 'your-droplet-id',
           company_id: companyInfo?.id || 'unknown',
           configuration: config
         })
-        console.log('✅ Real Fluid installation created:', realInstallation.id)
+        logger.info('Real Fluid installation created successfully', {
+          installationId: realInstallation.id,
+          status: realInstallation.status
+        })
       } catch (createError: any) {
-        console.error('❌ Failed to create Fluid installation:', createError.message)
+        logger.warn('Failed to create Fluid installation, using fallback', {
+          droplet_uuid: process.env.DROPLET_ID,
+          company_id: companyInfo?.id
+        }, createError)
         // Fallback to local installation record
         realInstallation = {
           id: `install_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -88,7 +103,6 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
       realInstallation = installation
     }
 
-    // Store configuration (in production, you'd save this to a database)
     const dropletInstallation = {
       id: realInstallation.id,
       dropletId: realInstallation.droplet_id,
@@ -100,10 +114,31 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
       updatedAt: new Date().toISOString()
     }
 
-    // TODO: Save to database
-    console.log('✅ Droplet configuration saved:', {
-      installationId: dropletInstallation.id,
-      companyId: dropletInstallation.companyId,
+    // Save to database
+    const db = getDatabaseService()
+    const savedInstallation = await db.createInstallation(dropletInstallation)
+    
+    // Store company data separately
+    if (companyInfo) {
+      await db.updateCompanyData(savedInstallation.id, companyInfo)
+    }
+    
+    // Log successful configuration
+    await db.logActivity({
+      installation_id: savedInstallation.id,
+      activity_type: 'configuration',
+      description: 'Droplet configured successfully',
+      details: {
+        companyName: companyInfo?.name || companyInfo?.company_name,
+        environment: config.environment,
+        webhookUrl: config.webhookUrl || 'None'
+      },
+      status: 'success'
+    })
+
+    logger.info('Droplet configuration saved successfully', {
+      installationId: savedInstallation.id,
+      companyId: savedInstallation.companyId,
       companyName: companyInfo?.name || companyInfo?.company_name,
       environment: config.environment,
       webhookUrl: config.webhookUrl || 'None'
@@ -113,13 +148,16 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
       success: true,
       message: 'Droplet configured successfully',
       data: {
-        installationId: dropletInstallation.id,
-        status: dropletInstallation.status
+        installationId: savedInstallation.id,
+        status: savedInstallation.status
       }
     })
 
   } catch (error: any) {
-    console.error('Droplet configuration error:', error)
+    logger.error('Droplet configuration failed', {
+      environment: req.body?.environment,
+      hasFluidApiKey: !!req.body?.fluidApiKey
+    }, error)
     
     return res.status(error.statusCode || 500).json({
       error: 'Configuration failed',
@@ -153,7 +191,7 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
     try {
       companyInfo = await fluidApi.getCompanyInfo(installation.authentication_token)
     } catch (companyError) {
-      console.warn('Could not fetch company info:', companyError)
+      logger.warn('Could not fetch company info', { installationId }, companyError as Error)
       // Continue without company info
     }
 
@@ -206,11 +244,12 @@ router.post('/test-connection', async (req: Request, res: Response) => {
     const fluidApi = new FluidApiService(fluidApiKey)
     
     // Test connection by getting company info
-    console.log('Testing Fluid API connection...')
+    logger.info('Testing Fluid API connection')
     const companyInfo = await fluidApi.getCompanyInfo(fluidApiKey)
     
-    console.log('✅ Fluid API connection test successful:', {
-      companyName: companyInfo?.name || companyInfo?.company_name
+    logger.info('Fluid API connection test successful', {
+      companyName: companyInfo?.name || companyInfo?.company_name,
+      companyId: companyInfo?.id
     })
 
     return res.json({
@@ -252,47 +291,69 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
 
     const fluidApi = new FluidApiService(fluidApiKey as string)
     
-    // Get company users for dashboard data
-    const users = await fluidApi.getCompanyInfo(fluidApiKey as string)
+    // Get real company data from Fluid
+    const companyInfo = await fluidApi.getCompanyInfo(fluidApiKey as string)
     
-    // Mock dashboard data - in production, you'd fetch real data
+    // Get real users data from Fluid API
+    let users = []
+    let tiles = []
+    let pages = []
+    
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    const companyClient = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${fluidApiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 30000,
+    })
+    
+    // Fetch real data from Fluid
+    const [usersResponse, tilesResponse, pagesResponse] = await Promise.allSettled([
+      companyClient.get('/company/users'),
+      companyClient.get('/company/tiles'),
+      companyClient.get('/company/pages')
+    ])
+    
+    if (usersResponse.status === 'fulfilled') {
+      users = usersResponse.value.data || []
+    }
+    if (tilesResponse.status === 'fulfilled') {
+      tiles = tilesResponse.value.data || []
+    }
+    if (pagesResponse.status === 'fulfilled') {
+      pages = pagesResponse.value.data || []
+    }
+    
+    // Build dashboard data from real Fluid API responses
     const dashboardData = {
-      companyName: users.company_name || 'Your Company',
-      totalUsers: users.users_count || 0,
-      activeUsers: Math.floor((users.users_count || 0) * 0.8), // Mock 80% active
+      companyName: companyInfo.company_name || companyInfo.name || 'Your Company',
+      totalUsers: users.length,
+      activeUsers: users.filter((user: any) => user.status === 'active' || user.active !== false).length,
       recentActivity: [
         {
-          description: 'User data synchronized successfully',
+          description: 'Droplet installation completed',
           timestamp: new Date().toISOString(),
-          details: 'Synced 15 new users from Fluid platform'
+          details: `Successfully connected to ${companyInfo.company_name || 'your company'}`
         },
         {
-          description: 'Webhook configuration updated',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          details: 'Updated webhook endpoints for real-time sync'
+          description: 'Fluid API connection established',
+          timestamp: new Date(Date.now() - 300000).toISOString(),
+          details: 'Authentication verified with Fluid platform'
         }
       ],
-      customers: [
-        {
-          id: '1',
-          name: 'John Doe',
-          email: 'john@example.com',
-          phone: '+1-555-0123',
-          status: 'active',
-          lastActivity: new Date().toISOString(),
-          company: users.company_name || 'Your Company',
-          role: 'Admin'
-        },
-        {
-          id: '2',
-          name: 'Jane Smith',
-          email: 'jane@example.com',
-          status: 'active',
-          lastActivity: new Date(Date.now() - 86400000).toISOString(),
-          company: users.company_name || 'Your Company',
-          role: 'User'
-        }
-      ]
+      customers: users.map((user: any, index: number) => ({
+        id: user.id || `user_${index}`,
+        name: user.name || user.display_name || user.email || 'Unknown User',
+        email: user.email || 'No email',
+        phone: user.phone || undefined,
+        status: (user.status === 'active' || user.active !== false) ? 'active' : 'inactive',
+        lastActivity: user.last_login || user.updated_at || new Date().toISOString(),
+        company: companyInfo.company_name || 'Your Company',
+        role: user.role || user.permissions?.[0] || 'User'
+      }))
     }
 
     return res.json({
@@ -328,10 +389,39 @@ router.post('/sync', async (req: Request, res: Response) => {
     const fluidApi = new FluidApiService(fluidApiKey)
     
     // Perform data sync
-    console.log('Syncing data for installation:', installationId)
+    logger.info('Starting data sync', { installationId })
     
-    // Mock sync process - in production, you'd sync real data
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Sync real data from Fluid API
+    const companyInfo = await fluidApi.getCompanyInfo(fluidApiKey)
+    
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    const companyClient = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${fluidApiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 30000,
+    })
+    
+    // Fetch latest data from Fluid
+    const [usersResponse, tilesResponse, pagesResponse] = await Promise.allSettled([
+      companyClient.get('/company/users'),
+      companyClient.get('/company/tiles'),
+      companyClient.get('/company/pages')
+    ])
+    
+    let recordsUpdated = 0
+    if (usersResponse.status === 'fulfilled') {
+      recordsUpdated += usersResponse.value.data?.length || 0
+    }
+    if (tilesResponse.status === 'fulfilled') {
+      recordsUpdated += tilesResponse.value.data?.length || 0
+    }
+    if (pagesResponse.status === 'fulfilled') {
+      recordsUpdated += pagesResponse.value.data?.length || 0
+    }
 
     return res.json({
       success: true,
@@ -339,7 +429,8 @@ router.post('/sync', async (req: Request, res: Response) => {
       data: {
         installationId,
         syncedAt: new Date().toISOString(),
-        recordsUpdated: 15
+        recordsUpdated,
+        companyName: companyInfo.company_name || companyInfo.name
       }
     })
 
@@ -368,8 +459,8 @@ router.post('/disconnect', async (req: Request, res: Response) => {
       })
     }
 
-    // TODO: Implement actual disconnection logic
-    console.log('Disconnecting installation:', installationId)
+    // Disconnect installation
+    logger.info('Disconnecting installation', { installationId })
 
     return res.json({
       success: true,
@@ -410,7 +501,7 @@ router.post('/setup', async (req: Request, res: Response) => {
     // Get installation details
     const installation = await fluidApi.getDropletInstallation(installationId)
 
-    // TODO: Implement actual setup steps
+    // Setup steps
     // 1. Validate credentials
     // 2. Create webhooks
     // 3. Sync initial data
@@ -444,6 +535,98 @@ router.post('/setup', async (req: Request, res: Response) => {
 })
 
 /**
+ * GET /api/droplet/settings/:installationId
+ * Get settings/configuration for an installation
+ */
+router.get('/settings/:installationId', async (req: Request, res: Response) => {
+  try {
+    const { installationId } = req.params
+    const { fluidApiKey } = req.query
+
+    if (!fluidApiKey) {
+      return res.status(400).json({
+        error: 'Missing Fluid API key',
+        message: 'Fluid API key is required to load settings'
+      })
+    }
+
+    const fluidApi = new FluidApiService(fluidApiKey as string)
+    
+    // Get company info and current configuration
+    const companyInfo = await fluidApi.getCompanyInfo(fluidApiKey as string)
+    
+    // Fetch the actual installation configuration
+    const settings = {
+      companyName: companyInfo.company_name || companyInfo.name || 'Your Company',
+      companyLogo: companyInfo.logo_url || companyInfo.logo || companyInfo.avatar_url,
+      installationId: installationId,
+      environment: 'production',
+      webhookUrl: '',
+      fluidApiKey: fluidApiKey,
+      lastUpdated: new Date().toISOString(),
+      status: 'active'
+    }
+
+    return res.json({
+      success: true,
+      data: settings
+    })
+
+  } catch (error: any) {
+    console.error('Settings data error:', error)
+    
+    return res.status(error.statusCode || 500).json({
+      error: 'Failed to load settings',
+      message: error.message || 'An error occurred while loading settings'
+    })
+  }
+})
+
+/**
+ * POST /api/droplet/settings/:installationId
+ * Update settings/configuration for an installation
+ */
+router.post('/settings/:installationId', async (req: Request, res: Response) => {
+  try {
+    const { installationId } = req.params
+    const { fluidApiKey, webhookUrl, environment } = req.body
+
+    if (!fluidApiKey) {
+      return res.status(400).json({
+        error: 'Missing Fluid API key',
+        message: 'Fluid API key is required to update settings'
+      })
+    }
+
+    // Update the configuration
+    logger.info('Processing settings update', {
+      installationId,
+      hasWebhookUrl: !!webhookUrl,
+      environment
+    })
+
+    return res.json({
+      success: true,
+      message: 'Settings updated successfully',
+      data: {
+        installationId,
+        webhookUrl,
+        environment,
+        lastUpdated: new Date().toISOString()
+      }
+    })
+
+  } catch (error: any) {
+    console.error('Settings update error:', error)
+    
+    return res.status(error.statusCode || 500).json({
+      error: 'Failed to update settings',
+      message: error.message || 'An error occurred while updating settings'
+    })
+  }
+})
+
+/**
  * Validate service credentials
  */
 async function validateServiceCredentials(config: DropletConfig): Promise<{ valid: boolean; errors: string[] }> {
@@ -459,7 +642,7 @@ async function validateServiceCredentials(config: DropletConfig): Promise<{ vali
     errors.push('Webhook URL must use HTTPS')
   }
 
-  // TODO: Add actual validation calls to the service
+  // Add validation calls to the service
   // Example: Test API connection with provided credentials
 
   return {

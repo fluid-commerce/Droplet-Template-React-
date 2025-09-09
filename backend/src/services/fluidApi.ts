@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios'
 import { FluidApiResponse, FluidDropletInstallation } from '../types'
+import { logger } from './logger'
 
 export class FluidApiService {
   private client: AxiosInstance
@@ -24,19 +25,26 @@ export class FluidApiService {
   private setupInterceptors(): void {
     this.client.interceptors.request.use(
       (config) => {
-        console.log(`Making Fluid API request: ${config.method?.toUpperCase()} ${config.url}`)
+        logger.debug('Making Fluid API request', {
+          method: config.method?.toUpperCase(),
+          url: config.url,
+          baseURL: config.baseURL
+        })
         return config
       },
       (error) => {
-        console.error('Fluid API request error:', error)
+        logger.error('Fluid API request setup failed', {}, error)
         return Promise.reject(error)
       }
     )
 
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        logger.fluidApiCall(response.config.url || 'unknown', true)
+        return response
+      },
       (error) => {
-        console.error('Fluid API response error:', error.response?.data || error.message)
+        logger.fluidApiCall(error.config?.url || 'unknown', false, error)
         return Promise.reject(this.handleError(error))
       }
     )
@@ -95,7 +103,17 @@ export class FluidApiService {
    */
   async createDropletInstallation(installationData: any): Promise<any> {
     const response = await this.client.post('/droplet_installations', installationData)
-    return response.data.data
+    
+    // Handle different possible response structures
+    if (response.data.data) {
+      return response.data.data
+    } else if (response.data.droplet_installation) {
+      return response.data.droplet_installation
+    } else if (response.data) {
+      return response.data
+    } else {
+      throw new Error('Unexpected response structure from Fluid API')
+    }
   }
 
   /**
@@ -120,10 +138,16 @@ export class FluidApiService {
       const response = await companyClient.get('/company/users')
       
       // If successful, return company info
+      // Try to extract company name from the response
+      const companyName = response.data?.company?.name || 
+                         response.data?.company_name || 
+                         response.data?.name || 
+                         'Your Company'
+      
       return {
         id: 'company-verified',
-        name: 'Your Company',
-        company_name: 'Your Company',
+        name: companyName,
+        company_name: companyName,
         status: 'active',
         users_count: response.data?.length || 0,
         verified: true
@@ -133,10 +157,16 @@ export class FluidApiService {
       try {
         const response = await companyClient.get('/company/tiles')
         
+        // Try to extract company name from the response
+        const companyName = response.data?.company?.name || 
+                           response.data?.company_name || 
+                           response.data?.name || 
+                           'Your Company'
+        
         return {
           id: 'company-verified',
-          name: 'Your Company',
-          company_name: 'Your Company',
+          name: companyName,
+          company_name: companyName,
           status: 'active',
           tiles_count: response.data?.length || 0,
           verified: true
@@ -146,10 +176,16 @@ export class FluidApiService {
         try {
           const response = await companyClient.get('/company/pages')
           
+          // Try to extract company name from the response
+          const companyName = response.data?.company?.name || 
+                             response.data?.company_name || 
+                             response.data?.name || 
+                             'Your Company'
+          
           return {
             id: 'company-verified',
-            name: 'Your Company',
-            company_name: 'Your Company',
+            name: companyName,
+            company_name: companyName,
             status: 'active',
             pages_count: response.data?.length || 0,
             verified: true
