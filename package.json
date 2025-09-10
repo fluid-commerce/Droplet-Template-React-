@@ -24,7 +24,11 @@
     "postinstall": "cd backend && npm install && cd .. && node scripts/postinstall.js",
     "setup": "node scripts/auto-setup.js",
     "setup:full": "npm run setup && npm run migrate",
-    "dev:auto": "npm run setup:full && npm run dev:full"
+    "dev:auto": "npm run setup:full && npm run dev:full",
+    "test": "node tests/droplet.test.js",
+    "test:local": "TEST_API_URL=http://localhost:3001 node tests/droplet.test.js",
+    "test:prod": "TEST_API_URL=https://your-backend.onrender.com node tests/droplet.test.js",
+    "create-droplet": "node scripts/create-droplet.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",

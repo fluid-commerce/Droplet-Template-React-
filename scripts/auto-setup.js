@@ -293,7 +293,7 @@ async function main() {
       log('1. Get your Fluid API key from https://fluid.app');
       log('2. Update the FLUID_API_KEY in backend/.env');
       log('3. Run: npm run dev:full');
-      log('4. Create your droplet: FLUID_API_KEY=your_key EMBED_URL=http://localhost:3000/ node scripts/create-droplet.js');
+      log('4. Create your droplet: FLUID_API_KEY=your_key EMBED_URL=http://localhost:3000/ npm run create-droplet');
     } else {
       logWarning('Setup completed with some issues. Please check the errors above.');
       logInfo('You can still proceed with development, but some features may not work.');

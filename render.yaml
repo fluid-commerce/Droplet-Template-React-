@@ -10,19 +10,19 @@ services:
     envVars:
       # Backend API Configuration
       - key: VITE_API_BASE_URL
-        value: https://droplet-backend.onrender.com
+        # Set to your backend service URL
       
       # Fluid Platform Configuration
       - key: VITE_FLUID_API_URL
-        value: https://droplet-backend.onrender.com
+        # Set to your backend service URL
       - key: VITE_FLUID_ENVIRONMENT
         value: production
       
       # Optional: Custom configuration
       - key: VITE_APP_NAME
-        value: Fluid Droplet Template
+        # Set your app name
       - key: VITE_APP_VERSION
-        value: 1.0.0
+        # Set your app version
 
   # Backend service (Node.js API)
   - type: web
@@ -41,13 +41,13 @@ services:
       
       # Frontend URL (for CORS)
       - key: FRONTEND_URL
-        value: https://droplet-frontend-ya60.onrender.com
+        # Set to your frontend service URL
       
       # Fluid Platform Configuration (Builder's API Key)
       - key: FLUID_API_KEY
         sync: false  # Set this in Render dashboard - YOUR builder API key
       - key: DROPLET_ID
-        value: drp_2jd94qffjmv1k3pifvvyeqxmtwtakbbr1  # Your droplet UUID
+        # Set your droplet UUID
       - key: FLUID_API_URL
         value: https://api.fluid.app
       - key: FLUID_WEBHOOK_SECRET
@@ -79,9 +79,9 @@ services:
       
       # Optional: External Service URLs
       - key: EXTERNAL_SERVICE_BASE_URL
-        value: https://api.external-service.com
+        # Set your external service API URL
       - key: WEBHOOK_BASE_URL
-        value: https://droplet-backend.onrender.com
+        # Set to your backend service URL
 
 databases:
   # PostgreSQL database for storing configurations and data

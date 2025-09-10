@@ -56,7 +56,7 @@ echo ℹ️  Next steps:
 echo 1. Get your Fluid API key from https://fluid.app
 echo 2. Update FLUID_API_KEY in backend\.env
 echo 3. Run: npm run dev:full
-echo 4. Create your droplet: FLUID_API_KEY=your_key EMBED_URL=http://localhost:3000/ node scripts/create-droplet.js
+echo 4. Create your droplet: FLUID_API_KEY=your_key EMBED_URL=http://localhost:3000/ npm run create-droplet
 echo.
 echo ℹ️  Happy coding! 🚀
 pause

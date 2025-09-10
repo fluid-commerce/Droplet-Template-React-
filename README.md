@@ -75,7 +75,10 @@ npm run setup:full           # Cross-platform - Does EVERYTHING automatically
 ### Step 3: Create Your Droplet
 ```bash
 # After deployment, get your Fluid API key and run:
-FLUID_API_KEY=your_fluid_api_key EMBED_URL=https://your-frontend-url.com/ node scripts/create-droplet.js
+FLUID_API_KEY=your_fluid_api_key EMBED_URL=https://your-frontend-url.com/ npm run create-droplet
+
+# Or with custom options:
+FLUID_API_KEY=your_key EMBED_URL=https://your-frontend.com/ DROPLET_NAME="My Awesome Droplet" npm run create-droplet
 ```
 
 **That's it!** Your droplet is live and ready for installation in Fluid.
@@ -136,7 +139,7 @@ VITE_API_BASE_URL=https://your-backend-name.onrender.com
 npm install
 
 # Create droplet in Fluid platform
-FLUID_API_KEY=PT-your_api_key_here EMBED_URL=https://your-frontend.onrender.com/ node scripts/create-droplet.js
+FLUID_API_KEY=PT-your_api_key_here EMBED_URL=https://your-frontend.onrender.com/ npm run create-droplet
 ```
 
 The script returns a **Droplet UUID**. Copy it!
@@ -251,7 +254,7 @@ This starts:
 
 #### 5. Create Development Droplet
 ```bash
-FLUID_API_KEY=your_key EMBED_URL=http://localhost:3000/ node scripts/create-droplet.js
+FLUID_API_KEY=your_key EMBED_URL=http://localhost:3000/ npm run create-droplet
 ```
 
 ---
@@ -504,7 +507,6 @@ npm run install:all     # Install all dependencies
 ```bash
 npm run dev            # Start dev server
 npm run build          # Production build
-npm run test           # Run tests
 npm run lint           # ESLint check
 ```
 
@@ -520,6 +522,18 @@ npm run start:backend  # Production server
 npm run migrate        # Run pending migrations
 npm run migrate:status # Check migration status
 npm run setup:db       # Automated PostgreSQL setup
+```
+
+**Testing:**
+```bash
+npm test               # Run integration tests
+npm run test:local     # Test against local server
+npm run test:prod      # Test against production server
+```
+
+**Droplet Creation:**
+```bash
+npm run create-droplet # Create droplet in Fluid platform
 ```
 
 ### Makefile Shortcuts
@@ -640,18 +654,40 @@ GET /health                                  # Service health status
 
 ## 🧪 Testing Your Droplet
 
+### Automated Testing
+```bash
+# Run the full test suite
+npm test
+
+# Test against local development server
+npm run test:local
+
+# Test against production deployment
+npm run test:prod
+```
+
+The test suite includes:
+- ✅ **Health check** - Verify backend is running
+- ✅ **Database connectivity** - Ensure database is accessible
+- ✅ **API validation** - Test configuration endpoints
+- ✅ **Webhook processing** - Verify webhook handlers
+- ✅ **CORS configuration** - Check frontend/backend communication
+- ✅ **Response format** - Validate API response consistency
+
 ### Local Testing
 1. **Start development servers**: `npm run dev:full`
-2. **Create test droplet**: `FLUID_API_KEY=key EMBED_URL=http://localhost:3000/ node scripts/create-droplet.js`
-3. **Test configuration flow**: Open `http://localhost:3000/?installation_id=test&company_id=123`
+2. **Create test droplet**: `FLUID_API_KEY=key EMBED_URL=http://localhost:3000/ npm run create-droplet`
+3. **Run integration tests**: `npm test`
+4. **Test configuration flow**: Open `http://localhost:3000/?installation_id=test&company_id=123`
 
 ### Production Testing  
 1. **Deploy to Render**: Follow deployment guide
 2. **Create production droplet**: Use your live frontend URL
-3. **Install in Fluid workspace**: Test the full installation flow
-4. **Test webhooks**: Trigger events and check processing
+3. **Test production API**: `npm run test:prod`
+4. **Install in Fluid workspace**: Test the full installation flow
+5. **Test webhooks**: Trigger events and check processing
 
-### Integration Testing
+### Manual Testing
 ```bash
 # Test database connection
 node -e "require('./database/config').Database.testConnection()"
@@ -663,13 +699,33 @@ curl -X POST http://localhost:3001/api/droplet/test-connection \
 
 # Test health endpoint
 curl http://localhost:3001/health
+
+# Test webhook endpoint with sample payload
+curl -X POST http://localhost:3001/api/webhook/fluid \
+  -H "Content-Type: application/json" \
+  -H "X-Fluid-Signature: sha256=test" \
+  --data @tests/sample-webhooks.json
 ```
+
+### Sample Webhook Payloads
+Check `tests/sample-webhooks.json` for complete webhook examples including:
+- Installation created/updated/deleted events
+- Company update events  
+- Full and minimal payload examples
+- Signature verification examples
 
 ---
 
 ## 🚨 Troubleshooting
 
-### Common Issues
+For comprehensive troubleshooting help, see **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - it covers:
+- 🏗️ Setup and installation issues
+- 🌐 API and connection problems  
+- 🚀 Deployment failures
+- 🧪 Droplet functionality issues
+- 🔍 Debugging tips and tools
+
+### Quick Fixes
 
 **"Database connection failed"**
 ```bash

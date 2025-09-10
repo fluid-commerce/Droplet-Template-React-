@@ -1,0 +1,250 @@
+{
+  "webhooks": {
+    "droplet_installation_created": {
+      "description": "Sent when a droplet is installed by a company",
+      "url": "POST /api/webhook/fluid",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Fluid-Signature": "sha256=calculated_signature",
+        "User-Agent": "Fluid-Webhooks/1.0"
+      },
+      "payload": {
+        "event": "droplet_installation.created",
+        "data": {
+          "droplet_installation": {
+            "id": "install_abc123def456",
+            "droplet_id": "drp_your_droplet_uuid",
+            "company_id": "comp_company123",
+            "company_name": "Acme Corporation",
+            "status": "pending",
+            "configuration": {},
+            "authentication_token": "PT-company-api-key-here",
+            "created_at": "2024-01-15T10:30:00Z",
+            "updated_at": "2024-01-15T10:30:00Z"
+          },
+          "company": {
+            "id": "comp_company123",
+            "name": "Acme Corporation",
+            "domain": "acme.com",
+            "logo_url": "https://acme.com/logo.png",
+            "created_at": "2023-12-01T09:00:00Z"
+          }
+        },
+        "timestamp": "2024-01-15T10:30:00Z",
+        "webhook_id": "wh_webhook123"
+      }
+    },
+    "droplet_installation_updated": {
+      "description": "Sent when a droplet installation is updated",
+      "url": "POST /api/webhook/fluid",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Fluid-Signature": "sha256=calculated_signature",
+        "User-Agent": "Fluid-Webhooks/1.0"
+      },
+      "payload": {
+        "event": "droplet_installation.updated",
+        "data": {
+          "droplet_installation": {
+            "id": "install_abc123def456",
+            "droplet_id": "drp_your_droplet_uuid",
+            "company_id": "comp_company123", 
+            "company_name": "Acme Corporation",
+            "status": "active",
+            "configuration": {
+              "integrationName": "Acme Integration",
+              "companyName": "Acme Corporation",
+              "environment": "production",
+              "customSettings": {
+                "sync_frequency": "hourly",
+                "notification_email": "admin@acme.com"
+              }
+            },
+            "authentication_token": "PT-company-api-key-here",
+            "created_at": "2024-01-15T10:30:00Z",
+            "updated_at": "2024-01-15T11:15:00Z"
+          },
+          "company": {
+            "id": "comp_company123",
+            "name": "Acme Corporation",
+            "domain": "acme.com",
+            "logo_url": "https://acme.com/logo.png",
+            "users_count": 25,
+            "created_at": "2023-12-01T09:00:00Z"
+          },
+          "changes": {
+            "status": ["pending", "active"],
+            "configuration": ["changed"],
+            "updated_at": ["2024-01-15T10:30:00Z", "2024-01-15T11:15:00Z"]
+          }
+        },
+        "timestamp": "2024-01-15T11:15:00Z",
+        "webhook_id": "wh_webhook124"
+      }
+    },
+    "droplet_installation_deleted": {
+      "description": "Sent when a droplet installation is removed",
+      "url": "POST /api/webhook/fluid",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Fluid-Signature": "sha256=calculated_signature",
+        "User-Agent": "Fluid-Webhooks/1.0"
+      },
+      "payload": {
+        "event": "droplet_installation.deleted",
+        "data": {
+          "droplet_installation": {
+            "id": "install_abc123def456",
+            "droplet_id": "drp_your_droplet_uuid",
+            "company_id": "comp_company123",
+            "company_name": "Acme Corporation",
+            "status": "deleted",
+            "deleted_at": "2024-01-15T14:20:00Z"
+          },
+          "company": {
+            "id": "comp_company123",
+            "name": "Acme Corporation",
+            "domain": "acme.com"
+          }
+        },
+        "timestamp": "2024-01-15T14:20:00Z",
+        "webhook_id": "wh_webhook125"
+      }
+    },
+    "company_updated": {
+      "description": "Sent when company information is updated",
+      "url": "POST /api/webhook/fluid",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Fluid-Signature": "sha256=calculated_signature",
+        "User-Agent": "Fluid-Webhooks/1.0"
+      },
+      "payload": {
+        "event": "company.updated",
+        "data": {
+          "company": {
+            "id": "comp_company123",
+            "name": "Acme Corporation Ltd",
+            "domain": "acme.com",
+            "logo_url": "https://acme.com/new-logo.png",
+            "users_count": 30,
+            "created_at": "2023-12-01T09:00:00Z",
+            "updated_at": "2024-01-15T12:45:00Z"
+          },
+          "changes": {
+            "name": ["Acme Corporation", "Acme Corporation Ltd"],
+            "logo_url": ["https://acme.com/logo.png", "https://acme.com/new-logo.png"],
+            "users_count": [25, 30]
+          }
+        },
+        "timestamp": "2024-01-15T12:45:00Z",
+        "webhook_id": "wh_webhook126"
+      }
+    }
+  },
+  "test_payloads": {
+    "minimal_installation": {
+      "description": "Minimal webhook payload for testing",
+      "event": "droplet_installation.created",
+      "data": {
+        "droplet_installation": {
+          "id": "install_test123",
+          "droplet_id": "drp_test_droplet",
+          "company_id": "comp_test456",
+          "company_name": "Test Company",
+          "status": "pending",
+          "authentication_token": "PT-test-token-123"
+        }
+      },
+      "timestamp": "2024-01-15T10:30:00Z"
+    },
+    "full_installation": {
+      "description": "Complete webhook payload with all fields",
+      "event": "droplet_installation.created",
+      "data": {
+        "droplet_installation": {
+          "id": "install_full123",
+          "droplet_id": "drp_production_droplet",
+          "company_id": "comp_production456", 
+          "company_name": "Production Company Inc",
+          "status": "active",
+          "configuration": {
+            "integrationName": "Production Integration",
+            "companyName": "Production Company Inc",
+            "environment": "production",
+            "webhookUrl": "https://production-company.com/webhooks",
+            "apiEndpoint": "https://api.production-company.com/v1",
+            "customFields": {
+              "department": "IT",
+              "budget_code": "TECH-2024-001",
+              "contact_email": "integration@production-company.com"
+            }
+          },
+          "authentication_token": "PT-production-token-abc123def456",
+          "metadata": {
+            "installation_source": "marketplace",
+            "installer_user_id": "user_admin789",
+            "installer_email": "admin@production-company.com"
+          },
+          "created_at": "2024-01-15T10:30:00Z",
+          "updated_at": "2024-01-15T10:30:00Z"
+        },
+        "company": {
+          "id": "comp_production456",
+          "name": "Production Company Inc",
+          "domain": "production-company.com",
+          "logo_url": "https://production-company.com/assets/logo.png",
+          "website": "https://production-company.com",
+          "industry": "Technology",
+          "size": "medium",
+          "users_count": 150,
+          "plan": "enterprise",
+          "created_at": "2023-06-15T08:00:00Z",
+          "updated_at": "2024-01-10T16:20:00Z"
+        }
+      },
+      "timestamp": "2024-01-15T10:30:00Z",
+      "webhook_id": "wh_production123"
+    }
+  },
+  "signature_examples": {
+    "description": "Examples of webhook signature verification",
+    "webhook_secret": "your_webhook_secret_here",
+    "payload_string": "{\"event\":\"droplet_installation.created\",\"data\":{\"droplet_installation\":{\"id\":\"install_test123\"}}}",
+    "expected_signature": "sha256=5d41402abc4b2a76b9719d911017c592",
+    "verification_steps": [
+      "1. Get the raw payload string (don't parse JSON first)",
+      "2. Create HMAC-SHA256 hash using your webhook secret",
+      "3. Compare with X-Fluid-Signature header (remove 'sha256=' prefix)",
+      "4. Use constant-time comparison to prevent timing attacks"
+    ],
+    "code_example": {
+      "javascript": "const crypto = require('crypto');\nconst signature = crypto.createHmac('sha256', webhookSecret).update(payloadString).digest('hex');\nconst expectedSignature = req.headers['x-fluid-signature'].replace('sha256=', '');\nconst isValid = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));"
+    }
+  },
+  "testing_instructions": {
+    "local_testing": {
+      "description": "How to test webhooks locally",
+      "steps": [
+        "1. Use ngrok or similar to expose your local server: ngrok http 3001",
+        "2. Update your webhook URL in Fluid platform to the ngrok URL",
+        "3. Create test installations to trigger webhooks",
+        "4. Monitor your server logs to see webhook payloads",
+        "5. Use the sample payloads above to test your webhook handler"
+      ]
+    },
+    "manual_testing": {
+      "description": "How to manually test webhook endpoints",
+      "curl_example": "curl -X POST http://localhost:3001/api/webhook/fluid \\\n  -H 'Content-Type: application/json' \\\n  -H 'X-Fluid-Signature: sha256=test_signature' \\\n  -d '{\"event\":\"droplet_installation.created\",\"data\":{\"droplet_installation\":{\"id\":\"test\"}}}'"
+    },
+    "validation_checklist": [
+      "✅ Webhook endpoint responds with 200 OK",
+      "✅ Signature verification works correctly",
+      "✅ Installation data is saved to database",
+      "✅ Error handling works for invalid payloads",
+      "✅ Duplicate webhook handling (idempotency)",
+      "✅ Company information is extracted correctly",
+      "✅ Configuration data is parsed properly"
+    ]
+  }
+}
