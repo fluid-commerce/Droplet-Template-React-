@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { DropletAutoSetup } from '@/entrypoints/DropletAutoSetup'
-import { DropletSuccess } from '@/entrypoints/DropletSuccess'
 import { DropletDashboard } from '@/entrypoints/DropletDashboard'
 
 function App() {
@@ -37,7 +36,6 @@ function App() {
     <div className="min-h-screen bg-white">
       <Routes>
         <Route path="/" element={<DropletAutoSetup />} />
-        <Route path="/success" element={<DropletSuccess />} />
         <Route path="/dashboard" element={<DropletDashboard />} />
       </Routes>
     </div>
