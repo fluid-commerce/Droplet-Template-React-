@@ -290,10 +290,7 @@ export function DropletAutoSetup() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
       <div className="text-center">
         <FontAwesomeIcon icon="spinner" spin className="text-4xl text-blue-600 mb-4" />
-        <p className="text-lg text-gray-600">Setting up your integration...</p>
-        <div className="w-64 bg-gray-200 rounded-full h-2 mt-4 mx-auto">
-          <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
-        </div>
+        <p className="text-lg text-gray-600">Loading Dashboard...</p>
       </div>
     </div>
   )
