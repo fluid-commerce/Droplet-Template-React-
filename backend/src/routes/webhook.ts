@@ -126,39 +126,38 @@ async function handleDropletInstalled(event: WebhookEvent) {
       return
     }
     
-    // Store the company information in the database
-    await Database.query(`
-      INSERT INTO droplet_installations (
-        installation_id,
-        droplet_id,
-        company_id, 
-        configuration, 
-        authentication_token, 
-        status, 
-        company_name,
-        created_at, 
-        updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-      ON CONFLICT (installation_id) DO UPDATE SET
-        company_id = EXCLUDED.company_id,
-        configuration = EXCLUDED.configuration,
-        authentication_token = EXCLUDED.authentication_token,
-        company_name = EXCLUDED.company_name,
-        updated_at = NOW()
-    `, [
-      installationId,
-      event.data?.droplet_uuid || 'unknown',
-      companyId,
-      JSON.stringify({
+    // Store the company information in the database using the database service
+    const installationData = {
+      id: installationId,
+      dropletId: event.data?.droplet_uuid || 'unknown',
+      companyId: companyId,
+      authenticationToken: authToken,
+      configuration: {
         companyName: companyName,
         integrationName: `${companyName} Integration`,
         environment: 'production',
         fluidApiKey: authToken
-      }),
-      authToken,
-      'pending',
-      companyName
-    ])
+      },
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    // Try to create or update the installation
+    try {
+      await Database.createInstallation(installationData)
+    } catch (error: any) {
+      // If it already exists, update it
+      if (error.code === '23505') { // unique constraint violation
+        await Database.updateInstallation(installationId, {
+          configuration: installationData.configuration,
+          authenticationToken: authToken,
+          status: 'pending'
+        })
+      } else {
+        throw error
+      }
+    }
     
     logger.info('Successfully stored company information', {
       installationId,
