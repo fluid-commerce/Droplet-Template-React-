@@ -460,35 +460,13 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
       logger.warn('No installation found in database at all', { installationId })
     }
 
-    const fluidApi = new FluidApiService(fluidApiKey as string)
-    
-    // Try to get fresh company data from Fluid API as fallback
-    let companyInfo
-    try {
-      companyInfo = await fluidApi.getCompanyInfo(fluidApiKey as string)
-      // Update company name if we got fresh data
-      if (companyInfo?.name || companyInfo?.company_name) {
-        const freshCompanyName = companyInfo.company_name || companyInfo.name
-        if (freshCompanyName !== companyName) {
-          logger.info('Updating company name from fresh API data', {
-            installationId,
-            oldName: companyName,
-            newName: freshCompanyName
-          })
-          companyName = freshCompanyName
-          
-          // Update the database with the fresh company name
-          await Database.query(`
-            UPDATE droplet_installations 
-            SET company_name = $1, updated_at = NOW()
-            WHERE installation_id = $2
-          `, [companyName, installationId])
-        }
-      }
-    } catch (error) {
-      // Use stored data if API call fails
-      logger.warn('Failed to get fresh company info, using stored data', { installationId })
-    }
+    // Don't call Fluid API to avoid overwriting correct company name with wrong data
+    // The database already has the correct company name from webhook/configuration
+    logger.info('Using company name from database without Fluid API fallback', {
+      installationId,
+      companyName,
+      source: 'database_only'
+    })
     
     // Get real users data from Fluid API
     let users = []
