@@ -204,11 +204,11 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
         
         let result
         if (installationId === 'new-installation') {
-          // Look for any pending installation with company data
+          // Look for any recent installation with company data (pending or active)
           result = await Database.query(`
             SELECT installation_id, company_id, configuration, authentication_token, status, company_name, created_at, updated_at
             FROM droplet_installations 
-            WHERE status = 'pending' 
+            WHERE status IN ('pending', 'active') 
             ORDER BY created_at DESC 
             LIMIT 1
           `)

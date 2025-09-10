@@ -52,6 +52,7 @@ export function DropletAutoSetup() {
             const maxAge = 24 * 60 * 60 * 1000 // 24 hours
             
             if (sessionAge < maxAge && sessionData.installationId && sessionData.installationId !== 'new-installation') {
+              // Redirect directly to dashboard for existing installations
               navigate(`/dashboard?installation_id=${sessionData.installationId}&fluid_api_key=${sessionData.fluidApiKey}`)
               return
             }
@@ -73,6 +74,27 @@ export function DropletAutoSetup() {
           return
         }
 
+        // Check if we have a valid authToken but no installation_id - this might be a returning user
+        if (authToken && !installationId) {
+          // Try to find any existing session for this auth token
+          const allSessionKeys = Object.keys(localStorage).filter(key => key.startsWith('droplet_session_'))
+          for (const key of allSessionKeys) {
+            try {
+              const sessionData = JSON.parse(localStorage.getItem(key) || '{}')
+              if (sessionData.fluidApiKey === authToken && sessionData.installationId && sessionData.installationId !== 'new-installation') {
+                const sessionAge = Date.now() - new Date(sessionData.timestamp).getTime()
+                const maxAge = 24 * 60 * 60 * 1000 // 24 hours
+                if (sessionAge < maxAge) {
+                  navigate(`/dashboard?installation_id=${sessionData.installationId}&fluid_api_key=${sessionData.fluidApiKey}`)
+                  return
+                }
+              }
+            } catch (e) {
+              // Invalid session data, continue
+            }
+          }
+        }
+
         // Use DRI as installation ID if no installation_id is provided
         const effectiveInstallationId = installationId || dri || 'new-installation'
         
@@ -85,14 +107,16 @@ export function DropletAutoSetup() {
 
         // First, check if we have a webhook-configured installation
         setLoadingText('Connecting to Fluid platform...')
+        
+        // Add a smooth delay to make the connection feel more natural
+        await new Promise(resolve => setTimeout(resolve, 4000))
+        
         const statusResponse = await apiClient.get(`/api/droplet/status/${effectiveInstallationId}`)
         
-        // If we get a successful response with an active installation, show success page first
+        // If we get a successful response with an active installation, redirect immediately to dashboard
         if (statusResponse.data.success && statusResponse.data.data?.status === 'active') {
           const data = statusResponse.data.data
-          setLoadingText('Installation verified!')
-          setStatus('complete')
-          setCompanyData({ companyName: data.companyName, companyId: data.companyId })
+          setLoadingText('Installation found! Redirecting to dashboard...')
           
           // Save session data
           const sessionData = {
@@ -104,30 +128,28 @@ export function DropletAutoSetup() {
           }
           localStorage.setItem(`droplet_session_${data.fluidApiKey || authToken}`, JSON.stringify(sessionData))
           
-          // Redirect to success page after showing completion
-          setTimeout(() => {
-            navigate(`/success?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey || authToken}`)
-          }, 2000)
+          // Redirect immediately to dashboard for active installations
+          navigate(`/dashboard?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey || authToken}`)
           return
         }
         
         if (statusResponse.data.success) {
           const data = statusResponse.data.data
           
-          // Check if installation is already fully configured (active status)
+          // Check if installation is already fully configured (active status) - this should have been caught above but double-check
           if (data.status === 'active' && data.companyName && data.companyName !== 'Your Company') {
             // Save session data
             const sessionData = {
               installationId: data.installationId,
-              fluidApiKey: data.fluidApiKey,
+              fluidApiKey: data.fluidApiKey || authToken,
               companyName: data.companyName,
               integrationName: data.integrationName,
               timestamp: new Date().toISOString()
             }
-            localStorage.setItem(`droplet_session_${data.fluidApiKey}`, JSON.stringify(sessionData))
+            localStorage.setItem(`droplet_session_${data.fluidApiKey || authToken}`, JSON.stringify(sessionData))
             
             // Redirect immediately to dashboard for returning users
-            navigate(`/dashboard?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey}`)
+            navigate(`/dashboard?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey || authToken}`)
             return
           }
           
@@ -318,7 +340,7 @@ export function DropletAutoSetup() {
         return {
           icon: 'check-circle',
           title: `Welcome, ${companyData?.companyName}!`,
-          description: 'Your integration has been configured successfully. Redirecting to dashboard...',
+          description: '',
           color: 'green'
         }
       
