@@ -28,7 +28,7 @@ export function DropletAutoSetup() {
       try {
         setStatus('checking')
         
-        // Debug: Log all URL parameters
+        // Debug: Log all URL parameters (temporary)
         console.error('🔍 Auto-setup URL parameters:', {
           installationId,
           companyId,
@@ -92,10 +92,26 @@ export function DropletAutoSetup() {
         // First, check if we have a webhook-configured installation
         const statusResponse = await apiClient.get(`/api/droplet/status/${effectiveInstallationId}`)
         
-        // If we get a successful response with an active installation, go directly to dashboard
+        // If we get a successful response with an active installation, show success page first
         if (statusResponse.data.success && statusResponse.data.data?.status === 'active') {
           const data = statusResponse.data.data
-          navigate(`/dashboard?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey || authToken}`)
+          setStatus('complete')
+          setCompanyData({ companyName: data.companyName, companyId: data.companyId })
+          
+          // Save session data
+          const sessionData = {
+            installationId: data.installationId,
+            fluidApiKey: data.fluidApiKey || authToken,
+            companyName: data.companyName,
+            integrationName: data.integrationName || `${data.companyName} Integration`,
+            timestamp: new Date().toISOString()
+          }
+          localStorage.setItem(`droplet_session_${data.fluidApiKey || authToken}`, JSON.stringify(sessionData))
+          
+          // Redirect to success page after showing completion
+          setTimeout(() => {
+            navigate(`/success?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey || authToken}`)
+          }, 2000)
           return
         }
         
