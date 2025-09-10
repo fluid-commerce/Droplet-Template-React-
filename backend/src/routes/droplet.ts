@@ -406,10 +406,36 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
       })
     }
 
+    // Get stored company data from database first
+    const installationResult = await Database.query(`
+      SELECT company_name, company_data, configuration
+      FROM droplet_installations 
+      WHERE installation_id = $1
+    `, [installationId])
+
+    let companyName = 'Your Company'
+    let companyData = null
+
+    if (installationResult.rows.length > 0) {
+      const installation = installationResult.rows[0]
+      companyName = installation.company_name || installation.configuration?.companyName || 'Your Company'
+      companyData = installation.company_data
+    }
+
     const fluidApi = new FluidApiService(fluidApiKey as string)
     
-    // Get real company data from Fluid
-    const companyInfo = await fluidApi.getCompanyInfo(fluidApiKey as string)
+    // Try to get fresh company data from Fluid API as fallback
+    let companyInfo
+    try {
+      companyInfo = await fluidApi.getCompanyInfo(fluidApiKey as string)
+      // Update company name if we got fresh data
+      if (companyInfo?.name || companyInfo?.company_name) {
+        companyName = companyInfo.company_name || companyInfo.name
+      }
+    } catch (error) {
+      // Use stored data if API call fails
+      logger.warn('Failed to get fresh company info, using stored data', { installationId })
+    }
     
     // Get real users data from Fluid API
     let users = []
@@ -446,7 +472,7 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
     
     // Build dashboard data from real Fluid API responses
     const dashboardData = {
-      companyName: companyInfo.company_name || companyInfo.name || 'Your Company',
+      companyName: companyName,
       recentActivity: [
         {
           description: 'Last sync completed',
@@ -456,7 +482,7 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
         {
           description: 'Droplet installation completed',
           timestamp: new Date(Date.now() - 300000).toISOString(),
-          details: `Successfully connected to ${companyInfo.company_name || 'your company'}`
+          details: `Successfully connected to ${companyName}`
         },
         {
           description: 'Fluid API connection established',
