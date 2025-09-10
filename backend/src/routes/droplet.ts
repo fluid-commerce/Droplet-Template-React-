@@ -416,10 +416,25 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
     let companyName = 'Your Company'
     let companyData = null
 
+    logger.info('Dashboard query result', {
+      installationId,
+      foundRecords: installationResult.rows.length,
+      companyName: installationResult.rows[0]?.company_name,
+      configuration: installationResult.rows[0]?.configuration
+    })
+
     if (installationResult.rows.length > 0) {
       const installation = installationResult.rows[0]
       companyName = installation.company_name || installation.configuration?.companyName || 'Your Company'
       companyData = installation.company_data
+      
+      logger.info('Using company name from database', {
+        installationId,
+        companyName,
+        source: installation.company_name ? 'company_name field' : 'configuration.companyName field'
+      })
+    } else {
+      logger.warn('No installation found in database', { installationId })
     }
 
     const fluidApi = new FluidApiService(fluidApiKey as string)
@@ -430,7 +445,22 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
       companyInfo = await fluidApi.getCompanyInfo(fluidApiKey as string)
       // Update company name if we got fresh data
       if (companyInfo?.name || companyInfo?.company_name) {
-        companyName = companyInfo.company_name || companyInfo.name
+        const freshCompanyName = companyInfo.company_name || companyInfo.name
+        if (freshCompanyName !== companyName) {
+          logger.info('Updating company name from fresh API data', {
+            installationId,
+            oldName: companyName,
+            newName: freshCompanyName
+          })
+          companyName = freshCompanyName
+          
+          // Update the database with the fresh company name
+          await Database.query(`
+            UPDATE droplet_installations 
+            SET company_name = $1, updated_at = NOW()
+            WHERE installation_id = $2
+          `, [companyName, installationId])
+        }
       }
     } catch (error) {
       // Use stored data if API call fails
