@@ -174,23 +174,57 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
     const { installationId } = req.params
     const { fluidApiKey } = req.query
 
-    // For new installations, check if we have stored company info from webhook
-    if (installationId === 'new-installation') {
+    // For new installations or specific installation IDs, check if we have stored company info from webhook
+    if (installationId === 'new-installation' || installationId) {
       try {
         const Database = getDatabaseService()
         
-        // Look for any pending installation with company data
-        const result = await Database.query(`
-          SELECT installation_id, company_id, configuration, authentication_token, status, company_name, created_at, updated_at
-          FROM droplet_installations 
-          WHERE status = 'pending' 
-          ORDER BY created_at DESC 
-          LIMIT 1
-        `)
+        let result
+        if (installationId === 'new-installation') {
+          // Look for any pending installation with company data
+          result = await Database.query(`
+            SELECT installation_id, company_id, configuration, authentication_token, status, company_name, created_at, updated_at
+            FROM droplet_installations 
+            WHERE status = 'pending' 
+            ORDER BY created_at DESC 
+            LIMIT 1
+          `)
+        } else {
+          // Look for the specific installation ID
+          result = await Database.query(`
+            SELECT installation_id, company_id, configuration, authentication_token, status, company_name, created_at, updated_at
+            FROM droplet_installations 
+            WHERE installation_id = $1
+          `, [installationId])
+        }
         
         if (result.rows.length > 0) {
           const installation = result.rows[0]
-          const config = installation.configuration ? JSON.parse(installation.configuration) : {}
+          let config: any = {
+            companyName: installation.company_name || 'Your Company',
+            integrationName: `${installation.company_name || 'Your Company'} Integration`,
+            environment: 'production',
+            fluidApiKey: installation.authentication_token || ''
+          }
+          
+          // Handle both old malformed data and new properly formatted data
+          try {
+            if (installation.configuration) {
+              if (typeof installation.configuration === 'string') {
+                const parsedConfig = JSON.parse(installation.configuration)
+                config = { ...config, ...parsedConfig }
+              } else if (typeof installation.configuration === 'object') {
+                config = { ...config, ...installation.configuration }
+              }
+            }
+          } catch (error: any) {
+            logger.warn('Failed to parse configuration, using defaults', { 
+              error: error.message,
+              configType: typeof installation.configuration,
+              installationId: installation.installation_id
+            })
+            // config already has defaults set above
+          }
           
           return res.json({
             success: true,

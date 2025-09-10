@@ -60,8 +60,8 @@ export function DropletAutoSetup() {
             return
           }
           
-          // Check if we have webhook data waiting to be configured (pending status)
-          if (data.companyName && data.companyName !== 'Your Company' && data.status === 'pending') {
+          // Check if we have webhook data waiting to be configured (pending status) OR auto-configure if we have company data
+          if (data.companyName && data.companyName !== 'Your Company') {
             console.log('🔧 Found webhook data, auto-configuring...')
             setCompanyData(data)
             setStatus('auto_configuring')
