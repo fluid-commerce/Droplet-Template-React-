@@ -60,7 +60,33 @@ export function DropletConfig() {
       }
 
       if (!installationId) {
-        // For new installations, try to get company info if we have auth token
+        // For new installations, first try to get stored company info from webhook
+        try {
+          const storedResponse = await apiClient.get('/api/droplet/status/new-installation')
+          if (storedResponse.data.success && storedResponse.data.data.companyName !== 'Your Company') {
+            // We have stored company info from webhook
+            const storedData = storedResponse.data.data
+            setCompanyData({
+              companyName: storedData.companyName,
+              companyLogo: storedData.companyLogo,
+              id: 'new-installation',
+              status: 'pending'
+            })
+            // Pre-fill the form with stored data
+            setFormData(prev => ({
+              ...prev,
+              fluidApiKey: storedData.fluidApiKey || authToken || '',
+              companyName: storedData.companyName,
+              integrationName: storedData.integrationName || `${storedData.companyName} Integration`
+            }))
+            setIsLoading(false)
+            return
+          }
+        } catch (error) {
+          console.log('No stored company data found, will try auth token')
+        }
+        
+        // If no stored data, try to get company info if we have auth token
         if (authToken) {
           try {
             // Test the Fluid API key and get company info

@@ -41,6 +41,12 @@ export class DatabaseService {
     await this.pool.end()
   }
 
+  async query(text: string, params?: any[]): Promise<any> {
+    return this.withClient(async (client) => {
+      return await client.query(text, params)
+    })
+  }
+
   private async withClient<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await this.pool.connect()
     const startTime = Date.now()

@@ -176,8 +176,49 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
     const { installationId } = req.params
     const { fluidApiKey } = req.query
 
-    // For new installations, we don't need a Fluid API key yet
+    // For new installations, check if we have stored company info from webhook
     if (installationId === 'new-installation') {
+      try {
+        const Database = getDatabaseService()
+        
+        // Look for any pending installation with company data
+        const result = await Database.query(`
+          SELECT id, company_id, config, authentication_token, status, created_at, updated_at
+          FROM droplet_installations 
+          WHERE status = 'pending' 
+          ORDER BY created_at DESC 
+          LIMIT 1
+        `)
+        
+        if (result.rows.length > 0) {
+          const installation = result.rows[0]
+          const config = installation.config ? JSON.parse(installation.config) : {}
+          
+          return res.json({
+            success: true,
+            data: {
+              connected: false,
+              installationId: installation.id,
+              companyName: config.companyName || 'Your Company',
+              companyId: installation.company_id,
+              lastSync: null,
+              userCount: 0,
+              status: installation.status,
+              createdAt: installation.created_at,
+              updatedAt: installation.updated_at,
+              integrationName: config.integrationName || 'My Integration',
+              environment: config.environment || 'production',
+              webhookUrl: config.webhookUrl || '',
+              fluidApiKey: installation.authentication_token || '',
+              companyLogo: config.companyLogo || null
+            }
+          })
+        }
+      } catch (error: any) {
+        logger.warn('Failed to check for stored company data', { error: error.message })
+      }
+      
+      // Default response if no stored data found
       return res.json({
         success: true,
         data: {
