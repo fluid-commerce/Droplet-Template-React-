@@ -26,6 +26,7 @@ app.use(express.urlencoded({ extended: true }))
 // Routes
 app.use('/api/droplet', dropletRoutes)
 app.use('/api/webhook', webhookRoutes)
+app.use('/api/webhooks', webhookRoutes) // Fluid uses plural "webhooks"
 
 // Health check
 app.get('/health', (req, res) => {
