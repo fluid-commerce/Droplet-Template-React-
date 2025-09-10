@@ -8,6 +8,7 @@ export function DropletAutoSetup() {
   const navigate = useNavigate()
   const installationId = searchParams.get('installation_id')
   const companyId = searchParams.get('company_id')
+  const dri = searchParams.get('dri') // Fluid Droplet Resource Identifier
   const authToken = searchParams.get('auth_token') || 
                    searchParams.get('token') || 
                    searchParams.get('fluid_api_key') ||
@@ -31,6 +32,7 @@ export function DropletAutoSetup() {
         console.error('🔍 Auto-setup URL parameters:', {
           installationId,
           companyId,
+          dri,
           authToken: authToken ? 'present' : 'missing',
           allParams: Object.fromEntries(searchParams.entries())
         })
@@ -76,16 +78,19 @@ export function DropletAutoSetup() {
           return
         }
 
+        // Use DRI as installation ID if no installation_id is provided
+        const effectiveInstallationId = installationId || dri || 'new-installation'
+        
         // Only run auto-setup if we have the necessary parameters for a new installation
-        if (!authToken) {
+        if (!authToken && !dri) {
           const receivedParams = Object.fromEntries(searchParams.entries())
-          setError(`Missing required auth token parameter. Received parameters: ${JSON.stringify(receivedParams)}. Please install the droplet from Fluid.`)
+          setError(`Missing required parameters. Need either auth token or DRI. Received parameters: ${JSON.stringify(receivedParams)}. Please install the droplet from Fluid.`)
           setStatus('error')
           return
         }
 
         // First, check if we have a webhook-configured installation
-        const statusResponse = await apiClient.get(`/api/droplet/status/${installationId || 'new-installation'}`)
+        const statusResponse = await apiClient.get(`/api/droplet/status/${effectiveInstallationId}`)
         
         // If we get a successful response with an active installation, go directly to dashboard
         if (statusResponse.data.success && statusResponse.data.data?.status === 'active') {
@@ -197,6 +202,13 @@ export function DropletAutoSetup() {
             }
           }
 
+          // Special case: If we have DRI but no auth token, try to get installation info
+          if (dri && !authToken && (!data.companyName || data.companyName === 'Your Company')) {
+            setError('Installation requires authentication. Please ensure you are properly logged into Fluid and try installing again.')
+            setStatus('error')
+            return
+          }
+
           // Check if we have auth token but no webhook data yet - try to auto-configure
           if (authToken && (!data.companyName || data.companyName === 'Your Company')) {
             // Try to get company info from Fluid API and auto-configure
@@ -218,7 +230,7 @@ export function DropletAutoSetup() {
                   companyName: companyName,
                   environment: 'production',
                   fluidApiKey: authToken,
-                  installationId: installationId || 'new-installation',
+                  installationId: effectiveInstallationId,
                   companyId: fetchedCompanyId
                 }
                 
@@ -230,7 +242,7 @@ export function DropletAutoSetup() {
                   
                   // Save session and redirect to success
                   const sessionData = {
-                    installationId: configResponse.data.data?.installationId || installationId,
+                    installationId: configResponse.data.data?.installationId || effectiveInstallationId,
                     fluidApiKey: authToken,
                     companyName: companyName,
                     integrationName: configData.integrationName,
