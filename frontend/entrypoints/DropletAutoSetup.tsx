@@ -12,7 +12,11 @@ export function DropletAutoSetup() {
                    searchParams.get('token') || 
                    searchParams.get('fluid_api_key') ||
                    searchParams.get('api_key') ||
-                   searchParams.get('access_token')
+                   searchParams.get('access_token') ||
+                   searchParams.get('authToken') ||
+                   searchParams.get('fluidApiKey') ||
+                   searchParams.get('apiKey') ||
+                   searchParams.get('accessToken')
   
   const [status, setStatus] = useState<'checking' | 'auto_configuring' | 'error' | 'complete'>('checking')
   const [companyData, setCompanyData] = useState<any>(null)
@@ -22,6 +26,14 @@ export function DropletAutoSetup() {
     const checkInstallationStatus = async () => {
       try {
         setStatus('checking')
+        
+        // Debug: Log all URL parameters
+        console.error('🔍 Auto-setup URL parameters:', {
+          installationId,
+          companyId,
+          authToken: authToken ? 'present' : 'missing',
+          allParams: Object.fromEntries(searchParams.entries())
+        })
 
         // Clear any old session data for new installations
         if (installationId === 'new-installation' || !installationId) {
@@ -66,7 +78,8 @@ export function DropletAutoSetup() {
 
         // Only run auto-setup if we have the necessary parameters for a new installation
         if (!authToken) {
-          setError('Missing required parameters for installation. Please install the droplet from Fluid.')
+          const receivedParams = Object.fromEntries(searchParams.entries())
+          setError(`Missing required auth token parameter. Received parameters: ${JSON.stringify(receivedParams)}. Please install the droplet from Fluid.`)
           setStatus('error')
           return
         }
