@@ -268,10 +268,6 @@ export function DropletConfig() {
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-12 text-center text-white">
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-            <FontAwesomeIcon icon="rocket" className="text-2xl" />
-          </div>
-          
           <h1 className="text-3xl font-bold mb-2">
             {isEditing ? 'Edit Integration' : 'Setup Integration'}
           </h1>
@@ -339,8 +335,7 @@ export function DropletConfig() {
 
             {/* Company Name */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center">
-                <FontAwesomeIcon icon="building" className="mr-2 text-blue-600" />
+              <label className="text-sm font-medium text-gray-700">
                 Company Name
               </label>
               <input
@@ -370,9 +365,9 @@ export function DropletConfig() {
                 value={formData.environment}
                 onChange={(e) => setFormData(prev => ({ ...prev, environment: e.target.value as any }))}
               >
-                <option value="production">🚀 Production</option>
-                <option value="staging">🧪 Staging</option>
-                <option value="development">🔧 Development</option>
+                <option value="production">Production</option>
+                <option value="staging">Staging</option>
+                <option value="development">Development</option>
               </select>
             </div>
 

@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS droplet_installations (
     droplet_id VARCHAR(255) NOT NULL,
     company_id VARCHAR(255) NOT NULL,
     authentication_token TEXT NOT NULL,
-    status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
+    status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended', 'pending')),
     configuration JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

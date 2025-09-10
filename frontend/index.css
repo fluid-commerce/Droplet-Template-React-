@@ -11,11 +11,31 @@
     @apply bg-white text-gray-900;
     margin: 0;
     padding: 0;
+    /* Remove scroll bars */
+    overflow-x: hidden;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+  
+  /* Remove scroll bars for all browsers */
+  body::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Remove scroll bars from all elements */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+  
+  *::-webkit-scrollbar {
+    display: none; /* WebKit */
   }
   
   /* Ensure iframe content fits properly */
   #root {
     min-height: 100vh;
+    overflow-x: hidden;
   }
 }
 
@@ -77,5 +97,15 @@
   
   .label {
     @apply text-sm font-semibold leading-none text-gray-800 tracking-wide;
+  }
+  
+  /* Utility class for hiding scroll bars while allowing scroll */
+  .no-scrollbar {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none; /* WebKit */
   }
 }
