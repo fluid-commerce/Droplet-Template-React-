@@ -135,7 +135,7 @@ async function handleDropletInstalled(event: WebhookEvent) {
       configuration: {
         companyName: companyName,
         integrationName: `${companyName} Integration`,
-        environment: 'production',
+        environment: 'production' as const,
         fluidApiKey: authToken
       },
       status: 'pending' as const,
