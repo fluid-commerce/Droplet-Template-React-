@@ -90,6 +90,14 @@ export function DropletAutoSetup() {
             return
           }
           
+          // If we have any installation data but it's not active, don't auto-configure
+          if (data.installationId && data.installationId !== 'new-installation') {
+            console.log('⚠️ Found existing installation but not active, waiting for webhook to complete')
+            setError('Installation is being processed. Please wait a moment and refresh the page.')
+            setStatus('error')
+            return
+          }
+          
           // Check if we have webhook data waiting to be configured (pending status) OR auto-configure if we have company data
           if (data.companyName && data.companyName !== 'Your Company') {
             console.log('🔧 Found webhook data, checking if configuration is needed...')
