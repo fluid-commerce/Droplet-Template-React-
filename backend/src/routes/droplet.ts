@@ -7,6 +7,7 @@ import { validateDropletConfig } from '../middleware/validation'
 import { logger } from '../services/logger'
 
 const router = Router()
+const Database = getDatabaseService()
 
 /**
  * POST /api/droplet/configure
@@ -568,20 +569,55 @@ router.post('/disconnect', async (req: Request, res: Response) => {
       })
     }
 
-    // Disconnect installation
     logger.info('Disconnecting installation', { installationId })
+
+    // Delete the installation from database
+    const result = await Database.query(
+      'DELETE FROM droplet_installations WHERE installation_id = $1',
+      [installationId]
+    )
+
+    if (result.rowCount === 0) {
+      logger.warn('Installation not found for disconnection', { installationId })
+      return res.status(404).json({
+        error: 'Installation not found',
+        message: 'No installation found with the provided ID'
+      })
+    }
+
+    // Also clean up related data
+    await Database.query(
+      'DELETE FROM activity_logs WHERE installation_id = $1',
+      [installationId]
+    )
+
+    await Database.query(
+      'DELETE FROM webhook_events WHERE installation_id = $1',
+      [installationId]
+    )
+
+    await Database.query(
+      'DELETE FROM custom_data WHERE installation_id = $1',
+      [installationId]
+    )
+
+    logger.info('Installation disconnected and cleaned up successfully', { 
+      installationId,
+      deletedRows: result.rowCount 
+    })
 
     return res.json({
       success: true,
-      message: 'Droplet disconnected successfully',
+      message: 'Droplet disconnected and cleaned up successfully',
       data: {
         installationId,
-        disconnectedAt: new Date().toISOString()
+        disconnectedAt: new Date().toISOString(),
+        deletedRows: result.rowCount
       }
     })
 
   } catch (error: any) {
-    console.error('Disconnect error:', error)
+    logger.error('Disconnect error:', error)
     
     return res.status(error.statusCode || 500).json({
       error: 'Disconnect failed',
@@ -590,7 +626,62 @@ router.post('/disconnect', async (req: Request, res: Response) => {
   }
 })
 
+/**
+ * POST /api/droplet/cleanup
+ * Clean up orphaned installations (for admin use)
+ */
+router.post('/cleanup', async (req: Request, res: Response) => {
+  try {
+    logger.info('Starting cleanup of orphaned installations')
 
+    // Find installations that might be orphaned (no recent activity)
+    const orphanedInstallations = await Database.query(`
+      SELECT installation_id, created_at, updated_at 
+      FROM droplet_installations 
+      WHERE updated_at < NOW() - INTERVAL '7 days'
+      AND status IN ('inactive', 'suspended')
+    `)
+
+    let cleanedCount = 0
+    for (const installation of orphanedInstallations.rows) {
+      try {
+        // Delete the installation and related data
+        await Database.query('DELETE FROM droplet_installations WHERE installation_id = $1', [installation.installation_id])
+        await Database.query('DELETE FROM activity_logs WHERE installation_id = $1', [installation.installation_id])
+        await Database.query('DELETE FROM webhook_events WHERE installation_id = $1', [installation.installation_id])
+        await Database.query('DELETE FROM custom_data WHERE installation_id = $1', [installation.installation_id])
+        
+        cleanedCount++
+        logger.info('Cleaned up orphaned installation', { installationId: installation.installation_id })
+      } catch (error: any) {
+        logger.error('Failed to clean up installation', { installationId: installation.installation_id }, error)
+      }
+    }
+
+    logger.info('Cleanup completed', { 
+      totalFound: orphanedInstallations.rows.length,
+      cleanedCount 
+    })
+
+    return res.json({
+      success: true,
+      message: 'Cleanup completed successfully',
+      data: {
+        totalFound: orphanedInstallations.rows.length,
+        cleanedCount,
+        cleanedAt: new Date().toISOString()
+      }
+    })
+
+  } catch (error: any) {
+    logger.error('Cleanup error:', error)
+    
+    return res.status(error.statusCode || 500).json({
+      error: 'Cleanup failed',
+      message: error.message || 'An error occurred during cleanup'
+    })
+  }
+})
 
 /**
  * Validate service credentials
