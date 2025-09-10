@@ -23,8 +23,19 @@ export function DropletAutoSetup() {
       try {
         setStatus('checking')
 
-        // Check if we already have a valid session in localStorage
-        const existingSession = localStorage.getItem('droplet_session')
+        // Clear any old session data for new installations
+        if (installationId === 'new-installation' || !installationId) {
+          // Clear all droplet session data to ensure fresh start
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('droplet_session_')) {
+              localStorage.removeItem(key)
+            }
+          })
+        }
+
+        // Check if we already have a valid session in localStorage for this specific auth token
+        const sessionKey = `droplet_session_${authToken}`
+        const existingSession = localStorage.getItem(sessionKey)
         if (existingSession) {
           try {
             const sessionData = JSON.parse(existingSession)
@@ -37,7 +48,7 @@ export function DropletAutoSetup() {
             }
           } catch (e) {
             // Invalid session data, continue with normal flow
-            localStorage.removeItem('droplet_session')
+            localStorage.removeItem(sessionKey)
           }
         }
 
@@ -83,7 +94,7 @@ export function DropletAutoSetup() {
               integrationName: data.integrationName,
               timestamp: new Date().toISOString()
             }
-            localStorage.setItem('droplet_session', JSON.stringify(sessionData))
+            localStorage.setItem(`droplet_session_${data.fluidApiKey}`, JSON.stringify(sessionData))
             
             // Redirect immediately to dashboard for returning users
             navigate(`/dashboard?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey}`)
@@ -112,7 +123,7 @@ export function DropletAutoSetup() {
                 integrationName: data.integrationName || `${data.companyName} Integration`,
                 timestamp: new Date().toISOString()
               }
-              localStorage.setItem('droplet_session', JSON.stringify(sessionData))
+              localStorage.setItem(`droplet_session_${data.fluidApiKey || authToken}`, JSON.stringify(sessionData))
               
               setTimeout(() => {
                 navigate(`/dashboard?installation_id=${sessionData.installationId}&fluid_api_key=${sessionData.fluidApiKey}`)
@@ -146,7 +157,7 @@ export function DropletAutoSetup() {
                   integrationName: configData.integrationName,
                   timestamp: new Date().toISOString()
                 }
-                localStorage.setItem('droplet_session', JSON.stringify(sessionData))
+                localStorage.setItem(`droplet_session_${configData.fluidApiKey}`, JSON.stringify(sessionData))
                 
                 setTimeout(() => {
                   navigate(`/success?installation_id=${sessionData.installationId}&fluid_api_key=${configData.fluidApiKey}`)
@@ -164,7 +175,7 @@ export function DropletAutoSetup() {
                 integrationName: data.integrationName || `${data.companyName} Integration`,
                 timestamp: new Date().toISOString()
               }
-              localStorage.setItem('droplet_session', JSON.stringify(sessionData))
+              localStorage.setItem(`droplet_session_${data.fluidApiKey || authToken}`, JSON.stringify(sessionData))
               
               setTimeout(() => {
                 navigate(`/success?installation_id=${sessionData.installationId}&fluid_api_key=${sessionData.fluidApiKey}`)
@@ -212,7 +223,7 @@ export function DropletAutoSetup() {
                     integrationName: configData.integrationName,
                     timestamp: new Date().toISOString()
                   }
-                  localStorage.setItem('droplet_session', JSON.stringify(sessionData))
+                  localStorage.setItem(`droplet_session_${authToken}`, JSON.stringify(sessionData))
                   
                   setTimeout(() => {
                     navigate(`/success?installation_id=${sessionData.installationId}&fluid_api_key=${authToken}`)
