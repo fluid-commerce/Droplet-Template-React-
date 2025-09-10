@@ -33,24 +33,75 @@ The script will provide:
 - Instructions for updating `render.yaml`
 - Next steps for deployment
 
+### `update-droplet.js`
+
+Updates an existing droplet with new logo and description information.
+
+**Usage:**
+```bash
+# Update your existing droplet
+FLUID_API_KEY=your_api_key_here DROPLET_ID=your_droplet_uuid node scripts/update-droplet.js
+
+# With custom logo
+FLUID_API_KEY=your_api_key_here DROPLET_ID=your_droplet_uuid LOGO_URL=https://your-logo-url.com/logo.png node scripts/update-droplet.js
+```
+
+**What it does:**
+1. Updates your existing droplet with proper description from `package.json`
+2. Updates the logo URL (uses your Cloudinary logo by default)
+3. Shows confirmation of the update
+
+### `enhance-droplet-details.js`
+
+Enhances your droplet's marketplace and details pages with better content.
+
+**Usage:**
+```bash
+# Enhance your droplet details
+FLUID_API_KEY=your_api_key_here DROPLET_ID=your_droplet_uuid node scripts/enhance-droplet-details.js
+```
+
+**What it does:**
+1. Updates marketplace page with enhanced summary
+2. Updates details page with better description
+3. Uses your logo and app information from `package.json`
+
 ## Environment Variables
 
 Make sure you have these set before running the scripts:
 
 - `FLUID_API_KEY` - Your Fluid platform API key (required)
 - `EMBED_URL` - Your deployed frontend URL (optional, defaults to placeholder)
+- `DROPLET_ID` - Your existing droplet UUID (required for update/enhance scripts)
+- `LOGO_URL` - Custom logo URL (optional, defaults to Cloudinary logo)
 
 ## Example Workflow
 
+### Initial Setup
 1. **Deploy your droplet** to Render or your preferred platform
 2. **Get your frontend URL** (e.g., `https://your-app.onrender.com/`)
-3. **Run the create script:**
+3. **Create your droplet:**
    ```bash
    FLUID_API_KEY=PT-your-key-here EMBED_URL=https://your-app.onrender.com/ node scripts/create-droplet.js
    ```
 4. **Update your backend** with the returned droplet UUID
 5. **Redeploy your backend** with the new `DROPLET_ID`
-6. **Test your droplet** installation flow
+
+### Enhancing Your Droplet
+6. **Update with logo and description:**
+   ```bash
+   FLUID_API_KEY=PT-your-key-here DROPLET_ID=your_droplet_uuid node scripts/update-droplet.js
+   ```
+7. **Enhance the details page:**
+   ```bash
+   FLUID_API_KEY=PT-your-key-here DROPLET_ID=your_droplet_uuid node scripts/enhance-droplet-details.js
+   ```
+8. **Test your droplet** installation flow
+
+### Making Updates Later
+- **Update logo:** Use `update-droplet.js` with a new `LOGO_URL`
+- **Update description:** Modify your `package.json` description and run `update-droplet.js`
+- **Enhance details:** Run `enhance-droplet-details.js` to improve the marketplace presentation
 
 ## Troubleshooting
 
