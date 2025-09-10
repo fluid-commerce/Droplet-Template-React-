@@ -86,10 +86,17 @@ async function handleDropletInstalled(event: WebhookEvent) {
   try {
     const Database = getDatabaseService()
     
+    // Debug: Log the full event data structure
+    logger.info('Full webhook event data', { 
+      eventData: event.data,
+      companyData: event.data?.company,
+      topLevelFields: Object.keys(event.data || {})
+    })
+    
     // Extract company information from the webhook payload
     const companyData = event.data?.company || {}
-    const installationId = event.data?.droplet_installation_uuid || event.data?.installation_id
-    const companyId = event.data?.company_id || event.data?.fluid_company_id
+    const installationId = companyData.droplet_installation_uuid || event.data?.droplet_installation_uuid || event.data?.installation_id
+    const companyId = event.data?.company_id || event.data?.fluid_company_id || companyData.fluid_company_id
     const companyName = companyData.name || 'Your Company'
     const authToken = companyData.authentication_token
     
@@ -99,6 +106,17 @@ async function handleDropletInstalled(event: WebhookEvent) {
       companyName,
       hasAuthToken: !!authToken
     })
+    
+    // Validate required data
+    if (!installationId) {
+      logger.error('Missing installation ID in webhook payload', { eventData: event.data })
+      return
+    }
+    
+    if (!companyName || companyName === 'Your Company') {
+      logger.error('Missing or invalid company name in webhook payload', { companyData })
+      return
+    }
     
     // Store the company information in the database
     await Database.query(`
