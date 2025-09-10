@@ -6,6 +6,7 @@ import dotenv from 'dotenv'
 import { dropletRoutes } from './routes/droplet'
 import { webhookRoutes } from './routes/webhook'
 import { errorHandler } from './middleware/errorHandler'
+import { logger } from './services/logger'
 
 // Load environment variables
 dotenv.config()
