@@ -120,7 +120,25 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
 
     // Save to database
     const db = getDatabaseService()
-    const savedInstallation = await db.createInstallation(dropletInstallation)
+    let savedInstallation
+    
+    try {
+      savedInstallation = await db.createInstallation(dropletInstallation)
+    } catch (createError: any) {
+      // If installation already exists (from webhook), update it to active status
+      if (createError.code === '23505') {
+        savedInstallation = await db.updateInstallation(dropletInstallation.id, {
+          status: 'active',
+          configuration: dropletInstallation.configuration,
+          authenticationToken: dropletInstallation.authenticationToken
+        })
+        if (!savedInstallation) {
+          throw new Error('Failed to update existing installation')
+        }
+      } else {
+        throw createError
+      }
+    }
     
     // Store company data separately
     if (companyInfo) {
@@ -233,11 +251,11 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
           return res.json({
             success: true,
             data: {
-              connected: false,
+              connected: installation.status === 'active' || installation.status === 'pending',
               installationId: installation.installation_id,
               companyName: installation.company_name || config.companyName || 'Your Company',
               companyId: installation.company_id,
-              lastSync: null,
+              lastSync: installation.status === 'active' ? new Date().toISOString() : null,
               userCount: 0,
               status: installation.status,
               createdAt: installation.created_at,
