@@ -37,16 +37,6 @@ interface DashboardData {
   }>
 }
 
-interface SettingsData {
-  companyName: string
-  companyLogo?: string
-  installationId: string
-  environment: string
-  webhookUrl: string
-  fluidApiKey: string
-  lastUpdated: string
-  status: string
-}
 
 class DropletsApiClient {
   async configure(config: DropletConfig & { installationId?: string }): Promise<ApiResponse> {
@@ -114,42 +104,8 @@ class DropletsApiClient {
     }
   }
 
-  async setup(installationId: string, fluidApiKey: string): Promise<ApiResponse> {
-    try {
-      const response = await apiClient.post('/api/droplet/setup', {
-        installationId,
-        fluidApiKey
-      })
-      return response.data
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Setup failed')
-    }
-  }
 
-  async getSettings(installationId: string, fluidApiKey: string): Promise<ApiResponse<SettingsData>> {
-    try {
-      const response = await apiClient.get(`/api/droplet/settings/${installationId}`, {
-        params: { fluidApiKey }
-      })
-      return response.data
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Settings load failed')
-    }
-  }
-
-  async updateSettings(installationId: string, settings: {
-    fluidApiKey: string
-    webhookUrl?: string
-    environment?: string
-  }): Promise<ApiResponse> {
-    try {
-      const response = await apiClient.post(`/api/droplet/settings/${installationId}`, settings)
-      return response.data
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Settings update failed')
-    }
-  }
 }
 
 export const dropletsClient = new DropletsApiClient()
-export type { DropletConfig, DashboardData, SettingsData, ApiResponse }
+export type { DropletConfig, DashboardData, ApiResponse }

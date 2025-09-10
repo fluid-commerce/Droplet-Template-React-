@@ -132,11 +132,7 @@ export function DropletSuccess() {
         {/* Connection Status Card */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <FontAwesomeIcon 
-                icon={connectionStatus?.connected ? "check-circle" : "times-circle"} 
-                className={`mr-3 h-5 w-5 ${connectionStatus?.connected ? 'text-green-600' : 'text-red-600'}`} 
-              />
+            <CardTitle className="text-lg ml-2">
               Connection Status
             </CardTitle>
             <CardDescription>
@@ -152,10 +148,6 @@ export function DropletSuccess() {
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-red-100 text-red-800'
                 }`}>
-                  <FontAwesomeIcon 
-                    icon={connectionStatus?.connected ? "check" : "times"} 
-                    className="mr-1 h-3 w-3" 
-                  />
                   {connectionStatus?.connected ? 'Connected' : 'Not Connected'}
                 </div>
               </div>
@@ -181,16 +173,6 @@ export function DropletSuccess() {
               </div>
             </div>
 
-            {connectionStatus?.connected && (
-              <div className="pt-4 border-t">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-500">Users Connected</span>
-                  <span className="text-lg font-semibold text-gray-900">
-                    {connectionStatus.userCount || 0}
-                  </span>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -225,34 +207,6 @@ export function DropletSuccess() {
           )}
         </div>
 
-        {/* Quick Stats */}
-        {connectionStatus?.connected && (
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardContent className="p-6 text-center">
-                <FontAwesomeIcon icon="users" className="text-3xl text-blue-600 mb-3" />
-                <h3 className="text-2xl font-bold text-gray-900">{connectionStatus.userCount || 0}</h3>
-                <p className="text-sm text-gray-600">Active Users</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6 text-center">
-                <FontAwesomeIcon icon="sync" className="text-3xl text-green-600 mb-3" />
-                <h3 className="text-2xl font-bold text-gray-900">Live</h3>
-                <p className="text-sm text-gray-600">Sync Status</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6 text-center">
-                <FontAwesomeIcon icon="shield-alt" className="text-3xl text-purple-600 mb-3" />
-                <h3 className="text-2xl font-bold text-gray-900">Secure</h3>
-                <p className="text-sm text-gray-600">Connection</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
       </div>
     </div>
   )

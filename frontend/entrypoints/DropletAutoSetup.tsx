@@ -14,7 +14,7 @@ export function DropletAutoSetup() {
                    searchParams.get('api_key') ||
                    searchParams.get('access_token')
   
-  const [status, setStatus] = useState<'checking' | 'auto_configuring' | 'needs_form' | 'complete'>('checking')
+  const [status, setStatus] = useState<'checking' | 'auto_configuring' | 'error' | 'complete'>('checking')
   const [companyData, setCompanyData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -161,22 +161,14 @@ export function DropletAutoSetup() {
           }
         }
         
-        console.log('📝 No auto-configuration possible, redirecting to form')
-        // If we get here, we need the configuration form
-        setStatus('needs_form')
-        setTimeout(() => {
-          navigate(`/config?installation_id=${installationId || 'new-installation'}&company_id=${companyId || ''}&fluid_api_key=${authToken || ''}`)
-        }, 1000)
+        console.log('❌ No auto-configuration possible')
+        setError('Unable to auto-configure installation. Please contact support.')
+        setStatus('error')
         
       } catch (error: any) {
         console.error('❌ Auto-setup failed:', error)
         setError(error.response?.data?.message || 'Failed to set up installation')
-        setStatus('needs_form')
-        
-        // Redirect to form as fallback
-        setTimeout(() => {
-          navigate(`/config?installation_id=${installationId || 'new-installation'}&company_id=${companyId || ''}&fluid_api_key=${authToken || ''}`)
-        }, 3000)
+        setStatus('error')
       }
     }
 
@@ -209,12 +201,12 @@ export function DropletAutoSetup() {
           color: 'green'
         }
       
-      case 'needs_form':
+      case 'error':
         return {
           icon: 'exclamation-triangle',
-          title: 'Configuration Required',
-          description: 'Additional setup needed. Redirecting to configuration form...',
-          color: 'yellow'
+          title: 'Setup Failed',
+          description: error || 'Unable to automatically configure the installation.',
+          color: 'red'
         }
       
       default:
@@ -311,9 +303,18 @@ export function DropletAutoSetup() {
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-start">
                 <FontAwesomeIcon icon="exclamation-triangle" className="text-red-500 mr-3 mt-0.5" />
-                <div>
+                <div className="flex-1">
                   <h3 className="text-sm font-medium text-red-800">Setup Error</h3>
                   <p className="text-sm text-red-700 mt-1">{error}</p>
+                  {status === 'error' && (
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="mt-3 px-3 py-1 text-xs font-medium text-red-800 bg-red-100 border border-red-200 rounded hover:bg-red-200 transition-colors"
+                    >
+                      <FontAwesomeIcon icon="redo" className="mr-1" />
+                      Try Again
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

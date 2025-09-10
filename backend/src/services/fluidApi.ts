@@ -145,7 +145,7 @@ export class FluidApiService {
                          'Your Company'
       
       return {
-        id: 'company-verified',
+        id: response.data?.company?.id || response.data?.company_id || 'company-verified',
         name: companyName,
         company_name: companyName,
         status: 'active',
@@ -164,7 +164,7 @@ export class FluidApiService {
                            'Your Company'
         
         return {
-          id: 'company-verified',
+          id: response.data?.company?.id || response.data?.company_id || 'company-verified',
           name: companyName,
           company_name: companyName,
           status: 'active',
@@ -183,7 +183,7 @@ export class FluidApiService {
                              'Your Company'
           
           return {
-            id: 'company-verified',
+            id: response.data?.company?.id || response.data?.company_id || 'company-verified',
             name: companyName,
             company_name: companyName,
             status: 'active',
