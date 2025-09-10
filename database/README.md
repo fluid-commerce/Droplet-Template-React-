@@ -59,7 +59,7 @@ Create a `.env` file in the backend directory:
 
 ```bash
 # Database Configuration
-DATABASE_URL=postgresql://postgres:password@localhost:5432/fluid_droplet_db
+DATABASE_URL=postgresql://user:password@localhost:5432/fluid_droplet_db
 
 # For production, use your hosted database URL
 # DATABASE_URL=postgresql://user:pass@host:port/database

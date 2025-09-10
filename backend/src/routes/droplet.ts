@@ -130,8 +130,7 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
       description: 'Droplet configured successfully',
       details: {
         companyName: companyInfo?.name || companyInfo?.company_name,
-        environment: config.environment,
-        webhookUrl: config.webhookUrl || 'None'
+        environment: config.environment
       },
       status: 'success'
     })
@@ -140,8 +139,7 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
       installationId: savedInstallation.id,
       companyId: savedInstallation.companyId,
       companyName: companyInfo?.name || companyInfo?.company_name,
-      environment: config.environment,
-      webhookUrl: config.webhookUrl || 'None'
+      environment: config.environment
     })
 
     return res.json({
@@ -208,7 +206,6 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
               updatedAt: installation.updated_at,
               integrationName: config.integrationName || 'My Integration',
               environment: config.environment || 'production',
-              webhookUrl: config.webhookUrl || '',
               fluidApiKey: installation.authentication_token || '',
               companyLogo: config.companyLogo || null
             }
@@ -233,7 +230,6 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
           updatedAt: null,
           integrationName: 'My Integration',
           environment: 'production',
-          webhookUrl: '',
           fluidApiKey: '',
           companyLogo: null
         }
@@ -275,7 +271,6 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
         // Include configuration data for editing
         integrationName: installation.configuration?.integrationName || 'My Integration',
         environment: installation.configuration?.environment || 'production',
-        webhookUrl: installation.configuration?.webhookUrl || '',
         fluidApiKey: installation.authentication_token,
         companyLogo: companyInfo?.logo_url || companyInfo?.logo || companyInfo?.avatar_url
       }
@@ -626,7 +621,6 @@ router.get('/settings/:installationId', async (req: Request, res: Response) => {
       companyLogo: companyInfo.logo_url || companyInfo.logo || companyInfo.avatar_url,
       installationId: installationId,
       environment: 'production',
-      webhookUrl: '',
       fluidApiKey: fluidApiKey,
       lastUpdated: new Date().toISOString(),
       status: 'active'
@@ -654,7 +648,7 @@ router.get('/settings/:installationId', async (req: Request, res: Response) => {
 router.post('/settings/:installationId', async (req: Request, res: Response) => {
   try {
     const { installationId } = req.params
-    const { fluidApiKey, webhookUrl, environment } = req.body
+    const { fluidApiKey, environment } = req.body
 
     if (!fluidApiKey) {
       return res.status(400).json({
@@ -666,7 +660,6 @@ router.post('/settings/:installationId', async (req: Request, res: Response) => 
     // Update the configuration
     logger.info('Processing settings update', {
       installationId,
-      hasWebhookUrl: !!webhookUrl,
       environment
     })
 
@@ -675,7 +668,6 @@ router.post('/settings/:installationId', async (req: Request, res: Response) => 
       message: 'Settings updated successfully',
       data: {
         installationId,
-        webhookUrl,
         environment,
         lastUpdated: new Date().toISOString()
       }
@@ -702,10 +694,6 @@ async function validateServiceCredentials(config: DropletConfig): Promise<{ vali
     errors.push('Fluid API key is required')
   }
 
-  // Validate webhook URL if provided
-  if (config.webhookUrl && !config.webhookUrl.startsWith('https://')) {
-    errors.push('Webhook URL must use HTTPS')
-  }
 
   // Add validation calls to the service
   // Example: Test API connection with provided credentials

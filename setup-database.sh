@@ -20,11 +20,11 @@ fi
 echo "✅ PostgreSQL is installed"
 
 # Check if database exists
-if psql -U postgres -lqt | cut -d \| -f 1 | grep -qw fluid_droplet_db; then
+if psql -U user -lqt | cut -d \| -f 1 | grep -qw fluid_droplet_db; then
     echo "✅ Database 'fluid_droplet_db' already exists"
 else
     echo "📦 Creating database 'fluid_droplet_db'..."
-    createdb -U postgres fluid_droplet_db
+    createdb -U user fluid_droplet_db
     if [ $? -eq 0 ]; then
         echo "✅ Database created successfully"
     else
@@ -47,7 +47,7 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "Next steps:"
     echo "1. Update your .env file with the database URL:"
-    echo "   DATABASE_URL=postgresql://postgres:password@localhost:5432/fluid_droplet_db"
+    echo "   DATABASE_URL=postgresql://user:password@localhost:5432/fluid_droplet_db"
     echo ""
     echo "2. Start your development server:"
     echo "   npm run dev"

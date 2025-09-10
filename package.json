@@ -20,7 +20,11 @@
     "start:backend": "cd backend && npm start",
     "migrate": "node database/migrate.cjs up",
     "migrate:status": "node database/migrate.cjs status",
-    "setup:db": "./setup-database.sh"
+    "setup:db": "./setup-database.sh",
+    "postinstall": "cd backend && npm install && cd .. && node scripts/postinstall.js",
+    "setup": "node scripts/auto-setup.js",
+    "setup:full": "npm run setup && npm run migrate",
+    "dev:auto": "npm run setup:full && npm run dev:full"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",

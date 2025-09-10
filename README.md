@@ -32,6 +32,35 @@ cd fluid-droplet-template
 git remote set-url origin https://github.com/YOUR_USERNAME/YOUR_DROPLET_NAME.git
 ```
 
+### 🚀 ONE-COMMAND SETUP (NEW!)
+
+**For the ultimate lazy developer experience:**
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/YOUR_USERNAME/fluid-droplet-template.git
+cd fluid-droplet-template
+
+# 2. Install dependencies (this will show setup instructions)
+npm install
+
+# 3. Run one-command setup
+./setup.sh                    # macOS/Linux - Does EVERYTHING automatically
+# OR
+setup.bat                     # Windows - Does EVERYTHING automatically  
+# OR
+npm run setup:full           # Cross-platform - Does EVERYTHING automatically
+```
+
+**What the setup does automatically:**
+- ✅ Detects and sets up PostgreSQL database
+- ✅ Creates environment files with secure random secrets
+- ✅ Runs database migrations
+- ✅ Validates the entire setup
+- ✅ Gives you next steps
+
+**That's it!** Your development environment is ready in under 2 minutes.
+
 ### Step 2: Deploy to Your Platform
 **Option A: Render (Recommended)**
 1. **Create Render account** → [render.com/register](https://render.com/register)
@@ -140,12 +169,21 @@ Perfect if you want to customize before deploying.
 git clone https://github.com/YOUR_USERNAME/fluid-droplet-template.git
 cd fluid-droplet-template
 
-# Install dependencies
+# 🚀 ONE-COMMAND SETUP (Recommended)
+./setup.sh                    # macOS/Linux
+# OR
+setup.bat                     # Windows  
+# OR
+npm run setup:full            # Cross-platform
+
+# Manual setup (if you prefer)
 npm run install:all
 ```
 
 #### 2. Set Up PostgreSQL
-**Option A - Automated Setup:**
+**🚀 Already done if you used the one-command setup!**
+
+**Option A - Automated Setup (if not using one-command setup):**
 ```bash
 npm run setup:db
 ```
@@ -170,6 +208,9 @@ npm run migrate
 ```
 
 #### 3. Configure Environment Variables
+**🚀 Already done if you used the one-command setup!**
+
+**Manual setup (if not using one-command setup):**
 
 **Frontend** (create `.env.local`):
 ```bash
@@ -182,7 +223,7 @@ VITE_APP_NAME=My Awesome Droplet
 **Backend** (create `backend/.env`):
 ```bash
 # Database
-DATABASE_URL=postgresql://postgres@localhost:5432/fluid_droplet_db
+DATABASE_URL=postgresql://user:password@localhost:5432/fluid_droplet_db
 
 # Fluid Platform
 FLUID_API_KEY=PT-your_fluid_api_key_here
@@ -197,6 +238,10 @@ FRONTEND_URL=http://localhost:3000
 
 #### 4. Start Development Servers
 ```bash
+# If you used one-command setup, you can also use:
+npm run dev:auto    # Runs setup + dev servers
+
+# Or just start the servers:
 npm run dev:full
 ```
 
@@ -208,6 +253,74 @@ This starts:
 ```bash
 FLUID_API_KEY=your_key EMBED_URL=http://localhost:3000/ node scripts/create-droplet.js
 ```
+
+---
+
+## 🚀 Auto-Setup Features
+
+This template now includes **comprehensive auto-setup** that handles everything for you:
+
+### What Gets Set Up Automatically
+
+| Feature | What It Does | Manual Override |
+|---------|--------------|-----------------|
+| **Dependencies** | Installs frontend + backend npm packages | `npm run install:all` |
+| **PostgreSQL** | Detects, starts, and creates database | `npm run setup:db` |
+| **Environment Files** | Creates `.env` files with secure secrets | Copy from `env.example` |
+| **Database Migrations** | Runs all pending migrations | `npm run migrate` |
+| **Validation** | Checks everything is working | Manual verification |
+
+### Auto-Setup Commands
+
+```bash
+# 🚀 ONE-COMMAND SETUP (Recommended)
+./setup.sh                    # macOS/Linux - Does everything
+setup.bat                     # Windows - Does everything
+npm run setup:full           # Cross-platform - Does everything
+
+# 🔧 INDIVIDUAL SETUP STEPS
+npm run setup                # Just environment files + database
+npm run dev:auto            # Setup + start development servers
+```
+
+### What Happens During Auto-Setup
+
+1. **Dependency Installation**: Installs all npm packages for frontend and backend
+2. **PostgreSQL Detection**: Checks if PostgreSQL is installed and running
+3. **Database Creation**: Creates `fluid_droplet_db` if it doesn't exist
+4. **Environment Setup**: Creates `.env` files with secure random secrets
+5. **Migration Execution**: Runs database migrations to set up schema
+6. **Validation**: Verifies everything is working correctly
+7. **Next Steps**: Provides clear instructions for what to do next
+
+### Secure Secret Generation
+
+The auto-setup generates cryptographically secure random secrets for:
+- `JWT_SECRET` (64 characters)
+- `ENCRYPTION_KEY` (32 characters) 
+- `FLUID_WEBHOOK_SECRET` (32 characters)
+
+### Troubleshooting Auto-Setup
+
+**PostgreSQL Issues:**
+```bash
+# If PostgreSQL isn't installed
+brew install postgresql        # macOS
+sudo apt install postgresql    # Ubuntu
+
+# If PostgreSQL isn't running
+brew services start postgresql # macOS
+sudo systemctl start postgresql # Ubuntu
+```
+
+**Permission Issues:**
+```bash
+# Make setup script executable
+chmod +x setup.sh
+```
+
+**Manual Fallback:**
+If auto-setup fails, you can always fall back to the manual setup process described in the sections below.
 
 ---
 
@@ -565,7 +678,7 @@ brew services list | grep postgresql  # macOS
 sudo systemctl status postgresql      # Linux
 
 # Test connection manually
-psql -h localhost -U postgres -d fluid_droplet_db
+psql -h localhost -U user -d fluid_droplet_db
 ```
 
 **"Migration failed"**

@@ -5,12 +5,19 @@
 # Default target
 help:
 	@echo "Available commands:"
+	@echo "  setup      - 🚀 One-command auto-setup (recommended)"
 	@echo "  install    - Install dependencies"
 	@echo "  dev        - Start development server"
+	@echo "  dev-auto   - Setup + start development servers"
 	@echo "  build      - Build for production"
 	@echo "  test       - Run tests"
 	@echo "  lint       - Run linter"
 	@echo "  clean      - Clean build artifacts"
+
+# One-command auto-setup
+setup:
+	@echo "🚀 Running one-command auto-setup..."
+	npm run setup:full
 
 # Install dependencies
 install:
@@ -19,6 +26,11 @@ install:
 # Start development server
 dev:
 	npm run dev
+
+# Setup + start development servers
+dev-auto:
+	@echo "🚀 Auto-setup + starting development servers..."
+	npm run dev:auto
 
 # Build for production
 build:
@@ -50,5 +62,5 @@ clean:
 	rm -rf node_modules/.vite
 	rm -rf coverage
 
-# Install and start development server
-setup: install dev
+# Install and start development server (legacy)
+setup-legacy: install dev

@@ -10,7 +10,7 @@ const { Client, Pool } = require('pg');
 // Database configuration
 const dbConfig = {
   // Connection string for the database
-  connectionString: process.env.DATABASE_URL || 'postgresql://pokey@localhost:5434/fluid_droplet_db',
+  connectionString: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/fluid_droplet_db',
   
   // SSL configuration for production
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,

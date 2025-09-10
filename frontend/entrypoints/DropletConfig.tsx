@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { Button } from '@/components/Button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/Card'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { apiClient } from '@/lib/api'
 
@@ -10,7 +8,6 @@ interface ConfigFormData {
   companyName: string
   environment: 'production' | 'staging' | 'development'
   fluidApiKey: string
-  webhookUrl?: string
 }
 
 export function DropletConfig() {
@@ -29,7 +26,6 @@ export function DropletConfig() {
     companyName: '',
     environment: 'production',
     fluidApiKey: '',
-    webhookUrl: '',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -50,7 +46,7 @@ export function DropletConfig() {
           const sessionData = JSON.parse(savedSession)
           if (sessionData.installationId && sessionData.fluidApiKey) {
             // Redirect to the saved installation
-            navigate(`/?installation_id=${sessionData.installationId}&fluid_api_key=${sessionData.fluidApiKey}`)
+            navigate(`/config?installation_id=${sessionData.installationId}&fluid_api_key=${sessionData.fluidApiKey}`)
             return
           }
         } catch (error) {
@@ -150,7 +146,6 @@ export function DropletConfig() {
             companyName: response.data.data.companyName,
             integrationName: response.data.data.integrationName || 'My Integration',
             environment: response.data.data.environment || 'production',
-            webhookUrl: response.data.data.webhookUrl || '',
             fluidApiKey: response.data.data.fluidApiKey || ''
           }))
         }
@@ -169,14 +164,7 @@ export function DropletConfig() {
     }
 
     loadCompanyData()
-  }, [installationId])
-
-  const handleInputChange = (field: keyof ConfigFormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }))
-  }
+  }, [installationId, navigate, authToken])
 
   const handleDisconnect = async () => {
     if (!window.confirm('Are you sure you want to disconnect this integration? This will remove all configuration data.')) {
@@ -260,87 +248,56 @@ export function DropletConfig() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading...</h2>
-            <p className="text-gray-600">
-              {authToken 
-                ? 'Fetching your company information from Fluid' 
-                : 'Setting up your droplet configuration'
-              }
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-              <FontAwesomeIcon icon="exclamation-triangle" className="text-red-600 text-2xl mb-4" />
-              <h2 className="text-xl font-semibold text-red-900 mb-2">Error Loading Configuration</h2>
-              <p className="text-red-700 mb-4">{error}</p>
-              <Button onClick={() => window.location.reload()}>
-                Try Again
-              </Button>
-            </div>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading...</h2>
+          <p className="text-gray-600">
+            {authToken 
+              ? 'Fetching your company information from Fluid' 
+              : 'Setting up your droplet configuration'
+            }
+          </p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
-            {isEditing 
-              ? 'Edit Configuration' 
-              : companyData?.companyName && companyData.companyName !== 'Your Company'
-                ? `Welcome, ${companyData.companyName}!`
-                : 'Welcome!'
-            }
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-12 text-center text-white">
+          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+            <FontAwesomeIcon icon="rocket" className="text-2xl" />
+          </div>
+          
+          <h1 className="text-3xl font-bold mb-2">
+            {isEditing ? 'Edit Integration' : 'Setup Integration'}
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            {isEditing 
-              ? 'Update your integration settings and configuration'
-              : companyData?.companyName && companyData.companyName !== 'Your Company'
-                ? `Let's set up your Fluid Droplet Template integration for ${companyData.companyName}`
-                : 'Configure your credentials to establish a secure connection'
+          
+          <p className="text-blue-100 text-lg">
+            {companyData?.companyName && companyData.companyName !== 'Your Company'
+              ? `Configure integration for ${companyData.companyName}`
+              : 'Connect your Fluid account to get started'
             }
           </p>
+
+          {/* Company Badge */}
           {companyData?.companyName && companyData.companyName !== 'Your Company' && (
-            <div className="mt-4 inline-flex items-center px-4 py-2 bg-primary-50 border border-primary-200 rounded-lg">
+            <div className="mt-6 inline-flex items-center bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2">
               {companyData.companyLogo ? (
                 <img 
                   src={companyData.companyLogo} 
                   alt={`${companyData.companyName} logo`}
-                  className="w-6 h-6 rounded mr-2 object-contain"
-                  onError={(e) => {
-                    // Fallback to icon if image fails to load
-                    e.currentTarget.style.display = 'none'
-                    const nextElement = e.currentTarget.nextElementSibling as HTMLElement
-                    if (nextElement) {
-                      nextElement.style.display = 'inline'
-                    }
-                  }}
+                  className="w-5 h-5 rounded mr-3 object-contain"
                 />
-              ) : null}
-              <FontAwesomeIcon 
-                icon="building" 
-                className="text-primary-600 mr-2"
-                style={{ display: companyData.companyLogo ? 'none' : 'inline' }}
-              />
-              <span className="text-primary-800 font-medium">{companyData.companyName}</span>
+              ) : (
+                <FontAwesomeIcon icon="building" className="mr-3" />
+              )}
+              <span className="font-medium">{companyData.companyName}</span>
               {isEditing && (
-                <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                <span className="ml-2 px-2 py-1 bg-green-400/20 text-green-100 text-xs rounded-full border border-green-400/30">
                   Connected
                 </span>
               )}
@@ -348,213 +305,182 @@ export function DropletConfig() {
           )}
         </div>
 
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center">
-              <FontAwesomeIcon icon="exclamation-triangle" className="text-red-600 mr-3" />
+        {/* Form Content */}
+        <div className="p-8">
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start">
+              <FontAwesomeIcon icon="exclamation-triangle" className="text-red-600 mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <h3 className="text-sm font-medium text-red-800">Configuration Error</h3>
+                <h3 className="font-medium text-red-800">Configuration Error</h3>
                 <p className="text-sm text-red-700 mt-1">{error}</p>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-10">
-          {/* Integration Info */}
-          <Card className="group">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <FontAwesomeIcon icon="info-circle" className="mr-3 h-5 w-5 text-blue-600" />
-              Integration Details
-            </CardTitle>
-            <CardDescription className="text-gray-600 mt-2">
-              Basic information about your integration
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 p-6">
-            <div className="form-group">
-              <label className="label">
-                <FontAwesomeIcon icon="cog" className="mr-2 text-blue-600" />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Integration Name */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center">
+                <FontAwesomeIcon icon="tag" className="mr-2 text-blue-600" />
                 Integration Name
               </label>
               <input
                 type="text"
-                className="input mt-1"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 value={formData.integrationName}
                 onChange={(e) => setFormData(prev => ({ ...prev, integrationName: e.target.value }))}
-                placeholder="Enter your integration name"
+                placeholder="e.g., Acme Corp Integration"
                 required
               />
-              <p className="text-sm text-gray-500 mt-1">
-                <FontAwesomeIcon icon="info-circle" className="mr-1 text-blue-500" />
-                Pre-filled from your Fluid account, but you can change it if needed
+              <p className="text-xs text-gray-500">
+                A friendly name for this integration
               </p>
             </div>
-            <div className="form-group">
-              <label className="label">
+
+            {/* Company Name */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center">
                 <FontAwesomeIcon icon="building" className="mr-2 text-blue-600" />
                 Company Name
               </label>
               <input
                 type="text"
-                className="input mt-1"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 value={formData.companyName}
                 onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
                 placeholder="Your company name"
                 required
               />
-              <p className="text-sm text-gray-500 mt-1">
-                <FontAwesomeIcon icon="info-circle" className="mr-1 text-blue-500" />
-                Pre-filled from your Fluid account, but you can change it if needed
+              <p className="text-xs text-gray-500">
+                {formData.companyName && formData.companyName !== 'Your Company' 
+                  ? 'Pre-filled from your Fluid account' 
+                  : 'Enter your organization name'
+                }
               </p>
             </div>
-            <div className="form-group">
-              <label className="label">Environment</label>
+
+            {/* Environment */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center">
+                <FontAwesomeIcon icon="server" className="mr-2 text-blue-600" />
+                Environment
+              </label>
               <select
-                className="input mt-1"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 value={formData.environment}
                 onChange={(e) => setFormData(prev => ({ ...prev, environment: e.target.value as any }))}
               >
-                <option value="production">Production</option>
-                <option value="staging">Staging</option>
-                <option value="development">Development</option>
+                <option value="production">🚀 Production</option>
+                <option value="staging">🧪 Staging</option>
+                <option value="development">🔧 Development</option>
               </select>
             </div>
-          </CardContent>
-        </Card>
 
-          {/* Fluid API Key */}
-          <Card className="group">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <FontAwesomeIcon icon="key" className="mr-3 h-5 w-5 text-green-600" />
-              Fluid API Key
-            </CardTitle>
-            <CardDescription className="text-gray-600 mt-2">
-              Connect your Fluid account to enable integration features
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 p-6">
-            <div className="form-group">
-              <label className="label">
+            {/* Fluid API Key */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center">
                 <FontAwesomeIcon icon="key" className="mr-2 text-blue-600" />
                 Fluid API Key
               </label>
               <div className="relative">
                 <input
                   type="password"
-                  className={`input mt-1 pr-20 ${isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                  className={`w-full px-4 py-3 pr-24 border rounded-xl transition-all ${
+                    isEditing 
+                      ? 'bg-gray-50 border-gray-200 cursor-not-allowed' 
+                      : 'border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                  }`}
                   value={formData.fluidApiKey}
                   onChange={(e) => !isEditing && setFormData(prev => ({ ...prev, fluidApiKey: e.target.value }))}
-                  placeholder="Enter your Fluid API key (starts with PT-...)"
+                  placeholder="PT-your-api-key-here"
                   required
                   disabled={isEditing}
                 />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={testConnection}
-                    disabled={isTestingConnection || !formData.fluidApiKey}
-                    className="h-8 px-3 text-xs"
-                  >
-                    {isTestingConnection ? (
-                      <>
-                        <FontAwesomeIcon icon="spinner" spin className="mr-1" />
-                        Testing...
-                      </>
-                    ) : (
-                      <>
-                        <FontAwesomeIcon icon="check" className="mr-1" />
-                        Test
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <button
+                  type="button"
+                  onClick={testConnection}
+                  disabled={isTestingConnection || !formData.fluidApiKey || isEditing}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isTestingConnection ? (
+                    <FontAwesomeIcon icon="spinner" spin className="w-3 h-3" />
+                  ) : (
+                    'Test'
+                  )}
+                </button>
               </div>
-              <div className="mt-2">
-              <p className="text-sm text-gray-600">
-                <FontAwesomeIcon icon="info-circle" className="mr-1 text-blue-500" />
+              
+              {/* Connection Status */}
+              {connectionStatus && (
+                <div className={`text-sm px-3 py-2 rounded-lg ${
+                  connectionStatus.includes('✅') 
+                    ? 'bg-green-50 text-green-700 border border-green-200' 
+                    : 'bg-red-50 text-red-700 border border-red-200'
+                }`}>
+                  {connectionStatus}
+                </div>
+              )}
+              
+              <p className="text-xs text-gray-500">
                 {formData.fluidApiKey 
-                  ? 'Pre-filled from your Fluid account - ready to use!'
-                  : 'This is your Fluid platform API key. You can find it in your Fluid account settings under "API Keys".'
+                  ? '🔐 Your API key is secure and encrypted'
+                  : 'Find this in your Fluid account settings → API Keys'
                 }
               </p>
-                {connectionStatus && (
-                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
-                    <span className="text-sm text-green-700">{connectionStatus}</span>
-                  </div>
-                )}
-              </div>
             </div>
-          </CardContent>
-        </Card>
 
-                  {/* Webhook Configuration */}
-                  <Card className="group">
-                    <CardHeader>
-                      <CardTitle className="flex items-center text-lg">
-                        <FontAwesomeIcon icon="cog" className="mr-3 h-5 w-5 text-blue-600" />
-                        Webhook Configuration
-                      </CardTitle>
-                      <CardDescription className="text-gray-600 mt-2">
-                        Optional: Configure where to send webhook notifications
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6 p-6">
-                      <div className="form-group">
-                        <label className="label">Webhook URL (Optional)</label>
-                        <input
-                          type="url"
-                          className="input mt-1"
-                          value={formData.webhookUrl || ''}
-                          onChange={(e) => handleInputChange('webhookUrl', e.target.value)}
-                          placeholder="https://your-company.com/webhooks/fluid"
-                        />
-                        <p className="text-sm text-gray-500 mt-1">
-                          Where to send webhook notifications when events occur
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-          {/* Actions */}
-          <div className="flex justify-end space-x-4 pt-8">
-            {isEditing && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="px-8"
-                onClick={() => navigate(`/dashboard?installation_id=${installationId}&fluid_api_key=${formData.fluidApiKey}`)}
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-6">
+              <button
+                type="button"
+                onClick={() => window.history.back()}
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
               >
-                <FontAwesomeIcon icon="tachometer-alt" className="mr-2" />
-                View Dashboard
-              </Button>
-            )}
-            <Button type="button" variant="outline" className="px-8">
-              Cancel
-            </Button>
-            {isEditing && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="px-8 text-red-600 border-red-300 hover:bg-red-50"
-                onClick={handleDisconnect}
+                Cancel
+              </button>
+              
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/dashboard?installation_id=${installationId}&fluid_api_key=${formData.fluidApiKey}`)}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors flex items-center justify-center"
+                >
+                  <FontAwesomeIcon icon="tachometer-alt" className="mr-2" />
+                  Dashboard
+                </button>
+              )}
+              
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={handleDisconnect}
+                  className="px-6 py-3 border border-red-300 text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                >
+                  <FontAwesomeIcon icon="unlink" className="mr-2" />
+                  Disconnect
+                </button>
+              )}
+              
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center font-medium"
               >
-                <FontAwesomeIcon icon="unlink" className="mr-2" />
-                Disconnect
-              </Button>
-            )}
-            <Button type="submit" loading={isSubmitting} className="px-8">
-              {isSubmitting 
-                ? (isEditing ? 'Updating...' : 'Connecting...') 
-                : (isEditing ? 'Update Configuration' : 'Connect')
-              }
-            </Button>
-          </div>
-        </form>
+                {isSubmitting ? (
+                  <>
+                    <FontAwesomeIcon icon="spinner" spin className="mr-2" />
+                    {isEditing ? 'Updating...' : 'Connecting...'}
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon="rocket" className="mr-2" />
+                    {isEditing ? 'Update Configuration' : 'Connect Integration'}
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )

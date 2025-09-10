@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { DropletAutoSetup } from '@/entrypoints/DropletAutoSetup'
 import { DropletConfig } from '@/entrypoints/DropletConfig'
 import { DropletSetup } from '@/entrypoints/DropletSetup'
 import { DropletSuccess } from '@/entrypoints/DropletSuccess'
@@ -9,7 +10,8 @@ function App() {
   return (
     <div className="min-h-screen bg-white">
       <Routes>
-        <Route path="/" element={<DropletConfig />} />
+        <Route path="/" element={<DropletAutoSetup />} />
+        <Route path="/config" element={<DropletConfig />} />
         <Route path="/setup" element={<DropletSetup />} />
         <Route path="/success" element={<DropletSuccess />} />
         <Route path="/dashboard" element={<DropletDashboard />} />

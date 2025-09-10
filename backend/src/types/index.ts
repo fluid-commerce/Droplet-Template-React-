@@ -5,7 +5,6 @@ export interface DropletConfig {
   companyName: string
   environment: 'production' | 'staging' | 'development'
   fluidApiKey: string
-  webhookUrl?: string
 }
 
 export interface DropletInstallation {

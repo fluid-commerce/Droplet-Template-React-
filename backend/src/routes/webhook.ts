@@ -153,7 +153,6 @@ async function handleDropletInstalled(event: WebhookEvent) {
         companyName: companyName,
         integrationName: `${companyName} Integration`,
         environment: 'production',
-        webhookUrl: '',
         fluidApiKey: authToken
       }),
       authToken,
