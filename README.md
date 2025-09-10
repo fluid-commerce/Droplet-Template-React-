@@ -1,453 +1,718 @@
-# Fluid Droplet Template - React + TypeScript
+# 🚀 Fluid Droplet Template - Build Your Integration in Minutes
 
-A React + TypeScript template for creating Fluid droplet services. This template provides iframe-embedded configuration interfaces for third-party integrations with the Fluid platform.
+> **The fastest way to build a professional Fluid droplet integration**  
+> Perfect for AI-assisted development with Cursor, Bolt, and other AI tools
 
-## Overview
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
-Droplets are integrations between third-party services and Fluid. This template provides iframe-embedded configuration pages that appear when users install your droplet in the Fluid portal. The pages collect credentials and configure the integration between your service and Fluid.
+## 🎯 What is This?
 
-## Prerequisites
+This is a **complete, production-ready template** for building Fluid platform droplet integrations. It provides everything you need to create a professional integration service that works seamlessly with the Fluid ecosystem.
 
-- Node.js 18.0+ (recommended: 20.x)
-- npm 8.0+ or yarn 1.22+
-- Git
-- PostgreSQL 15+ (for database features)
+### What You Get Out of the Box:
+- 🎨 **Beautiful React frontend** with TypeScript and Tailwind CSS
+- 🔧 **Robust Node.js backend** with Express and PostgreSQL
+- 🗄️ **Complete database schema** with migrations
+- 🚀 **One-click Render deployment** with automatic environment setup
+- 📝 **Comprehensive configuration forms** for user onboarding
+- 🔐 **Built-in security** with validation and error handling
+- 📊 **Activity logging** and webhook processing
+- 🛠️ **Developer tools** for testing and debugging
 
-## Key Features
+---
 
-- **React 18** with TypeScript for type safety
-- **Vite** for fast development and efficient bundling
-- **Tailwind CSS 4.0** for modern styling
-- **Font Awesome 6.7.2** for icons
-- **Jest** and **Testing Library** for comprehensive testing
-- **ESLint** and **TypeScript** for code quality
-- **React Router** for client-side routing
-- **Axios** for HTTP client functionality
-- **PostgreSQL** with migrations for persistent data storage
-- **Database migrations** for schema management
+## 🏃‍♂️ Quick Start (3 Steps to Live Droplet)
 
-## Project Structure
-
-```
-├── frontend/           # React frontend application
-│   ├── entrypoints/    # Iframe-embedded configuration pages
-│   │   ├── DropletConfig.tsx  # Main configuration form
-│   │   ├── DropletSetup.tsx   # Setup progress page
-│   │   ├── DropletSuccess.tsx # Success page
-│   │   └── DropletDashboard.tsx # Dashboard page
-│   ├── components/     # Reusable React components
-│   │   ├── Button.tsx  # Button component
-│   │   └── Card.tsx    # Card components
-│   ├── lib/            # Utility functions and helpers
-│   │   ├── utils.ts    # Common utilities
-│   │   ├── fontawesome.ts  # Font Awesome configuration
-│   │   └── api.ts      # API client
-│   └── test/           # Test setup and utilities
-├── backend/            # Node.js API server
-│   ├── src/
-│   │   ├── routes/     # API endpoints
-│   │   │   └── droplet.ts  # Droplet configuration routes
-│   │   ├── services/   # Business logic
-│   │   │   └── fluidApi.ts # Fluid API client
-│   │   └── middleware/ # Authentication, validation
-├── database/           # PostgreSQL database
-│   ├── migrations/     # Database schema migrations
-│   ├── migrate.cjs     # Migration runner
-│   └── config.js       # Database configuration
-├── scripts/            # Setup and utility scripts
-│   ├── create-droplet.js # Create droplet in Fluid platform
-│   └── README.md       # Script documentation
-│   │   │   └── webhook.ts    # Webhook handling routes
-│   │   ├── services/   # Business logic services
-│   │   │   └── fluidApi.ts   # Fluid API integration
-│   │   ├── middleware/ # Express middleware
-│   │   │   ├── validation.ts # Request validation
-│   │   │   └── errorHandler.ts # Error handling
-│   │   ├── types/      # Backend type definitions
-│   │   │   └── index.ts
-│   │   └── index.ts    # Express app setup
-│   ├── package.json    # Backend dependencies
-│   └── tsconfig.json   # Backend TypeScript config
-├── database/           # PostgreSQL database setup
-│   ├── migrations/     # Database migration files
-│   │   ├── 001_create_droplet_installations.sql
-│   │   ├── 002_create_activity_logs.sql
-│   │   ├── 003_create_webhook_events.sql
-│   │   └── 004_create_custom_data.sql
-│   ├── config.js       # Database configuration
-│   ├── migrate.cjs     # Migration runner script
-│   └── README.md       # Database setup guide
-├── setup-database.sh   # Database setup script
-├── render.yaml         # Render deployment configuration
-└── package.json        # Root package.json with scripts
-```
-
-## Installation
-
-1. Clone the repository:
+### Step 1: Get the Template
 ```bash
-git clone <repository-url>
+git clone https://github.com/your-org/fluid-droplet-template.git
 cd fluid-droplet-template
 ```
 
-2. Install dependencies:
+### Step 2: Deploy to Render (One-Click)
+1. **Create Render account** → [render.com/register](https://render.com/register)
+2. **Connect your GitHub** account
+3. **Push this repo** to your GitHub
+4. **Deploy with Blueprint** → [render.com/deploy](https://render.com/deploy) (paste your repo URL)
+
+### Step 3: Create Your Droplet
+```bash
+# After deployment, get your Fluid API key and run:
+FLUID_API_KEY=your_fluid_api_key EMBED_URL=https://your-frontend.onrender.com/ node scripts/create-droplet.js
+```
+
+**That's it!** Your droplet is live and ready for installation in Fluid.
+
+---
+
+## 📖 Complete Setup Guide
+
+### Prerequisites
+- **Node.js 18+** (for local development)
+- **Fluid Builder Account** (get API key from [Fluid Platform](https://fluid.app))
+- **Render Account** (free tier works great)
+
+### Option A: Deploy First (Recommended)
+
+This approach deploys your template first, then configures it. Perfect for getting started quickly.
+
+#### 1. Create Your Render Account
+1. Go to [render.com](https://render.com) → **Sign Up**
+2. Connect your **GitHub account**
+3. **Verify your email**
+
+#### 2. Fork and Deploy
+1. **Fork this repository** to your GitHub account
+2. In Render dashboard: **New** → **Blueprint**
+3. **Paste your forked repo URL**
+4. **Deploy** (takes ~5 minutes)
+
+The `render.yaml` file automatically creates:
+- ✅ **Frontend service** (React app)
+- ✅ **Backend service** (Node.js API)
+- ✅ **PostgreSQL database**
+- ✅ **Environment variables** (some need your values)
+
+#### 3. Configure Environment Variables
+
+After deployment, update these in your Render dashboard:
+
+**Backend Service** → **Environment**:
+```bash
+# Your Fluid Builder API Key (REQUIRED)
+FLUID_API_KEY=PT-your_fluid_api_key_here
+
+# Your Webhook Secret (generate a random string)
+FLUID_WEBHOOK_SECRET=your_secure_random_string_here
+```
+
+**Frontend Service** → **Environment**:
+```bash
+# Your backend URL (auto-generated by Render)
+VITE_API_BASE_URL=https://your-backend-name.onrender.com
+```
+
+#### 4. Create Your Droplet
+```bash
+# Clone your repo locally
+git clone https://github.com/yourusername/your-droplet-name.git
+cd your-droplet-name
+
+# Install dependencies
+npm install
+
+# Create droplet in Fluid platform
+FLUID_API_KEY=PT-your_api_key_here EMBED_URL=https://your-frontend.onrender.com/ node scripts/create-droplet.js
+```
+
+The script returns a **Droplet UUID**. Copy it!
+
+#### 5. Update Your Droplet ID
+In Render dashboard → **Backend Service** → **Environment**:
+```bash
+DROPLET_ID=drp_your_droplet_uuid_here
+```
+
+Click **Save** to redeploy.
+
+#### 6. Run Database Migration
+In Render dashboard → **Backend Service** → **Shell**:
+```bash
+npm run migrate
+```
+
+🎉 **Your droplet is now live!** Test it by installing it in your Fluid workspace.
+
+---
+
+### Option B: Develop Locally First
+
+Perfect if you want to customize before deploying.
+
+#### 1. Install Dependencies
 ```bash
 npm run install:all
-# This installs dependencies for both frontend and backend
 ```
 
-3. Set up the database (optional but recommended):
-```bash
-# Option 1: Use the automated setup script
-npm run setup:db
-
-# Option 2: Manual setup
-# Install PostgreSQL, create database, then run migrations
-npm run migrate
-```
-
-4. Create your droplet in Fluid platform:
-```bash
-# Set your Fluid API key and run the setup script
-FLUID_API_KEY=your_api_key_here node scripts/create-droplet.js
-
-# The script will provide your droplet UUID for configuration
-```
-
-5. Start the development servers:
-```bash
-# Start both frontend and backend
-npm run dev:full
-
-# Or start them separately:
-npm run dev          # Frontend only (port 3000)
-npm run dev:backend  # Backend only (port 3001)
-```
-
-This will start:
-- **Frontend**: Vite development server on `http://localhost:3000`
-- **Backend**: Express API server on `http://localhost:3001`
-
-## Available Scripts
-
-### Frontend Scripts
-- `npm run dev` - Start frontend development server
-- `npm run build` - Build frontend for production
-- `npm run preview` - Preview frontend production build
-- `npm run test` - Run frontend tests
-- `npm run test:watch` - Run frontend tests in watch mode
-- `npm run test:coverage` - Run frontend tests with coverage
-- `npm run lint` - Run ESLint on frontend
-- `npm run lint:fix` - Fix ESLint errors in frontend
-- `npm run type-check` - Run TypeScript type checking
-
-### Backend Scripts
-- `npm run dev:backend` - Start backend development server
-- `npm run build:backend` - Build backend for production
-- `npm run test:backend` - Run backend tests
-- `npm run lint:backend` - Run ESLint on backend
-- `npm run start:backend` - Start backend production server
-
-### Full Stack Scripts
-- `npm run dev:full` - Start both frontend and backend
-- `npm run build:full` - Build both frontend and backend
-- `npm run test:full` - Run tests for both frontend and backend
-- `npm run lint:full` - Run ESLint on both frontend and backend
-- `npm run install:all` - Install dependencies for both projects
-
-### Database Scripts
-- `npm run migrate` - Run all pending database migrations
-- `npm run migrate:status` - Check migration status
-- `npm run setup:db` - Run automated database setup script
-
-## Database Setup
-
-The template includes PostgreSQL with a complete migration system for persistent data storage.
-
-### Quick Setup
-
-**Option 1: Automated Setup (Recommended)**
+#### 2. Set Up PostgreSQL
+**Option A - Automated Setup:**
 ```bash
 npm run setup:db
 ```
 
-**Option 2: Manual Setup**
+**Option B - Manual Setup:**
 ```bash
-# 1. Install PostgreSQL
-# macOS: brew install postgresql
-# Ubuntu: sudo apt install postgresql postgresql-contrib
+# Install PostgreSQL
+brew install postgresql  # macOS
+# OR
+sudo apt install postgresql  # Ubuntu
 
-# 2. Start PostgreSQL service
-# macOS: brew services start postgresql
-# Ubuntu: sudo systemctl start postgresql
+# Start PostgreSQL
+brew services start postgresql  # macOS
+# OR  
+sudo systemctl start postgresql  # Ubuntu
 
-# 3. Create database
-createdb -U postgres fluid_droplet_db
-
-# 4. Run migrations
-npm run migrate
-```
-
-**Option 3: Docker Setup**
-```bash
-# Start PostgreSQL in Docker
-docker run --name postgres-droplet -e POSTGRES_PASSWORD=password -e POSTGRES_DB=fluid_droplet_db -p 5432:5432 -d postgres:15
+# Create database
+createdb fluid_droplet_db
 
 # Run migrations
 npm run migrate
 ```
 
-### Database Schema
+#### 3. Configure Environment Variables
 
-The template creates these tables:
-- **`droplet_installations`** - Stores installation data and configurations
-- **`activity_logs`** - Tracks all activities and events
-- **`webhook_events`** - Stores incoming webhook events
-- **`custom_data`** - Flexible storage for custom data
-
-### Migration Commands
-
+**Frontend** (create `.env.local`):
 ```bash
-# Run all pending migrations
-npm run migrate
+VITE_API_BASE_URL=http://localhost:3001
+VITE_FLUID_API_URL=http://localhost:3001
+VITE_FLUID_ENVIRONMENT=development
+VITE_APP_NAME=My Awesome Droplet
+```
 
-# Check migration status
+**Backend** (create `backend/.env`):
+```bash
+# Database
+DATABASE_URL=postgresql://postgres@localhost:5432/fluid_droplet_db
+
+# Fluid Platform
+FLUID_API_KEY=PT-your_fluid_api_key_here
+FLUID_API_URL=https://api.fluid.app
+FLUID_WEBHOOK_SECRET=your_webhook_secret_here
+
+# Server
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
+```
+
+#### 4. Start Development Servers
+```bash
+npm run dev:full
+```
+
+This starts:
+- **Frontend**: `http://localhost:3000`
+- **Backend**: `http://localhost:3001`
+
+#### 5. Create Development Droplet
+```bash
+FLUID_API_KEY=your_key EMBED_URL=http://localhost:3000/ node scripts/create-droplet.js
+```
+
+---
+
+## 🏗️ Architecture Overview
+
+### Frontend (React + TypeScript)
+```
+frontend/
+├── entrypoints/           # Main droplet pages
+│   ├── DropletConfig.tsx  # 🔧 Configuration form
+│   ├── DropletSetup.tsx   # ⚙️ Setup wizard  
+│   ├── DropletSuccess.tsx # ✅ Success page
+│   └── DropletDashboard.tsx # 📊 Dashboard
+├── components/            # 🎨 Reusable UI components
+├── clients/              # 🌐 API clients
+└── lib/                  # 🛠️ Utilities
+```
+
+### Backend (Node.js + Express)
+```
+backend/src/
+├── routes/               # 🛤️ API endpoints
+│   ├── droplet.ts       # Configuration endpoints
+│   └── webhook.ts       # Webhook processing
+├── services/            # 💼 Business logic
+│   ├── fluidApi.ts     # Fluid platform client
+│   └── database.ts     # Database operations
+└── middleware/          # 🔒 Validation & security
+```
+
+### Database (PostgreSQL)
+```sql
+-- Core tables with UUID primary keys
+droplet_installations    -- Installation configs & auth tokens
+activity_logs           -- Event tracking & monitoring  
+webhook_events          -- Webhook queue & processing
+custom_data            -- Flexible JSON storage
+```
+
+---
+
+## 🔧 Customization Guide
+
+### For AI-Assisted Development (Cursor, Bolt, etc.)
+
+This template is **perfectly structured** for AI tools. Here's how to use it:
+
+#### 1. Tell Your AI About the Structure
+```
+"This is a Fluid droplet template with:
+- React frontend in /frontend 
+- Node.js backend in /backend
+- PostgreSQL database with migrations
+- All types defined in TypeScript
+- Comprehensive error handling built-in"
+```
+
+#### 2. Common Customization Prompts
+
+**Add a new configuration field:**
+```
+"Add a new field called 'apiEndpoint' to the configuration form. It should:
+- Be a required URL input in DropletConfig.tsx
+- Save to the database in the configure route
+- Validate as a proper URL"
+```
+
+**Connect to external API:**
+```  
+"Create a service to connect to Shopify API using the stored API credentials. Add:
+- New service file for Shopify operations
+- Route to test the connection  
+- Frontend component to display connection status"
+```
+
+**Add custom dashboard widgets:**
+```
+"Add a metrics widget to DropletDashboard.tsx that shows:
+- Total API calls made this month
+- Success/error rate chart
+- Recent activity list"
+```
+
+#### 3. Key Files to Modify
+
+| Task | Files to Edit |
+|------|--------------|
+| **Add config fields** | `frontend/entrypoints/DropletConfig.tsx`<br/>`backend/src/routes/droplet.ts` |
+| **New API integration** | `backend/src/services/yourService.ts`<br/>`backend/src/routes/droplet.ts` |
+| **Custom UI components** | `frontend/components/YourComponent.tsx` |
+| **Database changes** | `database/migrations/XXX_your_changes.sql` |
+| **Webhook handling** | `backend/src/routes/webhook.ts` |
+
+---
+
+## 🌍 Environment Variables Reference
+
+### Frontend Variables (`VITE_*`)
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `VITE_API_BASE_URL` | Your backend API URL | `https://droplet-backend.onrender.com` |
+| `VITE_FLUID_API_URL` | Same as API base URL | `https://droplet-backend.onrender.com` |
+| `VITE_FLUID_ENVIRONMENT` | Environment name | `production` |
+| `VITE_APP_NAME` | Your droplet name | `My Awesome Integration` |
+
+### Backend Variables
+| Variable | Description | Example | Required |
+|----------|-------------|---------|----------|
+| `FLUID_API_KEY` | Your Fluid builder API key | `PT-abc123...` | ✅ |
+| `DROPLET_ID` | Your droplet UUID | `drp_abc123...` | ✅ |
+| `DATABASE_URL` | PostgreSQL connection | `postgresql://user:pass@host:port/db` | ✅ |
+| `FLUID_WEBHOOK_SECRET` | Webhook signature secret | `random_secure_string` | ✅ |
+| `FRONTEND_URL` | Your frontend URL (CORS) | `https://droplet-frontend.onrender.com` | ✅ |
+| `JWT_SECRET` | JWT signing secret | `random_jwt_secret` | ⚡ Auto-generated |
+| `ENCRYPTION_KEY` | Data encryption key | `random_encryption_key` | ⚡ Auto-generated |
+
+> ⚡ = Auto-generated by Render deployment
+
+---
+
+## 🚀 Render Deployment Deep Dive
+
+### Understanding render.yaml
+
+The `render.yaml` file is your deployment blueprint. It automatically creates:
+
+```yaml
+services:
+  # Frontend (Static Site)
+  - name: droplet-frontend
+    type: web
+    env: static
+    buildCommand: npm install && npm run build
+    
+  # Backend (Node.js Service)  
+  - name: droplet-backend
+    type: web
+    env: node
+    startCommand: cd backend && npm start
+    
+databases:
+  # PostgreSQL Database
+  - name: droplet-db
+    databaseName: droplet_db
+```
+
+### Environment Variable Injection
+
+Render automatically:
+1. **Creates services** defined in render.yaml
+2. **Generates secure secrets** (JWT_SECRET, ENCRYPTION_KEY)
+3. **Connects database** (DATABASE_URL from droplet-db)
+4. **Sets environment variables** from the yaml file
+
+### What You Still Need to Set
+
+After deployment, manually set these in Render dashboard:
+
+| Service | Variable | Where to Get It |
+|---------|----------|-----------------|
+| Backend | `FLUID_API_KEY` | Fluid platform dashboard |
+| Backend | `FLUID_WEBHOOK_SECRET` | Generate random 32+ char string |
+| Backend | `DROPLET_ID` | Returned by create-droplet.js script |
+
+---
+
+## 🛠️ Development Tools
+
+### Available Scripts
+
+**Full Stack:**
+```bash
+npm run dev:full        # Start frontend + backend
+npm run build:full      # Build both for production  
+npm run test:full       # Run all tests
+npm run lint:full       # Lint all code
+npm run install:all     # Install all dependencies
+```
+
+**Frontend Only:**
+```bash
+npm run dev            # Start dev server
+npm run build          # Production build
+npm run test           # Run tests
+npm run lint           # ESLint check
+```
+
+**Backend Only:**
+```bash
+npm run dev:backend    # Start API server
+npm run build:backend  # Build TypeScript
+npm run start:backend  # Production server
+```
+
+**Database:**
+```bash
+npm run migrate        # Run pending migrations
+npm run migrate:status # Check migration status
+npm run setup:db       # Automated PostgreSQL setup
+```
+
+### Makefile Shortcuts
+```bash
+make setup            # Install deps + start dev
+make dev              # Start both servers
+make build            # Production build
+make clean            # Remove build files
+```
+
+---
+
+## 📊 Database Schema
+
+### Core Tables
+
+**droplet_installations**
+```sql
+id UUID PRIMARY KEY                    -- Installation identifier
+company_id VARCHAR                     -- Fluid company ID
+installation_id VARCHAR                -- Fluid installation ID  
+config JSONB                          -- Configuration data
+authentication_token VARCHAR           -- Fluid auth token
+status VARCHAR DEFAULT 'active'       -- Installation status
+created_at TIMESTAMP                  -- Creation time
+updated_at TIMESTAMP                  -- Last update
+```
+
+**activity_logs**  
+```sql
+id UUID PRIMARY KEY                    -- Log entry ID
+installation_id UUID                  -- Links to installation
+event_type VARCHAR                     -- Type of event
+event_data JSONB                      -- Event details
+status VARCHAR                        -- success/error/warning
+created_at TIMESTAMP                  -- When it happened
+```
+
+**webhook_events**
+```sql
+id UUID PRIMARY KEY                    -- Event ID
+installation_id UUID                  -- Links to installation  
+event_type VARCHAR                    -- Webhook event type
+payload JSONB                         -- Full webhook payload
+processed BOOLEAN DEFAULT false       -- Processing status
+created_at TIMESTAMP                  -- Received time
+```
+
+**custom_data**
+```sql
+id UUID PRIMARY KEY                    -- Data ID
+installation_id UUID                  -- Links to installation
+data_key VARCHAR                      -- Key for the data
+data_value JSONB                      -- Flexible JSON value
+metadata JSONB                        -- Additional metadata
+created_at TIMESTAMP                  -- Creation time
+```
+
+### Adding Custom Tables
+
+Create a new migration file:
+```bash
+# database/migrations/005_add_your_table.sql
+CREATE TABLE your_custom_table (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    installation_id UUID NOT NULL REFERENCES droplet_installations(id),
+    your_field VARCHAR NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_your_custom_table_installation 
+ON your_custom_table(installation_id);
+```
+
+Run migration:
+```bash
+npm run migrate
+```
+
+---
+
+## 🔗 API Endpoints
+
+### Droplet Configuration
+```http
+POST /api/droplet/configure
+Content-Type: application/json
+
+{
+  "integrationName": "My Integration",
+  "companyName": "Acme Corp", 
+  "environment": "production",
+  "fluidApiKey": "api_key_here",
+  "webhookUrl": "https://webhook.example.com"
+}
+```
+
+### Installation Management
+```http
+GET  /api/droplet/status/:installationId     # Get status
+GET  /api/droplet/dashboard/:installationId  # Dashboard data
+POST /api/droplet/test-connection            # Test API connection
+POST /api/droplet/sync                       # Sync with Fluid
+```
+
+### Webhook Processing
+```http
+POST /api/webhook/fluid                      # Fluid platform webhooks
+POST /api/webhook/custom                     # Your custom webhooks
+```
+
+### Health Check
+```http
+GET /health                                  # Service health status
+```
+
+---
+
+## 🧪 Testing Your Droplet
+
+### Local Testing
+1. **Start development servers**: `npm run dev:full`
+2. **Create test droplet**: `FLUID_API_KEY=key EMBED_URL=http://localhost:3000/ node scripts/create-droplet.js`
+3. **Test configuration flow**: Open `http://localhost:3000/?installation_id=test&company_id=123`
+
+### Production Testing  
+1. **Deploy to Render**: Follow deployment guide
+2. **Create production droplet**: Use your live frontend URL
+3. **Install in Fluid workspace**: Test the full installation flow
+4. **Test webhooks**: Trigger events and check processing
+
+### Integration Testing
+```bash
+# Test database connection
+node -e "require('./database/config').Database.testConnection()"
+
+# Test Fluid API connection  
+curl -X POST http://localhost:3001/api/droplet/test-connection \
+  -H "Content-Type: application/json" \
+  -d '{"fluidApiKey":"your_key"}'
+
+# Test health endpoint
+curl http://localhost:3001/health
+```
+
+---
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**"Database connection failed"**
+```bash
+# Check PostgreSQL is running
+brew services list | grep postgresql  # macOS
+sudo systemctl status postgresql      # Linux
+
+# Test connection manually
+psql -h localhost -U postgres -d fluid_droplet_db
+```
+
+**"Migration failed"**
+```bash
+# Check migration status  
 npm run migrate:status
 
-# View detailed database documentation
-cat database/README.md
+# Reset and retry
+dropdb fluid_droplet_db
+createdb fluid_droplet_db  
+npm run migrate
 ```
 
-## Setup Scripts
+**"Render deployment failed"**
+1. Check **build logs** in Render dashboard
+2. Verify **environment variables** are set
+3. Ensure **package.json** scripts are correct
 
-The template includes helpful scripts in the `scripts/` directory to streamline droplet setup:
+**"Fluid API connection failed"**
+1. Verify **FLUID_API_KEY** is correct
+2. Check **FLUID_API_URL** matches your environment
+3. Ensure API key has **droplet permissions**
 
-### Creating Your Droplet
+### Debug Mode
 
-Use the `create-droplet.js` script to create your droplet in the Fluid platform:
-
+Enable detailed logging:
 ```bash
-# Basic usage
-FLUID_API_KEY=your_api_key_here node scripts/create-droplet.js
+# Backend
+LOG_LEVEL=debug npm run dev:backend
 
-# With custom embed URL
-FLUID_API_KEY=your_api_key_here EMBED_URL=https://your-app.onrender.com/ node scripts/create-droplet.js
+# Check logs in production (Render)
+# Dashboard → Service → Logs
 ```
 
-**What the script does:**
-- Creates a new droplet in Fluid with your app name and embed URL
-- Returns the droplet UUID needed for your `DROPLET_ID` environment variable
-- Provides step-by-step instructions for updating your configuration
+---
 
-**After running the script:**
-1. Copy the returned droplet UUID
-2. Update your backend environment variables with `DROPLET_ID=your_uuid_here`
-3. Update your `render.yaml` file with the droplet UUID
-4. Redeploy your backend with the new configuration
-
-For more details, see [scripts/README.md](scripts/README.md).
-
-## Configuration
+## 🔒 Security Best Practices
 
 ### Environment Variables
+- ❌ **Never commit** `.env` files
+- ✅ **Use Render's secure** environment variables  
+- ✅ **Generate strong secrets** for JWT and encryption
+- ✅ **Rotate keys regularly**
 
-Create a `.env.local` file in the root directory:
+### API Security
+- ✅ **Validate all inputs** using Joi schemas
+- ✅ **Rate limiting** built-in with Express
+- ✅ **CORS configured** for your domains only
+- ✅ **Helmet.js** for security headers
 
-```env
-# Frontend Configuration
-VITE_FLUID_API_URL=https://api.fluid.com
-VITE_FLUID_API_KEY=your-api-key-here
-VITE_FLUID_ENVIRONMENT=development
+### Database Security  
+- ✅ **Parameterized queries** prevent SQL injection
+- ✅ **Connection pooling** prevents exhaustion
+- ✅ **SSL connections** in production
+- ✅ **Regular backups** via Render
 
-# Backend Configuration (create backend/.env)
-DATABASE_URL=postgresql://postgres:password@localhost:5432/fluid_droplet_db
-FLUID_API_KEY=your-builder-api-key
-FLUID_API_URL=https://your-org.fluid.app
-```
+---
 
-### Fluid Client Configuration
+## 🎯 Next Steps
 
-The Fluid client is configured through the `FluidClientFactory`:
+### Immediate Actions
+1. ✅ **Deploy your template** using this guide
+2. ✅ **Create your first droplet** with the script
+3. ✅ **Test the installation** in a Fluid workspace
+4. ✅ **Customize the branding** and copy
 
-```typescript
-import { fluidClientFactory } from '@/clients'
+### Enhance Your Droplet
+1. **Add your business logic** to the backend services
+2. **Customize the UI** with your branding and flows  
+3. **Integrate with your APIs** using the flexible architecture
+4. **Add monitoring** and analytics for your users
+5. **Implement advanced features** like bulk operations
 
-const config = {
-  apiUrl: process.env.VITE_FLUID_API_URL,
-  apiKey: process.env.VITE_FLUID_API_KEY,
-  environment: process.env.VITE_FLUID_ENVIRONMENT
-}
+### Go to Production
+1. **Upgrade Render plan** for production workloads
+2. **Set up monitoring** and error tracking  
+3. **Configure backups** and disaster recovery
+4. **Add custom domain** for professional appearance
+5. **Submit to Fluid marketplace**
 
-fluidClientFactory.initialize(config)
-```
+---
 
-## Usage
+## 📚 Resources
 
-### How Droplets Work
+### Essential Links
+- 🏠 **Fluid Platform**: [fluid.app](https://fluid.app)
+- 📖 **Fluid API Docs**: [api.fluid.app/docs](https://api.fluid.app/docs)
+- ☁️ **Render Platform**: [render.com](https://render.com)
+- 📖 **Render Docs**: [render.com/docs](https://render.com/docs)
 
-1. **Create your droplet** using the Fluid API with an `embed_url` pointing to your configuration page
-2. **Users install your droplet** in the Fluid portal
-3. **Fluid opens an iframe** pointing to your `embed_url` with the company ID appended
-4. **Your configuration page** collects credentials and sets up the integration
-5. **Your backend** uses the Fluid API to complete the droplet installation
+### Framework Documentation  
+- ⚛️ **React**: [react.dev](https://react.dev)
+- 🎨 **Tailwind CSS**: [tailwindcss.com](https://tailwindcss.com)
+- 🚀 **Vite**: [vitejs.dev](https://vitejs.dev)
+- 🟢 **Express**: [expressjs.com](https://expressjs.com)
+- 🐘 **PostgreSQL**: [postgresql.org](https://postgresql.org)
 
-### Configuration Pages
+### Development Tools
+- 🤖 **Cursor AI**: [cursor.sh](https://cursor.sh)
+- ⚡ **Bolt**: [bolt.new](https://bolt.new)
+- 📝 **TypeScript**: [typescriptlang.org](https://typescriptlang.org)
 
-The template includes two main entrypoints:
+---
 
-- **`/` (DropletConfig)** - Main configuration form for collecting API credentials, database settings, etc.
-- **`/setup` (DropletSetup)** - Setup progress page showing the configuration steps
+## 🤝 Contributing
 
-### Using the Fluid Client
+We welcome contributions! Here's how to help:
 
-```typescript
-import { getDropletsClient } from '@/clients'
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make your changes** with tests
+4. **Commit your changes**: `git commit -m 'Add amazing feature'`  
+5. **Push to the branch**: `git push origin feature/amazing-feature`
+6. **Open a Pull Request**
 
-const dropletsClient = getDropletsClient()
+### Development Guidelines
+- ✅ **Follow TypeScript** best practices
+- ✅ **Add tests** for new features  
+- ✅ **Update documentation** as needed
+- ✅ **Keep commits clean** and descriptive
 
-// Get droplet installation details
-const installation = await dropletsClient.getInstallation(installationId)
+---
 
-// Use the authentication token to make API calls as the company
-const authToken = installation.authentication_token
-```
+## 📄 License
 
-## Testing
+MIT License - see [LICENSE](LICENSE) file for details.
 
-The template includes comprehensive testing setup with Jest and Testing Library:
+---
 
-```bash
-# Run all tests
-npm run test
+## 💬 Support
 
-# Run tests in watch mode
-npm run test:watch
+### Need Help?
+- 📧 **Email**: support@yourcompany.com
+- 💬 **Discord**: [Your Community](https://discord.gg/your-community)  
+- 📖 **Wiki**: [GitHub Wiki](https://github.com/your-org/fluid-droplet-template/wiki)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/your-org/fluid-droplet-template/issues)
 
-# Run tests with coverage
-npm run test:coverage
-```
+### Professional Services
+Need help building your integration? We offer:
+- 🎨 **Custom UI/UX design**
+- ⚙️ **Complex API integrations** 
+- 🚀 **Performance optimization**
+- 📊 **Analytics and monitoring**
+- 🔒 **Enterprise security**
 
-### Writing Tests
+**Contact us**: [hello@yourcompany.com](mailto:hello@yourcompany.com)
 
-```typescript
-import { render, screen } from '@testing-library/react'
-import { Button } from '@/components/Button'
+---
 
-test('renders button with text', () => {
-  render(<Button>Click me</Button>)
-  expect(screen.getByText('Click me')).toBeInTheDocument()
-})
-```
+<div align="center">
 
-## Styling
+### 🎉 Happy Building!
 
-The template uses Tailwind CSS 4.0 for styling. Custom styles are defined in `src/index.css` and component-specific styles use Tailwind utility classes.
+**Made with ❤️ for the Fluid community**
 
-### Custom Components
+[![Stars](https://img.shields.io/github/stars/your-org/fluid-droplet-template?style=social)](https://github.com/your-org/fluid-droplet-template)
+[![Forks](https://img.shields.io/github/forks/your-org/fluid-droplet-template?style=social)](https://github.com/your-org/fluid-droplet-template)
+[![Issues](https://img.shields.io/github/issues/your-org/fluid-droplet-template)](https://github.com/your-org/fluid-droplet-template/issues)
 
-The template includes several pre-built components:
-- `Button` - Various button styles and sizes
-- `Card` - Card layout components
-- `Layout` - Main application layout
-- `Navigation` - Sidebar navigation
-- `Header` - Top header component
-
-## Deployment
-
-### Build for Production
-
-```bash
-npm run build
-```
-
-This creates a `dist` folder with optimized production files.
-
-### Environment Configuration
-
-Make sure to set the correct environment variables for your deployment:
-
-- `VITE_FLUID_API_URL` - Your Fluid API URL
-- `VITE_FLUID_API_KEY` - Your API key
-- `VITE_FLUID_ENVIRONMENT` - Environment (development/staging/production)
-
-## Development
-
-### Code Style
-
-The project uses ESLint and Prettier for code formatting. Run `npm run lint:fix` to automatically fix formatting issues.
-
-### Type Safety
-
-TypeScript is configured with strict mode enabled. Run `npm run type-check` to verify type safety.
-
-### Adding New Features
-
-1. Create new components in `src/components/`
-2. Add new pages in `src/pages/`
-3. Extend the API client in `src/clients/`
-4. Add types in `src/types/`
-5. Write tests for new functionality
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite
-6. Submit a pull request
-
-## License
-
-MIT License - see LICENSE file for details.
-
-## Troubleshooting
-
-### Database Issues
-
-**PostgreSQL Connection Refused**
-```bash
-# Check if PostgreSQL is running
-brew services list | grep postgresql  # macOS
-sudo systemctl status postgresql      # Ubuntu
-
-# Start PostgreSQL if not running
-brew services start postgresql        # macOS
-sudo systemctl start postgresql       # Ubuntu
-```
-
-**Migration Errors**
-```bash
-# Check migration status
-npm run migrate:status
-
-# Check database connection
-node -e "require('./database/config').Database.testConnection()"
-```
-
-**Permission Issues**
-```bash
-# Create database with proper permissions
-sudo -u postgres createdb fluid_droplet_db
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE fluid_droplet_db TO $USER;"
-```
-
-### Development Issues
-
-**Port Already in Use**
-```bash
-# Kill processes on ports 3000 and 3001
-lsof -ti:3000 | xargs kill -9
-lsof -ti:3001 | xargs kill -9
-```
-
-**Module Not Found Errors**
-```bash
-# Reinstall all dependencies
-rm -rf node_modules backend/node_modules
-npm run install:all
-```
-
-## Support
-
-For questions and support, please refer to the Fluid platform documentation or contact the development team.
+</div>

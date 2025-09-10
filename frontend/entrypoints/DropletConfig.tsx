@@ -18,7 +18,11 @@ export function DropletConfig() {
   const navigate = useNavigate()
   const installationId = searchParams.get('installation_id')
   const companyId = searchParams.get('company_id')
-  // Note: authToken removed as it's not needed for new installations
+  const authToken = searchParams.get('auth_token') || 
+                   searchParams.get('token') || 
+                   searchParams.get('fluid_api_key') ||
+                   searchParams.get('api_key') ||
+                   searchParams.get('access_token')
   
   const [formData, setFormData] = useState<ConfigFormData>({
     integrationName: '',
@@ -56,12 +60,48 @@ export function DropletConfig() {
       }
 
       if (!installationId) {
-        // For new installations, set up default company data
-        setCompanyData({
-          companyName: 'Your Company',
-          id: 'new-installation',
-          status: 'pending'
-        })
+        // For new installations, try to get company info if we have auth token
+        if (authToken) {
+          try {
+            // Test the Fluid API key and get company info
+            const testResponse = await apiClient.post('/api/droplet/test-connection', {
+              fluidApiKey: authToken
+            })
+            
+            if (testResponse.data.success) {
+              setCompanyData({
+                companyName: testResponse.data.data.companyName || 'Your Company',
+                companyLogo: testResponse.data.data.companyLogo,
+                id: 'new-installation',
+                status: 'pending'
+              })
+              // Pre-fill the form with the Fluid API key
+              setFormData(prev => ({
+                ...prev,
+                fluidApiKey: authToken
+              }))
+            } else {
+              setCompanyData({
+                companyName: 'Your Company',
+                id: 'new-installation',
+                status: 'pending'
+              })
+            }
+          } catch (error) {
+            console.error('Failed to get company info:', error)
+            setCompanyData({
+              companyName: 'Your Company',
+              id: 'new-installation',
+              status: 'pending'
+            })
+          }
+        } else {
+          setCompanyData({
+            companyName: 'Your Company',
+            id: 'new-installation',
+            status: 'pending'
+          })
+        }
         setIsLoading(false)
         return
       }
@@ -196,7 +236,12 @@ export function DropletConfig() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading...</h2>
-            <p className="text-gray-600">Fetching your company information from Fluid</p>
+            <p className="text-gray-600">
+              {authToken 
+                ? 'Fetching your company information from Fluid' 
+                : 'Setting up your droplet configuration'
+              }
+            </p>
           </div>
         </div>
       </div>
@@ -237,7 +282,9 @@ export function DropletConfig() {
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             {isEditing 
               ? 'Update your integration settings and configuration'
-              : 'Configure your credentials to establish a secure connection'
+              : companyData?.companyName && companyData.companyName !== 'Your Company'
+                ? `Let's set up your Fluid Droplet Template integration for ${companyData.companyName}`
+                : 'Configure your credentials to establish a secure connection'
             }
           </p>
           {companyData?.companyName && companyData.companyName !== 'Your Company' && (
