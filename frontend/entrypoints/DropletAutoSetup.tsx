@@ -23,11 +23,45 @@ export function DropletAutoSetup() {
       try {
         setStatus('checking')
 
+        // Check if we already have a valid session in localStorage
+        const existingSession = localStorage.getItem('droplet_session')
+        if (existingSession) {
+          try {
+            const sessionData = JSON.parse(existingSession)
+            const sessionAge = Date.now() - new Date(sessionData.timestamp).getTime()
+            const maxAge = 24 * 60 * 60 * 1000 // 24 hours
+            
+            if (sessionAge < maxAge && sessionData.installationId && sessionData.installationId !== 'new-installation') {
+              console.log('🔄 Found valid session, redirecting to dashboard')
+              navigate(`/dashboard?installation_id=${sessionData.installationId}&fluid_api_key=${sessionData.fluidApiKey}`)
+              return
+            }
+          } catch (e) {
+            // Invalid session data, continue with normal flow
+            localStorage.removeItem('droplet_session')
+          }
+        }
+
+        // If we have installation_id and fluid_api_key in URL, go directly to dashboard
+        if (installationId && installationId !== 'new-installation' && authToken) {
+          console.log('🎯 Have installation ID and API key, going directly to dashboard')
+          navigate(`/dashboard?installation_id=${installationId}&fluid_api_key=${authToken}`)
+          return
+        }
+
         console.log('🔍 Auto-setup checking:', {
           installationId,
           companyId, 
           authToken: authToken ? 'present' : 'missing'
         })
+
+        // Only run auto-setup if we have the necessary parameters for a new installation
+        if (!authToken && !installationId) {
+          console.log('❌ No auth token or installation ID, cannot proceed with auto-setup')
+          setError('Missing required parameters for installation. Please install the droplet from Fluid.')
+          setStatus('error')
+          return
+        }
 
         // First, check if we have a webhook-configured installation
         const statusResponse = await apiClient.get(`/api/droplet/status/${installationId || 'new-installation'}`)
@@ -58,12 +92,33 @@ export function DropletAutoSetup() {
           
           // Check if we have webhook data waiting to be configured (pending status) OR auto-configure if we have company data
           if (data.companyName && data.companyName !== 'Your Company') {
-            console.log('🔧 Found webhook data, auto-configuring...')
+            console.log('🔧 Found webhook data, checking if configuration is needed...')
             setCompanyData(data)
-            setStatus('auto_configuring')
             
-            // Only auto-configure if we have a real installation ID (not 'new-installation')
-            if (data.installationId && data.installationId !== 'new-installation') {
+            // If installation is already active, just redirect to dashboard
+            if (data.status === 'active') {
+              console.log('✅ Installation already active, redirecting to dashboard')
+              setStatus('complete')
+              
+              const sessionData = {
+                installationId: data.installationId,
+                fluidApiKey: data.fluidApiKey || authToken,
+                companyName: data.companyName,
+                integrationName: data.integrationName || `${data.companyName} Integration`,
+                timestamp: new Date().toISOString()
+              }
+              localStorage.setItem('droplet_session', JSON.stringify(sessionData))
+              
+              setTimeout(() => {
+                navigate(`/dashboard?installation_id=${sessionData.installationId}&fluid_api_key=${sessionData.fluidApiKey}`)
+              }, 1000)
+              return
+            }
+            
+            // Only auto-configure if we have a real installation ID (not 'new-installation') AND status is pending
+            if (data.installationId && data.installationId !== 'new-installation' && data.status === 'pending') {
+              console.log('🔧 Found pending installation, auto-configuring...')
+              setStatus('auto_configuring')
               // Auto-configure the installation using webhook data
               const configData = {
                 integrationName: data.integrationName || `${data.companyName} Integration`,
