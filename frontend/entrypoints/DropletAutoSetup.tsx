@@ -32,7 +32,6 @@ export function DropletAutoSetup() {
             const maxAge = 24 * 60 * 60 * 1000 // 24 hours
             
             if (sessionAge < maxAge && sessionData.installationId && sessionData.installationId !== 'new-installation') {
-              console.log('🔄 Found valid session, redirecting to dashboard')
               navigate(`/dashboard?installation_id=${sessionData.installationId}&fluid_api_key=${sessionData.fluidApiKey}`)
               return
             }
@@ -44,27 +43,18 @@ export function DropletAutoSetup() {
 
         // If we have installation_id and fluid_api_key in URL, go directly to dashboard
         if (installationId && installationId !== 'new-installation' && authToken) {
-          console.log('🎯 Have installation ID and API key, going directly to dashboard')
           navigate(`/dashboard?installation_id=${installationId}&fluid_api_key=${authToken}`)
           return
         }
 
         // If we have any installation ID that's not 'new-installation', don't run auto-setup
         if (installationId && installationId !== 'new-installation') {
-          console.log('⚠️ Have existing installation ID, redirecting to dashboard without auto-setup')
           navigate(`/dashboard?installation_id=${installationId}&fluid_api_key=${authToken || 'unknown'}`)
           return
         }
 
-        console.log('🔍 Auto-setup checking:', {
-          installationId,
-          companyId, 
-          authToken: authToken ? 'present' : 'missing'
-        })
-
         // Only run auto-setup if we have the necessary parameters for a new installation
         if (!authToken) {
-          console.log('❌ No auth token, cannot proceed with auto-setup')
           setError('Missing required parameters for installation. Please install the droplet from Fluid.')
           setStatus('error')
           return
@@ -73,11 +63,8 @@ export function DropletAutoSetup() {
         // First, check if we have a webhook-configured installation
         const statusResponse = await apiClient.get(`/api/droplet/status/${installationId || 'new-installation'}`)
         
-        console.log('📊 Status response:', statusResponse.data)
-        
         // If we get a successful response with an active installation, go directly to dashboard
         if (statusResponse.data.success && statusResponse.data.data?.status === 'active') {
-          console.log('✅ Found active installation, redirecting to dashboard immediately')
           const data = statusResponse.data.data
           navigate(`/dashboard?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey || authToken}`)
           return
@@ -88,8 +75,6 @@ export function DropletAutoSetup() {
           
           // Check if installation is already fully configured (active status)
           if (data.status === 'active' && data.companyName && data.companyName !== 'Your Company') {
-            console.log('✅ Found active installation, redirecting to dashboard immediately')
-            
             // Save session data
             const sessionData = {
               installationId: data.installationId,
@@ -107,7 +92,6 @@ export function DropletAutoSetup() {
           
           // If we have any installation data but it's not active, don't auto-configure
           if (data.installationId && data.installationId !== 'new-installation') {
-            console.log('⚠️ Found existing installation but not active, waiting for webhook to complete')
             setError('Installation is being processed. Please wait a moment and refresh the page.')
             setStatus('error')
             return
@@ -115,12 +99,10 @@ export function DropletAutoSetup() {
           
           // Check if we have webhook data waiting to be configured (pending status) OR auto-configure if we have company data
           if (data.companyName && data.companyName !== 'Your Company') {
-            console.log('🔧 Found webhook data, checking if configuration is needed...')
             setCompanyData(data)
             
             // If installation is already active, just redirect to dashboard
             if (data.status === 'active') {
-              console.log('✅ Installation already active, redirecting to dashboard')
               setStatus('complete')
               
               const sessionData = {
@@ -140,7 +122,6 @@ export function DropletAutoSetup() {
             
             // Only auto-configure if we have a real installation ID (not 'new-installation') AND status is pending
             if (data.installationId && data.installationId !== 'new-installation' && data.status === 'pending') {
-              console.log('🔧 Found pending installation, auto-configuring...')
               setStatus('auto_configuring')
               // Auto-configure the installation using webhook data
               const configData = {
@@ -151,8 +132,6 @@ export function DropletAutoSetup() {
                 installationId: data.installationId,
                 companyId: data.companyId || companyId
               }
-              
-              console.log('📝 Auto-configuring with:', configData)
               
               const configResponse = await apiClient.post('/api/droplet/configure', configData)
               
@@ -169,7 +148,6 @@ export function DropletAutoSetup() {
                 }
                 localStorage.setItem('droplet_session', JSON.stringify(sessionData))
                 
-                console.log('✅ Auto-configuration successful, redirecting to success')
                 setTimeout(() => {
                   navigate(`/success?installation_id=${sessionData.installationId}&fluid_api_key=${configData.fluidApiKey}`)
                 }, 2000)
@@ -177,7 +155,6 @@ export function DropletAutoSetup() {
               }
             } else {
               // If no real installation ID, just redirect to success with the data we have
-              console.log('✅ No real installation ID, redirecting to success with webhook data')
               setStatus('complete')
               
               const sessionData = {
@@ -198,8 +175,6 @@ export function DropletAutoSetup() {
 
           // Check if we have auth token but no webhook data yet - try to auto-configure
           if (authToken && (!data.companyName || data.companyName === 'Your Company')) {
-            console.log('🔧 Have auth token but no webhook data, attempting auto-configuration...')
-            
             // Try to get company info from Fluid API and auto-configure
             try {
               setStatus('auto_configuring')
@@ -213,8 +188,6 @@ export function DropletAutoSetup() {
                 const companyName = testResponse.data.data.companyName || testResponse.data.data.name || 'Your Company'
                 const fetchedCompanyId = testResponse.data.data.companyId || testResponse.data.data.id || companyId
                 
-                console.log('✅ Got company info from Fluid API:', { companyName, companyId: fetchedCompanyId })
-                
                 // Auto-configure the installation
                 const configData = {
                   integrationName: `${companyName} Integration`,
@@ -224,8 +197,6 @@ export function DropletAutoSetup() {
                   installationId: installationId || 'new-installation',
                   companyId: fetchedCompanyId
                 }
-                
-                console.log('📝 Auto-configuring with:', configData)
                 
                 const configResponse = await apiClient.post('/api/droplet/configure', configData)
                 
@@ -243,7 +214,6 @@ export function DropletAutoSetup() {
                   }
                   localStorage.setItem('droplet_session', JSON.stringify(sessionData))
                   
-                  console.log('✅ Auto-configuration successful, redirecting to success')
                   setTimeout(() => {
                     navigate(`/success?installation_id=${sessionData.installationId}&fluid_api_key=${authToken}`)
                   }, 2000)
@@ -263,7 +233,6 @@ export function DropletAutoSetup() {
           }
         }
         
-        console.log('❌ No auto-configuration possible')
         setError('Unable to auto-configure installation. Please contact support.')
         setStatus('error')
         

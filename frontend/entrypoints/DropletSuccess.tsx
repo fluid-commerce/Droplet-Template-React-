@@ -58,7 +58,6 @@ export function DropletSuccess() {
         setConnectionStatus(data)
         
         // Installation is active - user can choose to go to dashboard or stay on success page
-        console.log('✅ Installation is active and ready')
       } catch (err: any) {
         console.error('Failed to load connection status:', err)
         setError(err.response?.data?.message || 'Failed to load connection status')

@@ -35,8 +35,6 @@ export function DropletDashboard() {
 
       try {
         const response = await apiClient.get(`/api/droplet/dashboard/${installationId}?fluidApiKey=${fluidApiKey}`)
-        console.log('🔍 Dashboard API response:', response.data)
-        console.log('🏢 Company name from API:', response.data.data?.companyName)
         setDashboardData(response.data.data)
       } catch (err: any) {
         console.error('Failed to load dashboard data:', err)

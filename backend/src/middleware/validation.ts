@@ -62,8 +62,7 @@ export function validateWebhookEvent(req: Request, res: Response, next: NextFunc
   })
 
   if (error) {
-    console.log('Webhook validation error:', error.details)
-    console.log('Webhook payload:', JSON.stringify(req.body, null, 2))
+    // Validation error details logged via logger in error handler
     return res.status(400).json({
       error: 'Invalid webhook event',
       message: 'Webhook payload validation failed',
