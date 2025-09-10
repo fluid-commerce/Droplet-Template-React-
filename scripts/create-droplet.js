@@ -9,12 +9,13 @@
  * Usage:
  * 1. Set your FLUID_API_KEY in the environment or update the script
  * 2. Update the EMBED_URL to your deployed frontend URL
- * 3. Run: node scripts/create-droplet.js
+ * 3. Optionally set LOGO_URL to your custom logo (defaults to placeholder)
+ * 4. Run: node scripts/create-droplet.js
  */
 
 import axios from 'axios';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join } from 'path'; 
 import { readFileSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,25 +25,31 @@ const __dirname = dirname(__filename);
 const FLUID_API_URL = 'https://api.fluid.app';
 const FLUID_API_KEY = process.env.FLUID_API_KEY || 'YOUR_FLUID_API_KEY_HERE';
 const EMBED_URL = process.env.EMBED_URL || 'https://your-droplet-frontend.onrender.com/';
+const LOGO_URL = process.env.LOGO_URL || 'https://res.cloudinary.com/ddway3wcc/image/upload/v1751920946/business-logos/revb5zhzz38shehvdxlq.png';
 
-// Read package.json for app name
+// Read package.json for app name and description
 let appName = 'Fluid Droplet Template';
+let appDescription = 'A React + TypeScript template for creating Fluid droplet services';
 try {
   const packageJson = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8'));
   appName = packageJson.name || appName;
+  appDescription = packageJson.description || appDescription;
 } catch (error) {
-  console.log('Using default app name');
+  console.log('Using default app name and description');
 }
 
 async function createDroplet() {
   console.log('🚀 Creating Fluid Droplet...');
   console.log(`📦 App Name: ${appName}`);
+  console.log(`📝 Description: ${appDescription}`);
   console.log(`🔗 Embed URL: ${EMBED_URL}`);
+  console.log(`🖼️  Logo URL: ${LOGO_URL}`);
   console.log('');
 
   if (FLUID_API_KEY === 'YOUR_FLUID_API_KEY_HERE') {
     console.error('❌ Please set your FLUID_API_KEY environment variable or update the script');
     console.log('   Example: FLUID_API_KEY=your_key_here node scripts/create-droplet.js');
+    console.log('   Optional: LOGO_URL=https://your-logo-url.com/logo.png');
     process.exit(1);
   }
 
@@ -56,12 +63,12 @@ async function createDroplet() {
           marketplace_page: {
             title: appName,
             summary: appDescription,
-            logo_url: "https://via.placeholder.com/200x200/007bff/ffffff?text=FD"
+            logo_url: LOGO_URL
           },
           details_page: {
             title: appName,
             summary: appDescription,
-            logo_url: "https://via.placeholder.com/400x400/007bff/ffffff?text=FD"
+            logo_url: LOGO_URL
           }
         }
       }

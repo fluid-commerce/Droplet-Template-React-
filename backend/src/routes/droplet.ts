@@ -176,6 +176,30 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
     const { installationId } = req.params
     const { fluidApiKey } = req.query
 
+    // For new installations, we don't need a Fluid API key yet
+    if (installationId === 'new-installation') {
+      return res.json({
+        success: true,
+        data: {
+          connected: false,
+          installationId: 'new-installation',
+          companyName: 'Your Company',
+          companyId: null,
+          lastSync: null,
+          userCount: 0,
+          status: 'pending',
+          createdAt: null,
+          updatedAt: null,
+          integrationName: 'My Integration',
+          environment: 'production',
+          webhookUrl: '',
+          fluidApiKey: '',
+          companyLogo: null
+        }
+      })
+    }
+
+    // For existing installations, we need the Fluid API key
     if (!fluidApiKey) {
       return res.status(400).json({
         error: 'Missing Fluid API key',

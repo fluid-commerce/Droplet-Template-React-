@@ -18,11 +18,7 @@ export function DropletConfig() {
   const navigate = useNavigate()
   const installationId = searchParams.get('installation_id')
   const companyId = searchParams.get('company_id')
-  const authToken = searchParams.get('auth_token') || 
-                   searchParams.get('token') || 
-                   searchParams.get('fluid_api_key') ||
-                   searchParams.get('api_key') ||
-                   searchParams.get('access_token')
+  // Note: authToken removed as it's not needed for new installations
   
   const [formData, setFormData] = useState<ConfigFormData>({
     integrationName: '',
@@ -60,49 +56,12 @@ export function DropletConfig() {
       }
 
       if (!installationId) {
-        // If no installation ID, try to get company info from Fluid API if we have a key
-        const fluidApiKey = authToken || searchParams.get('fluid_api_key')
-        if (fluidApiKey) {
-          try {
-            // Test the Fluid API key and get company info
-            const testResponse = await apiClient.post('/api/droplet/test-connection', {
-              fluidApiKey: fluidApiKey
-            })
-            
-            if (testResponse.data.success) {
-              setCompanyData({
-                companyName: testResponse.data.data.companyName || 'Your Company',
-                companyLogo: testResponse.data.data.companyLogo,
-                id: 'new-installation',
-                status: 'pending'
-              })
-              // Pre-fill the form with the Fluid API key
-              setFormData(prev => ({
-                ...prev,
-                fluidApiKey: fluidApiKey
-              }))
-            } else {
-              setCompanyData({
-                companyName: 'Your Company',
-                id: 'new-installation',
-                status: 'pending'
-              })
-            }
-          } catch (error) {
-            console.error('Failed to get company info:', error)
-            setCompanyData({
-              companyName: 'Your Company',
-              id: 'new-installation',
-              status: 'pending'
-            })
-          }
-        } else {
-          setCompanyData({
-            companyName: 'Your Company',
-            id: 'new-installation',
-            status: 'pending'
-          })
-        }
+        // For new installations, set up default company data
+        setCompanyData({
+          companyName: 'Your Company',
+          id: 'new-installation',
+          status: 'pending'
+        })
         setIsLoading(false)
         return
       }
@@ -383,52 +342,59 @@ export function DropletConfig() {
               Fluid API Key
             </CardTitle>
             <CardDescription className="text-gray-600 mt-2">
-              Your Fluid API token for platform integration
+              Connect your Fluid account to enable integration features
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             <div className="form-group">
-              <label className="label">API Token</label>
-                        <input
-                          type="password"
-                          className={`input mt-1 ${isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
-                          value={formData.fluidApiKey}
-                          onChange={(e) => !isEditing && setFormData(prev => ({ ...prev, fluidApiKey: e.target.value }))}
-                          placeholder="Enter your Fluid API token"
-                          required
-                          disabled={isEditing}
-                        />
-                        <p className="text-sm text-gray-500 mt-1">
-                          Generate your API token in the Fluid dashboard under API Tokens
-                        </p>
-                        <div className="mt-3 flex items-center space-x-3">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={testConnection}
-                            disabled={isTestingConnection || !formData.fluidApiKey}
-                          >
-                            {isTestingConnection ? (
-                              <>
-                                <FontAwesomeIcon icon="spinner" spin className="mr-2" />
-                                Testing...
-                              </>
-                            ) : (
-                              <>
-                                <FontAwesomeIcon icon="check-circle" className="mr-2" />
-                                Test Connection
-                              </>
-                            )}
-                          </Button>
-                          {connectionStatus && (
-                            <span className={`text-sm font-medium ${
-                              connectionStatus.includes('✅') ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {connectionStatus}
-                            </span>
-                          )}
-                        </div>
+              <label className="label">
+                <FontAwesomeIcon icon="key" className="mr-2 text-blue-600" />
+                Fluid API Key
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  className={`input mt-1 pr-20 ${isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                  value={formData.fluidApiKey}
+                  onChange={(e) => !isEditing && setFormData(prev => ({ ...prev, fluidApiKey: e.target.value }))}
+                  placeholder="Enter your Fluid API key (starts with PT-...)"
+                  required
+                  disabled={isEditing}
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={testConnection}
+                    disabled={isTestingConnection || !formData.fluidApiKey}
+                    className="h-8 px-3 text-xs"
+                  >
+                    {isTestingConnection ? (
+                      <>
+                        <FontAwesomeIcon icon="spinner" spin className="mr-1" />
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <FontAwesomeIcon icon="check" className="mr-1" />
+                        Test
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-2">
+                <p className="text-sm text-gray-600">
+                  <FontAwesomeIcon icon="info-circle" className="mr-1 text-blue-500" />
+                  This is your Fluid platform API key. You can find it in your Fluid account settings under "API Keys".
+                </p>
+                {connectionStatus && (
+                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                    <span className="text-sm text-green-700">{connectionStatus}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
