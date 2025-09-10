@@ -109,9 +109,9 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
       dropletId: realInstallation.droplet_id || 
                 realInstallation.droplet_uuid || 
                 process.env.DROPLET_ID || 
-                'drp_2jd94qffjmv1k3pifvvyeqxmtwtakbbr1', // Your actual droplet ID as fallback
-      companyId: realInstallation.company_id,
-      authenticationToken: realInstallation.authentication_token,
+                'unknown',
+      companyId: realInstallation.company_id || companyInfo?.id || 'unknown',
+      authenticationToken: realInstallation.authentication_token || config.fluidApiKey,
       configuration: config,
       status: 'active' as const,
       createdAt: new Date().toISOString(),
