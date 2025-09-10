@@ -20,7 +20,15 @@ router.post('/fluid', validateWebhookEvent, async (req: Request, res: Response) 
       url: req.url
     })
 
-    const event: WebhookEvent = req.body
+    // Fluid sends data directly in the body, not nested under 'data'
+    const event: WebhookEvent = {
+      id: req.body.id,
+      type: req.body.type,
+      event_name: req.body.event_name,
+      data: req.body, // The entire body is the data
+      timestamp: req.body.timestamp,
+      source: req.body.source
+    }
 
     logger.info('Parsed Fluid webhook event', {
       id: event.id,

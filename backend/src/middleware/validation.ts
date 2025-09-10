@@ -42,11 +42,14 @@ export function validateDropletConfig(req: Request, res: Response, next: NextFun
  * Validate webhook event
  */
 export function validateWebhookEvent(req: Request, res: Response, next: NextFunction) {
-  // More flexible webhook validation - Fluid may send different formats
+  // More flexible webhook validation - Fluid sends company data directly in body
   const webhookSchema = Joi.object({
     id: Joi.string().optional(),
     type: Joi.string().optional(),
+    event_name: Joi.string().optional(),
     data: Joi.object().optional(),
+    company: Joi.object().optional(),
+    company_id: Joi.number().optional(),
     timestamp: Joi.string().optional(),
     source: Joi.string().optional(),
     // Allow any additional fields that Fluid might send
