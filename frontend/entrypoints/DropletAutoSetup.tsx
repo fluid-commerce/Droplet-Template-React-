@@ -22,11 +22,13 @@ export function DropletAutoSetup() {
   const [status, setStatus] = useState<'checking' | 'auto_configuring' | 'error' | 'complete'>('checking')
   const [companyData, setCompanyData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const [loadingText, setLoadingText] = useState('Initializing...')
 
   useEffect(() => {
     const checkInstallationStatus = async () => {
       try {
         setStatus('checking')
+        setLoadingText('Checking installation status...')
         
         // URL parameters processed
 
@@ -82,11 +84,13 @@ export function DropletAutoSetup() {
         }
 
         // First, check if we have a webhook-configured installation
+        setLoadingText('Connecting to Fluid platform...')
         const statusResponse = await apiClient.get(`/api/droplet/status/${effectiveInstallationId}`)
         
         // If we get a successful response with an active installation, show success page first
         if (statusResponse.data.success && statusResponse.data.data?.status === 'active') {
           const data = statusResponse.data.data
+          setLoadingText('Installation verified!')
           setStatus('complete')
           setCompanyData({ companyName: data.companyName, companyId: data.companyId })
           
@@ -159,6 +163,7 @@ export function DropletAutoSetup() {
             
             // Only auto-configure if we have a real installation ID (not 'new-installation') AND status is pending
             if (data.installationId && data.installationId !== 'new-installation' && data.status === 'pending') {
+              setLoadingText('Configuring your integration...')
               setStatus('auto_configuring')
               // Auto-configure the installation using webhook data
               const configData = {
@@ -221,6 +226,7 @@ export function DropletAutoSetup() {
           if (authToken && (!data.companyName || data.companyName === 'Your Company')) {
             // Try to get company info from Fluid API and auto-configure
             try {
+              setLoadingText('Setting up your integration...')
               setStatus('auto_configuring')
               
               // Test the Fluid API connection to get company info
@@ -295,16 +301,16 @@ export function DropletAutoSetup() {
       case 'checking':
         return {
           icon: 'search',
-          title: 'Checking Installation Status...',
-          description: 'Looking up your company information',
+          title: loadingText,
+          description: 'Please wait while we set up your integration',
           color: 'blue'
         }
       
       case 'auto_configuring':
         return {
           icon: 'cog',
-          title: `Setting up ${companyData?.companyName || 'Your Integration'}...`,
-          description: 'Automatically configuring your droplet with company information',
+          title: loadingText,
+          description: `Setting up ${companyData?.companyName || 'your integration'} with Fluid platform`,
           color: 'purple'
         }
       
@@ -327,7 +333,7 @@ export function DropletAutoSetup() {
       default:
         return {
           icon: 'spinner',
-          title: 'Loading...',
+          title: loadingText,
           description: 'Please wait',
           color: 'gray'
         }
@@ -355,13 +361,20 @@ export function DropletAutoSetup() {
             />
           </div>
             
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2 transition-all duration-300">
             {content.title}
           </h1>
           
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-6 transition-all duration-300">
             {content.description}
           </p>
+          
+          {/* Progress indicator for loading states */}
+          {(status === 'checking' || status === 'auto_configuring') && (
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+              <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+            </div>
+          )}
           
           {companyData?.companyLogo && (
             <div className="flex items-center justify-center mb-6">

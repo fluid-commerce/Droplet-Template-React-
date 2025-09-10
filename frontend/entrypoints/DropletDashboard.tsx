@@ -17,6 +17,7 @@ export function DropletDashboard() {
   
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSyncing, setIsSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export function DropletDashboard() {
   const handleSyncData = async () => {
     if (!installationId || !fluidApiKey) return
     
+    setIsSyncing(true)
     try {
       await apiClient.post('/api/droplet/sync', { 
         installationId, 
@@ -61,6 +63,8 @@ export function DropletDashboard() {
     } catch (err: any) {
       console.error('Failed to sync data:', err)
       setError(err.response?.data?.message || 'Failed to sync data')
+    } finally {
+      setIsSyncing(false)
     }
   }
 
@@ -69,7 +73,10 @@ export function DropletDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <FontAwesomeIcon icon="spinner" spin className="text-4xl text-blue-600 mb-4" />
-          <p className="text-lg text-gray-600">Loading dashboard...</p>
+          <p className="text-lg text-gray-600">Loading your dashboard...</p>
+          <div className="w-64 bg-gray-200 rounded-full h-2 mt-4 mx-auto">
+            <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '80%'}}></div>
+          </div>
         </div>
       </div>
     )
@@ -104,9 +111,9 @@ export function DropletDashboard() {
             <p className="text-gray-600 mt-1">Manage your droplet integration</p>
           </div>
           <div className="flex space-x-3">
-            <Button onClick={handleSyncData} variant="outline">
+            <Button onClick={handleSyncData} variant="outline" loading={isSyncing} disabled={isSyncing}>
               <FontAwesomeIcon icon="sync" className="mr-2" />
-              Sync Data
+              {isSyncing ? 'Syncing...' : 'Sync Data'}
             </Button>
           </div>
         </div>
