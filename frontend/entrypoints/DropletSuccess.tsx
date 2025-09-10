@@ -57,13 +57,8 @@ export function DropletSuccess() {
         const data = response.data.data
         setConnectionStatus(data)
         
-        // If installation is active, redirect to dashboard after a short delay
-        if (data.status === 'active') {
-          console.log('✅ Installation is active, redirecting to dashboard')
-          setTimeout(() => {
-            navigate(`/dashboard?installation_id=${installationId}&fluid_api_key=${fluidApiKey}`)
-          }, 2000)
-        }
+        // Installation is active - user can choose to go to dashboard or stay on success page
+        console.log('✅ Installation is active and ready')
       } catch (err: any) {
         console.error('Failed to load connection status:', err)
         setError(err.response?.data?.message || 'Failed to load connection status')

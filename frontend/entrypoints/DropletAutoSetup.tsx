@@ -63,8 +63,8 @@ export function DropletAutoSetup() {
         })
 
         // Only run auto-setup if we have the necessary parameters for a new installation
-        if (!authToken && !installationId) {
-          console.log('❌ No auth token or installation ID, cannot proceed with auto-setup')
+        if (!authToken) {
+          console.log('❌ No auth token, cannot proceed with auto-setup')
           setError('Missing required parameters for installation. Please install the droplet from Fluid.')
           setStatus('error')
           return
@@ -196,15 +196,70 @@ export function DropletAutoSetup() {
             }
           }
 
-          // Check if we have auth token but no webhook data yet (race condition)
+          // Check if we have auth token but no webhook data yet - try to auto-configure
           if (authToken && (!data.companyName || data.companyName === 'Your Company')) {
-            console.log('⏱️ Have auth token but no webhook data yet, waiting for webhook...')
+            console.log('🔧 Have auth token but no webhook data, attempting auto-configuration...')
             
-            // Instead of creating a new installation, wait for the webhook to arrive
-            // This prevents creating duplicate installations on every page load
-            console.log('🔄 Waiting for webhook data to arrive...')
-            setError('Waiting for installation data from Fluid platform. Please refresh the page in a few moments.')
-            return
+            // Try to get company info from Fluid API and auto-configure
+            try {
+              setStatus('auto_configuring')
+              
+              // Test the Fluid API connection to get company info
+              const testResponse = await apiClient.post('/api/droplet/test-connection', {
+                fluidApiKey: authToken
+              })
+              
+              if (testResponse.data.success) {
+                const companyName = testResponse.data.data.companyName || testResponse.data.data.name || 'Your Company'
+                const fetchedCompanyId = testResponse.data.data.companyId || testResponse.data.data.id || companyId
+                
+                console.log('✅ Got company info from Fluid API:', { companyName, companyId: fetchedCompanyId })
+                
+                // Auto-configure the installation
+                const configData = {
+                  integrationName: `${companyName} Integration`,
+                  companyName: companyName,
+                  environment: 'production',
+                  fluidApiKey: authToken,
+                  installationId: installationId || 'new-installation',
+                  companyId: fetchedCompanyId
+                }
+                
+                console.log('📝 Auto-configuring with:', configData)
+                
+                const configResponse = await apiClient.post('/api/droplet/configure', configData)
+                
+                if (configResponse.data.success) {
+                  setStatus('complete')
+                  setCompanyData({ companyName, companyId: fetchedCompanyId })
+                  
+                  // Save session and redirect to success
+                  const sessionData = {
+                    installationId: configResponse.data.data?.installationId || installationId,
+                    fluidApiKey: authToken,
+                    companyName: companyName,
+                    integrationName: configData.integrationName,
+                    timestamp: new Date().toISOString()
+                  }
+                  localStorage.setItem('droplet_session', JSON.stringify(sessionData))
+                  
+                  console.log('✅ Auto-configuration successful, redirecting to success')
+                  setTimeout(() => {
+                    navigate(`/success?installation_id=${sessionData.installationId}&fluid_api_key=${authToken}`)
+                  }, 2000)
+                  return
+                } else {
+                  throw new Error(configResponse.data.message || 'Configuration failed')
+                }
+              } else {
+                throw new Error(testResponse.data.message || 'Failed to connect to Fluid API')
+              }
+            } catch (error: any) {
+              console.error('❌ Auto-configuration failed:', error)
+              setError(error.response?.data?.message || error.message || 'Failed to auto-configure installation')
+              setStatus('error')
+              return
+            }
           }
         }
         
