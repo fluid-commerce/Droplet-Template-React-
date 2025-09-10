@@ -138,7 +138,7 @@ async function handleDropletInstalled(event: WebhookEvent) {
         environment: 'production' as const,
         fluidApiKey: authToken
       },
-      status: 'pending' as const,
+      status: 'active' as const,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -152,7 +152,7 @@ async function handleDropletInstalled(event: WebhookEvent) {
         await Database.updateInstallation(installationId, {
           configuration: installationData.configuration,
           authenticationToken: authToken,
-          status: 'pending'
+          status: 'active'
         })
       } else {
         throw error
