@@ -248,11 +248,11 @@ export function DropletConfig() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading...</h2>
-          <p className="text-gray-600">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 w-full max-w-md text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Loading...</h2>
+          <p className="text-gray-600 text-sm">
             {authToken 
               ? 'Fetching your company information from Fluid' 
               : 'Setting up your droplet configuration'
@@ -264,48 +264,50 @@ export function DropletConfig() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 w-full max-w-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-12 text-center text-white">
-          <h1 className="text-3xl font-bold mb-2">
-            {isEditing ? 'Edit Integration' : 'Setup Integration'}
-          </h1>
-          
-          <p className="text-blue-100 text-lg">
-            {companyData?.companyName && companyData.companyName !== 'Your Company'
-              ? `Configure integration for ${companyData.companyName}`
-              : 'Connect your Fluid account to get started'
-            }
-          </p>
+        <div className="px-8 py-8 border-b border-gray-200">
+          <div className="text-center">
+            <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+              {isEditing ? 'Edit Integration' : 'Setup Integration'}
+            </h1>
+            
+            <p className="text-gray-600">
+              {companyData?.companyName && companyData.companyName !== 'Your Company'
+                ? `Configure integration for ${companyData.companyName}`
+                : 'Connect your Fluid account to get started'
+              }
+            </p>
 
-          {/* Company Badge */}
-          {companyData?.companyName && companyData.companyName !== 'Your Company' && (
-            <div className="mt-6 inline-flex items-center bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2">
-              {companyData.companyLogo ? (
-                <img 
-                  src={companyData.companyLogo} 
-                  alt={`${companyData.companyName} logo`}
-                  className="w-5 h-5 rounded mr-3 object-contain"
-                />
-              ) : (
-                <FontAwesomeIcon icon="building" className="mr-3" />
-              )}
-              <span className="font-medium">{companyData.companyName}</span>
-              {isEditing && (
-                <span className="ml-2 px-2 py-1 bg-green-400/20 text-green-100 text-xs rounded-full border border-green-400/30">
-                  Connected
-                </span>
-              )}
-            </div>
-          )}
+            {/* Company Badge */}
+            {companyData?.companyName && companyData.companyName !== 'Your Company' && (
+              <div className="mt-4 inline-flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                {companyData.companyLogo ? (
+                  <img 
+                    src={companyData.companyLogo} 
+                    alt={`${companyData.companyName} logo`}
+                    className="w-4 h-4 rounded mr-2 object-contain"
+                  />
+                ) : (
+                  <FontAwesomeIcon icon="building" className="mr-2 text-gray-500" />
+                )}
+                <span className="font-medium text-gray-900">{companyData.companyName}</span>
+                {isEditing && (
+                  <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-md">
+                    Connected
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Form Content */}
         <div className="p-8">
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start">
-              <FontAwesomeIcon icon="exclamation-triangle" className="text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
+              <FontAwesomeIcon icon="exclamation-triangle" className="text-red-500 mt-0.5 mr-3 flex-shrink-0" />
               <div>
                 <h3 className="font-medium text-red-800">Configuration Error</h3>
                 <p className="text-sm text-red-700 mt-1">{error}</p>
@@ -316,13 +318,13 @@ export function DropletConfig() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Integration Name */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center">
-                <FontAwesomeIcon icon="tag" className="mr-2 text-blue-600" />
+              <label className="text-sm font-medium text-gray-900 flex items-center">
+                <FontAwesomeIcon icon="tag" className="mr-2 text-gray-400" />
                 Integration Name
               </label>
               <input
                 type="text"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 value={formData.integrationName}
                 onChange={(e) => setFormData(prev => ({ ...prev, integrationName: e.target.value }))}
                 placeholder="e.g., Acme Corp Integration"
@@ -335,12 +337,12 @@ export function DropletConfig() {
 
             {/* Company Name */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-900">
                 Company Name
               </label>
               <input
                 type="text"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 value={formData.companyName}
                 onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
                 placeholder="Your company name"
@@ -356,12 +358,12 @@ export function DropletConfig() {
 
             {/* Environment */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center">
-                <FontAwesomeIcon icon="server" className="mr-2 text-blue-600" />
+              <label className="text-sm font-medium text-gray-900 flex items-center">
+                <FontAwesomeIcon icon="server" className="mr-2 text-gray-400" />
                 Environment
               </label>
               <select
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
                 value={formData.environment}
                 onChange={(e) => setFormData(prev => ({ ...prev, environment: e.target.value as any }))}
               >
@@ -373,17 +375,17 @@ export function DropletConfig() {
 
             {/* Fluid API Key */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center">
-                <FontAwesomeIcon icon="key" className="mr-2 text-blue-600" />
+              <label className="text-sm font-medium text-gray-900 flex items-center">
+                <FontAwesomeIcon icon="key" className="mr-2 text-gray-400" />
                 Fluid API Key
               </label>
               <div className="relative">
                 <input
                   type="password"
-                  className={`w-full px-4 py-3 pr-24 border rounded-xl transition-all ${
+                  className={`w-full px-4 py-3 pr-20 border rounded-lg transition-colors ${
                     isEditing 
-                      ? 'bg-gray-50 border-gray-200 cursor-not-allowed' 
-                      : 'border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                      ? 'bg-gray-50 border-gray-300 cursor-not-allowed text-gray-500' 
+                      : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                   }`}
                   value={formData.fluidApiKey}
                   onChange={(e) => !isEditing && setFormData(prev => ({ ...prev, fluidApiKey: e.target.value }))}
@@ -395,7 +397,7 @@ export function DropletConfig() {
                   type="button"
                   onClick={testConnection}
                   disabled={isTestingConnection || !formData.fluidApiKey || isEditing}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                 >
                   {isTestingConnection ? (
                     <FontAwesomeIcon icon="spinner" spin className="w-3 h-3" />
@@ -429,7 +431,7 @@ export function DropletConfig() {
               <button
                 type="button"
                 onClick={() => window.history.back()}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
@@ -438,7 +440,7 @@ export function DropletConfig() {
                 <button
                   type="button"
                   onClick={() => navigate(`/dashboard?installation_id=${installationId}&fluid_api_key=${formData.fluidApiKey}`)}
-                  className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors flex items-center justify-center"
+                  className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center"
                 >
                   <FontAwesomeIcon icon="tachometer-alt" className="mr-2" />
                   Dashboard
@@ -449,7 +451,7 @@ export function DropletConfig() {
                 <button
                   type="button"
                   onClick={handleDisconnect}
-                  className="px-6 py-3 border border-red-300 text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                  className="px-6 py-3 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                 >
                   <FontAwesomeIcon icon="unlink" className="mr-2" />
                   Disconnect
@@ -459,7 +461,7 @@ export function DropletConfig() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center font-medium"
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center font-medium"
               >
                 {isSubmitting ? (
                   <>

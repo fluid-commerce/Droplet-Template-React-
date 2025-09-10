@@ -228,102 +228,97 @@ export function DropletAutoSetup() {
   }
 
   const content = getStatusContent()
-  const colorClasses = {
-    blue: 'from-blue-500 to-blue-600 bg-blue-50 text-blue-700',
-    purple: 'from-purple-500 to-purple-600 bg-purple-50 text-purple-700',
-    green: 'from-green-500 to-green-600 bg-green-50 text-green-700',
-    yellow: 'from-yellow-500 to-yellow-600 bg-yellow-50 text-yellow-700',
-    gray: 'from-gray-500 to-gray-600 bg-gray-50 text-gray-700'
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/20 backdrop-blur-sm"></div>
-      
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       {/* Status Card */}
-      <div className="relative w-full max-w-2xl bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         {/* Header */}
-        <div className="relative px-8 pt-8 pb-6">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10"></div>
-          <div className="relative text-center">
-            <div className={`flex items-center justify-center w-20 h-20 mx-auto mb-6 bg-gradient-to-br ${colorClasses[content.color as keyof typeof colorClasses].split(' ')[0]} ${colorClasses[content.color as keyof typeof colorClasses].split(' ')[1]} rounded-3xl shadow-lg`}>
-              <FontAwesomeIcon 
-                icon={content.icon as any} 
-                className={`text-3xl text-white ${status === 'checking' || status === 'auto_configuring' ? 'animate-spin' : ''}`} 
-              />
-            </div>
-            
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">
-              {content.title}
-            </h1>
-            
-            <p className="text-lg text-gray-600 mb-6">
-              {content.description}
-            </p>
-            
-            {companyData?.companyLogo && (
-              <div className="flex items-center justify-center mb-4">
-                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-full">
-                  <img 
-                    src={companyData.companyLogo} 
-                    alt={`${companyData.companyName} logo`}
-                    className="w-5 h-5 rounded mr-2 object-contain"
-                  />
-                  <span className="text-blue-800 font-medium text-sm">{companyData.companyName}</span>
-                </div>
-              </div>
-            )}
-            
-            {/* Progress Steps for auto-configuring */}
-            {status === 'auto_configuring' && (
-              <div className="mt-8 space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Verifying company information</span>
-                  <FontAwesomeIcon icon="check" className="text-green-600" />
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Configuring integration settings</span>
-                  <FontAwesomeIcon icon="spinner" spin className="text-blue-600" />
-                </div>
-                <div className="flex items-center justify-between text-sm text-gray-400">
-                  <span>Finalizing setup</span>
-                  <FontAwesomeIcon icon="clock" className="text-gray-400" />
-                </div>
-              </div>
-            )}
-            
-            {/* Success checkmarks */}
-            {status === 'complete' && (
-              <div className="mt-8 space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Company verified</span>
-                  <FontAwesomeIcon icon="check" className="text-green-600" />
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Integration configured</span>
-                  <FontAwesomeIcon icon="check" className="text-green-600" />
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Ready to use</span>
-                  <FontAwesomeIcon icon="check" className="text-green-600" />
-                </div>
-              </div>
-            )}
-            
-            {error && (
-              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center">
-                  <FontAwesomeIcon icon="exclamation-triangle" className="text-red-600 mr-3" />
-                  <div className="text-left">
-                    <h3 className="text-sm font-medium text-red-800">Setup Error</h3>
-                    <p className="text-sm text-red-700 mt-1">{error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+        <div className="px-8 pt-8 pb-6 text-center">
+          <div className={`flex items-center justify-center w-16 h-16 mx-auto mb-6 rounded-2xl shadow-sm ${
+            content.color === 'blue' ? 'bg-blue-50 text-blue-600' :
+            content.color === 'purple' ? 'bg-purple-50 text-purple-600' :
+            content.color === 'green' ? 'bg-green-50 text-green-600' :
+            content.color === 'yellow' ? 'bg-amber-50 text-amber-600' :
+            'bg-gray-50 text-gray-600'
+          }`}>
+            <FontAwesomeIcon 
+              icon={content.icon as any} 
+              className={`text-2xl ${status === 'checking' || status === 'auto_configuring' ? 'animate-spin' : ''}`} 
+            />
           </div>
+            
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+            {content.title}
+          </h1>
+          
+          <p className="text-gray-600 mb-6">
+            {content.description}
+          </p>
+          
+          {companyData?.companyLogo && (
+            <div className="flex items-center justify-center mb-6">
+              <div className="inline-flex items-center px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                <img 
+                  src={companyData.companyLogo} 
+                  alt={`${companyData.companyName} logo`}
+                  className="w-4 h-4 rounded mr-2 object-contain"
+                />
+                <span className="text-gray-700 font-medium text-sm">{companyData.companyName}</span>
+              </div>
+            </div>
+          )}
+            
+          {/* Progress Steps for auto-configuring */}
+          {status === 'auto_configuring' && (
+            <div className="space-y-3 px-4">
+              <div className="flex items-center justify-between text-sm py-2">
+                <span className="text-gray-600">Verifying company information</span>
+                <FontAwesomeIcon icon="check" className="text-green-500" />
+              </div>
+              <div className="flex items-center justify-between text-sm py-2">
+                <span className="text-gray-900 font-medium">Configuring integration settings</span>
+                <FontAwesomeIcon icon="spinner" spin className="text-blue-500" />
+              </div>
+              <div className="flex items-center justify-between text-sm py-2">
+                <span className="text-gray-400">Finalizing setup</span>
+                <FontAwesomeIcon icon="clock" className="text-gray-300" />
+              </div>
+            </div>
+          )}
+          
+          {/* Success checkmarks */}
+          {status === 'complete' && (
+            <div className="space-y-3 px-4">
+              <div className="flex items-center justify-between text-sm py-2">
+                <span className="text-gray-600">Company verified</span>
+                <FontAwesomeIcon icon="check" className="text-green-500" />
+              </div>
+              <div className="flex items-center justify-between text-sm py-2">
+                <span className="text-gray-600">Integration configured</span>
+                <FontAwesomeIcon icon="check" className="text-green-500" />
+              </div>
+              <div className="flex items-center justify-between text-sm py-2">
+                <span className="text-gray-600">Ready to use</span>
+                <FontAwesomeIcon icon="check" className="text-green-500" />
+              </div>
+            </div>
+          )}
         </div>
+        
+        {error && (
+          <div className="mx-8 mb-8">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start">
+                <FontAwesomeIcon icon="exclamation-triangle" className="text-red-500 mr-3 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-medium text-red-800">Setup Error</h3>
+                  <p className="text-sm text-red-700 mt-1">{error}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

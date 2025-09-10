@@ -83,7 +83,8 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
         })
         logger.info('Real Fluid installation created successfully', {
           installationId: realInstallation.id,
-          status: realInstallation.status
+          status: realInstallation.status,
+          fullResponse: realInstallation
         })
       } catch (createError: any) {
         logger.warn('Failed to create Fluid installation, using fallback', {
@@ -105,7 +106,10 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
 
     const dropletInstallation = {
       id: realInstallation.id,
-      dropletId: realInstallation.droplet_id,
+      dropletId: realInstallation.droplet_id || 
+                realInstallation.droplet_uuid || 
+                process.env.DROPLET_ID || 
+                'drp_2jd94qffjmv1k3pifvvyeqxmtwtakbbr1', // Your actual droplet ID as fallback
       companyId: realInstallation.company_id,
       authenticationToken: realInstallation.authentication_token,
       configuration: config,
