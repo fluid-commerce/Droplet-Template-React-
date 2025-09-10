@@ -28,14 +28,7 @@ export function DropletAutoSetup() {
       try {
         setStatus('checking')
         
-        // Debug: Log all URL parameters (temporary)
-        console.error('🔍 Auto-setup URL parameters:', {
-          installationId,
-          companyId,
-          dri,
-          authToken: authToken ? 'present' : 'missing',
-          allParams: Object.fromEntries(searchParams.entries())
-        })
+        // URL parameters processed
 
         // Clear any old session data for new installations
         if (installationId === 'new-installation' || !installationId) {
@@ -83,8 +76,7 @@ export function DropletAutoSetup() {
         
         // Only run auto-setup if we have the necessary parameters for a new installation
         if (!authToken && !dri) {
-          const receivedParams = Object.fromEntries(searchParams.entries())
-          setError(`Missing required parameters. Need either auth token or DRI. Received parameters: ${JSON.stringify(receivedParams)}. Please install the droplet from Fluid.`)
+          setError('Missing required parameters for installation. Please install the droplet from Fluid.')
           setStatus('error')
           return
         }
