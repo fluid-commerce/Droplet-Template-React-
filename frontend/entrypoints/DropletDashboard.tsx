@@ -18,7 +18,6 @@ export function DropletDashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'activity'>('overview')
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -48,6 +47,22 @@ export function DropletDashboard() {
     loadDashboardData()
   }, [installationId])
 
+  const handleSyncData = async () => {
+    if (!installationId || !fluidApiKey) return
+    
+    try {
+      await apiClient.post('/api/droplet/sync', { 
+        installationId, 
+        fluidApiKey 
+      })
+      // Reload dashboard data
+      const response = await apiClient.get(`/api/droplet/dashboard/${installationId}?fluidApiKey=${fluidApiKey}`)
+      setDashboardData(response.data.data)
+    } catch (err: any) {
+      console.error('Failed to sync data:', err)
+      setError(err.response?.data?.message || 'Failed to sync data')
+    }
+  }
 
   if (isLoading) {
     return (
@@ -84,103 +99,26 @@ export function DropletDashboard() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              {dashboardData?.companyName || 'Your Business'} with Fluid
+              {dashboardData?.companyName || 'Your Business'}
             </h1>
             <p className="text-gray-600 mt-1">Manage your droplet integration</p>
           </div>
-        </div>
-
-
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: 'tachometer-alt' },
-              { id: 'activity', label: 'Activity', icon: 'history' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <FontAwesomeIcon icon={tab.icon as any} className="mr-2" />
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest updates from your integration</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {dashboardData?.recentActivity?.slice(0, 5).map((activity, index) => (
-                    <div key={index} className="flex items-center space-x-3">
-                      <div className="p-2 bg-blue-100 rounded-full">
-                        <FontAwesomeIcon icon="sync" className="text-blue-600 text-sm" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{activity.description}</p>
-                        <p className="text-xs text-gray-500">{activity.timestamp}</p>
-                      </div>
-                    </div>
-                  )) || (
-                    <p className="text-gray-500 text-center py-4">No recent activity</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Integration Health</CardTitle>
-                <CardDescription>Status of your droplet connection</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">API Connection</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      <FontAwesomeIcon icon="check" className="mr-1" />
-                      Healthy
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">Data Sync</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      <FontAwesomeIcon icon="check" className="mr-1" />
-                      Up to Date
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">Webhooks</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      <FontAwesomeIcon icon="check" className="mr-1" />
-                      Active
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="flex space-x-3">
+            <Button onClick={handleSyncData} variant="outline">
+              <FontAwesomeIcon icon="sync" className="mr-2" />
+              Sync Data
+            </Button>
           </div>
-        )}
+        </div>
 
 
-        {activeTab === 'activity' && (
+        {/* Dashboard Content */}
+        <div className="space-y-6">
+          {/* Recent Activity */}
           <Card>
             <CardHeader>
-              <CardTitle>Activity Log</CardTitle>
-              <CardDescription>Complete history of integration activities</CardDescription>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Latest updates from your integration</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -191,7 +129,7 @@ export function DropletDashboard() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{activity.description}</p>
-                      <p className="text-xs text-gray-500 mt-1">{activity.timestamp}</p>
+                      <p className="text-xs text-gray-500 mt-1">{new Date(activity.timestamp).toLocaleString()}</p>
                       {activity.details && (
                         <p className="text-xs text-gray-600 mt-1">{activity.details}</p>
                       )}
@@ -203,7 +141,40 @@ export function DropletDashboard() {
               </div>
             </CardContent>
           </Card>
-        )}
+
+          {/* Integration Health */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Integration Health</CardTitle>
+              <CardDescription>Status of your droplet connection</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600">API Connection</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <FontAwesomeIcon icon="check" className="mr-1" />
+                    Healthy
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600">Data Sync</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <FontAwesomeIcon icon="check" className="mr-1" />
+                    Up to Date
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600">Webhooks</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <FontAwesomeIcon icon="check" className="mr-1" />
+                    Active
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

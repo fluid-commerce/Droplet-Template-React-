@@ -39,11 +39,9 @@ export function DropletAutoSetup() {
           
           // Check if installation is already fully configured (active status)
           if (data.status === 'active' && data.companyName && data.companyName !== 'Your Company') {
-            console.log('✅ Found active installation, redirecting to dashboard')
-            setCompanyData(data)
-            setStatus('complete')
+            console.log('✅ Found active installation, redirecting to dashboard immediately')
             
-            // Save session and redirect to dashboard instead of success page
+            // Save session data
             const sessionData = {
               installationId: data.installationId,
               fluidApiKey: data.fluidApiKey,
@@ -53,10 +51,8 @@ export function DropletAutoSetup() {
             }
             localStorage.setItem('droplet_session', JSON.stringify(sessionData))
             
-            // Redirect to dashboard page for active installations
-            setTimeout(() => {
-              navigate(`/dashboard?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey}`)
-            }, 2000)
+            // Redirect immediately to dashboard for returning users
+            navigate(`/dashboard?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey}`)
             return
           }
           
