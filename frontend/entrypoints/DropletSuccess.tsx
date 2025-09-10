@@ -123,7 +123,7 @@ export function DropletSuccess() {
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             {connectionStatus?.connected 
-              ? `Your droplet is now connected to ${connectionStatus.companyName}`
+              ? `Connected to ${connectionStatus.companyName}`
               : 'Please complete the connection process to continue'
             }
           </p>
@@ -136,7 +136,7 @@ export function DropletSuccess() {
               Connection Status
             </CardTitle>
             <CardDescription>
-              Current status of your droplet integration
+              Current status of your integration
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
