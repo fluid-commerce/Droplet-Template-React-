@@ -62,36 +62,57 @@ export function DropletAutoSetup() {
             setCompanyData(data)
             setStatus('auto_configuring')
             
-            // Auto-configure the installation using webhook data
-            const configData = {
-              integrationName: data.integrationName || `${data.companyName} Integration`,
-              companyName: data.companyName,
-              environment: 'production',
-              fluidApiKey: data.fluidApiKey || authToken,
-              installationId: data.installationId || installationId || 'new-installation',
-              companyId: data.companyId || companyId
-            }
-            
-            console.log('📝 Auto-configuring with:', configData)
-            
-            const configResponse = await apiClient.post('/api/droplet/configure', configData)
-            
-            if (configResponse.data.success) {
+            // Only auto-configure if we have a real installation ID (not 'new-installation')
+            if (data.installationId && data.installationId !== 'new-installation') {
+              // Auto-configure the installation using webhook data
+              const configData = {
+                integrationName: data.integrationName || `${data.companyName} Integration`,
+                companyName: data.companyName,
+                environment: 'production',
+                fluidApiKey: data.fluidApiKey || authToken,
+                installationId: data.installationId,
+                companyId: data.companyId || companyId
+              }
+              
+              console.log('📝 Auto-configuring with:', configData)
+              
+              const configResponse = await apiClient.post('/api/droplet/configure', configData)
+              
+              if (configResponse.data.success) {
+                setStatus('complete')
+                
+                // Save session and redirect to success
+                const sessionData = {
+                  installationId: configResponse.data.data?.installationId || data.installationId,
+                  fluidApiKey: configData.fluidApiKey,
+                  companyName: data.companyName,
+                  integrationName: configData.integrationName,
+                  timestamp: new Date().toISOString()
+                }
+                localStorage.setItem('droplet_session', JSON.stringify(sessionData))
+                
+                console.log('✅ Auto-configuration successful, redirecting to success')
+                setTimeout(() => {
+                  navigate(`/success?installation_id=${sessionData.installationId}&fluid_api_key=${configData.fluidApiKey}`)
+                }, 2000)
+                return
+              }
+            } else {
+              // If no real installation ID, just redirect to success with the data we have
+              console.log('✅ No real installation ID, redirecting to success with webhook data')
               setStatus('complete')
               
-              // Save session and redirect to success
               const sessionData = {
-                installationId: configResponse.data.data?.installationId || data.installationId,
-                fluidApiKey: configData.fluidApiKey,
+                installationId: data.installationId || 'new-installation',
+                fluidApiKey: data.fluidApiKey || authToken,
                 companyName: data.companyName,
-                integrationName: configData.integrationName,
+                integrationName: data.integrationName || `${data.companyName} Integration`,
                 timestamp: new Date().toISOString()
               }
               localStorage.setItem('droplet_session', JSON.stringify(sessionData))
               
-              console.log('✅ Auto-configuration successful, redirecting to success')
               setTimeout(() => {
-                navigate(`/success?installation_id=${sessionData.installationId}&fluid_api_key=${configData.fluidApiKey}`)
+                navigate(`/success?installation_id=${sessionData.installationId}&fluid_api_key=${sessionData.fluidApiKey}`)
               }, 2000)
               return
             }
@@ -99,61 +120,13 @@ export function DropletAutoSetup() {
 
           // Check if we have auth token but no webhook data yet (race condition)
           if (authToken && (!data.companyName || data.companyName === 'Your Company')) {
-            console.log('⏱️ Have auth token but no webhook data yet, testing API...')
+            console.log('⏱️ Have auth token but no webhook data yet, waiting for webhook...')
             
-            try {
-              // Test the connection to get company info
-              const testResponse = await apiClient.post('/api/droplet/test-connection', {
-                fluidApiKey: authToken
-              })
-              
-              if (testResponse.data.success) {
-                console.log('🏢 Got company info from API:', testResponse.data.data)
-                const companyName = testResponse.data.data.companyName || 'Your Company'
-                
-                if (companyName !== 'Your Company') {
-                  setCompanyData({
-                    companyName,
-                    companyLogo: testResponse.data.data.companyLogo,
-                    id: 'new-installation',
-                    status: 'pending'
-                  })
-                  setStatus('auto_configuring')
-                  
-                  // Auto-configure with API data
-                  const configData = {
-                    integrationName: `${companyName} Integration`,
-                    companyName,
-                    environment: 'production',
-                    fluidApiKey: authToken,
-                    installationId: installationId || 'new-installation',
-                    companyId: companyId
-                  }
-                  
-                  const configResponse = await apiClient.post('/api/droplet/configure', configData)
-                  
-                  if (configResponse.data.success) {
-                    setStatus('complete')
-                    
-                    const sessionData = {
-                      installationId: configResponse.data.data?.installationId || 'new-installation',
-                      fluidApiKey: authToken,
-                      companyName,
-                      integrationName: configData.integrationName,
-                      timestamp: new Date().toISOString()
-                    }
-                    localStorage.setItem('droplet_session', JSON.stringify(sessionData))
-                    
-                    setTimeout(() => {
-                      navigate(`/success?installation_id=${sessionData.installationId}&fluid_api_key=${authToken}`)
-                    }, 2000)
-                    return
-                  }
-                }
-              }
-            } catch (apiError) {
-              console.log('⚠️ API test failed, will show form')
-            }
+            // Instead of creating a new installation, wait for the webhook to arrive
+            // This prevents creating duplicate installations on every page load
+            console.log('🔄 Waiting for webhook data to arrive...')
+            setError('Waiting for installation data from Fluid platform. Please refresh the page in a few moments.')
+            return
           }
         }
         
