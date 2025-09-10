@@ -224,8 +224,8 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
         if (result.rows.length > 0) {
           const installation = result.rows[0]
           let config: any = {
-            companyName: installation.company_name || installation.configuration?.companyName || 'Your Company',
-            integrationName: `${installation.company_name || installation.configuration?.companyName || 'Your Company'} Integration`,
+            companyName: installation.configuration?.companyName || installation.company_name || 'Your Company',
+            integrationName: `${installation.configuration?.companyName || installation.company_name || 'Your Company'} Integration`,
             environment: 'production',
             fluidApiKey: installation.authentication_token || ''
           }
@@ -254,7 +254,7 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
             data: {
               connected: installation.status === 'active' || installation.status === 'pending',
               installationId: installation.installation_id,
-              companyName: installation.company_name || config.companyName || 'Your Company',
+              companyName: installation.configuration?.companyName || installation.company_name || 'Your Company',
               companyId: installation.company_id,
               lastSync: installation.status === 'active' ? new Date().toISOString() : null,
               userCount: 0,
@@ -439,10 +439,10 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
     if (installationResult.rows.length > 0) {
       const installation = installationResult.rows[0]
       
-      // Try multiple sources for company name
-      companyName = installation.company_name || 
-                   installation.configuration?.companyName || 
+      // Try multiple sources for company name - prioritize configuration.companyName first
+      companyName = installation.configuration?.companyName || 
                    installation.configuration?.company_name ||
+                   installation.company_name || 
                    'Your Company'
       
       companyData = installation.company_data
@@ -451,9 +451,9 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
         installationId,
         actualInstallationId: installation.installation_id,
         companyName,
-        source: installation.company_name ? 'company_name field' : 
-                installation.configuration?.companyName ? 'configuration.companyName field' :
+        source: installation.configuration?.companyName ? 'configuration.companyName field' :
                 installation.configuration?.company_name ? 'configuration.company_name field' :
+                installation.company_name ? 'company_name field' : 
                 'fallback'
       })
     } else {
