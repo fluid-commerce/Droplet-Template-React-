@@ -30,7 +30,10 @@ router.post('/fluid', validateWebhookEvent, async (req: Request, res: Response) 
     })
 
     // Handle different webhook event types
-    switch (event.type) {
+    // Fluid sends event_name in the body, not type
+    const eventType = event.type || event.event_name || req.body.event_name
+    
+    switch (eventType) {
       case 'droplet_installed':
         await handleDropletInstalled(event)
         break
@@ -100,21 +103,25 @@ async function handleDropletInstalled(event: WebhookEvent) {
     // Store the company information in the database
     await Database.query(`
       INSERT INTO droplet_installations (
-        id, 
+        installation_id,
+        droplet_id,
         company_id, 
-        config, 
+        configuration, 
         authentication_token, 
         status, 
+        company_name,
         created_at, 
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-      ON CONFLICT (id) DO UPDATE SET
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      ON CONFLICT (installation_id) DO UPDATE SET
         company_id = EXCLUDED.company_id,
-        config = EXCLUDED.config,
+        configuration = EXCLUDED.configuration,
         authentication_token = EXCLUDED.authentication_token,
+        company_name = EXCLUDED.company_name,
         updated_at = NOW()
     `, [
       installationId,
+      event.data?.droplet_uuid || 'unknown',
       companyId,
       JSON.stringify({
         companyName: companyName,
@@ -124,7 +131,8 @@ async function handleDropletInstalled(event: WebhookEvent) {
         fluidApiKey: authToken
       }),
       authToken,
-      'pending'
+      'pending',
+      companyName
     ])
     
     logger.info('Successfully stored company information', {

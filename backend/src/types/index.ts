@@ -37,11 +37,12 @@ export interface FluidDropletInstallation {
 }
 
 export interface WebhookEvent {
-  id: string
-  type: string
+  id?: string
+  type?: string
+  event_name?: string
   data: Record<string, any>
-  timestamp: string
-  source: string
+  timestamp?: string
+  source?: string
 }
 
 export interface ApiError {

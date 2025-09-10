@@ -183,7 +183,7 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
         
         // Look for any pending installation with company data
         const result = await Database.query(`
-          SELECT id, company_id, config, authentication_token, status, created_at, updated_at
+          SELECT installation_id, company_id, configuration, authentication_token, status, company_name, created_at, updated_at
           FROM droplet_installations 
           WHERE status = 'pending' 
           ORDER BY created_at DESC 
@@ -192,14 +192,14 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
         
         if (result.rows.length > 0) {
           const installation = result.rows[0]
-          const config = installation.config ? JSON.parse(installation.config) : {}
+          const config = installation.configuration ? JSON.parse(installation.configuration) : {}
           
           return res.json({
             success: true,
             data: {
               connected: false,
-              installationId: installation.id,
-              companyName: config.companyName || 'Your Company',
+              installationId: installation.installation_id,
+              companyName: installation.company_name || config.companyName || 'Your Company',
               companyId: installation.company_id,
               lastSync: null,
               userCount: 0,
