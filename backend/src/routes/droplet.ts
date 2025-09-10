@@ -224,8 +224,8 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
         if (result.rows.length > 0) {
           const installation = result.rows[0]
           let config: any = {
-            companyName: installation.company_name || 'Your Company',
-            integrationName: `${installation.company_name || 'Your Company'} Integration`,
+            companyName: installation.company_name || installation.configuration?.companyName || 'Your Company',
+            integrationName: `${installation.company_name || installation.configuration?.companyName || 'Your Company'} Integration`,
             environment: 'production',
             fluidApiKey: installation.authentication_token || ''
           }
