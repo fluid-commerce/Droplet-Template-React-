@@ -69,16 +69,19 @@ export function DropletConfig() {
             })
             
             if (testResponse.data.success) {
+              const companyName = testResponse.data.data.companyName || 'Your Company'
               setCompanyData({
-                companyName: testResponse.data.data.companyName || 'Your Company',
+                companyName: companyName,
                 companyLogo: testResponse.data.data.companyLogo,
                 id: 'new-installation',
                 status: 'pending'
               })
-              // Pre-fill the form with the Fluid API key
+              // Pre-fill the form with the Fluid API key and company information
               setFormData(prev => ({
                 ...prev,
-                fluidApiKey: authToken
+                fluidApiKey: authToken,
+                companyName: companyName,
+                integrationName: `${companyName} Integration`
               }))
             } else {
               setCompanyData({
@@ -345,18 +348,28 @@ export function DropletConfig() {
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             <div className="form-group">
-              <label className="label">Integration Name</label>
-                        <input
-                          type="text"
-                          className="input mt-1"
-                          value={formData.integrationName}
-                          onChange={(e) => setFormData(prev => ({ ...prev, integrationName: e.target.value }))}
-                          placeholder="Enter your integration name"
-                          required
-                        />
+              <label className="label">
+                <FontAwesomeIcon icon="cog" className="mr-2 text-blue-600" />
+                Integration Name
+              </label>
+              <input
+                type="text"
+                className="input mt-1"
+                value={formData.integrationName}
+                onChange={(e) => setFormData(prev => ({ ...prev, integrationName: e.target.value }))}
+                placeholder="Enter your integration name"
+                required
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                <FontAwesomeIcon icon="info-circle" className="mr-1 text-blue-500" />
+                Pre-filled from your Fluid account, but you can change it if needed
+              </p>
             </div>
             <div className="form-group">
-              <label className="label">Company Name</label>
+              <label className="label">
+                <FontAwesomeIcon icon="building" className="mr-2 text-blue-600" />
+                Company Name
+              </label>
               <input
                 type="text"
                 className="input mt-1"
@@ -365,6 +378,10 @@ export function DropletConfig() {
                 placeholder="Your company name"
                 required
               />
+              <p className="text-sm text-gray-500 mt-1">
+                <FontAwesomeIcon icon="info-circle" className="mr-1 text-blue-500" />
+                Pre-filled from your Fluid account, but you can change it if needed
+              </p>
             </div>
             <div className="form-group">
               <label className="label">Environment</label>
@@ -432,10 +449,13 @@ export function DropletConfig() {
                 </div>
               </div>
               <div className="mt-2">
-                <p className="text-sm text-gray-600">
-                  <FontAwesomeIcon icon="info-circle" className="mr-1 text-blue-500" />
-                  This is your Fluid platform API key. You can find it in your Fluid account settings under "API Keys".
-                </p>
+              <p className="text-sm text-gray-600">
+                <FontAwesomeIcon icon="info-circle" className="mr-1 text-blue-500" />
+                {formData.fluidApiKey 
+                  ? 'Pre-filled from your Fluid account - ready to use!'
+                  : 'This is your Fluid platform API key. You can find it in your Fluid account settings under "API Keys".'
+                }
+              </p>
                 {connectionStatus && (
                   <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
                     <span className="text-sm text-green-700">{connectionStatus}</span>

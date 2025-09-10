@@ -11,9 +11,17 @@ const router = Router()
  */
 router.post('/fluid', validateWebhookEvent, async (req: Request, res: Response) => {
   try {
+    // Log the raw webhook payload for debugging
+    logger.info('Received Fluid webhook', {
+      headers: req.headers,
+      body: req.body,
+      method: req.method,
+      url: req.url
+    })
+
     const event: WebhookEvent = req.body
 
-    logger.info('Received Fluid webhook', {
+    logger.info('Parsed Fluid webhook event', {
       id: event.id,
       type: event.type,
       timestamp: event.timestamp,

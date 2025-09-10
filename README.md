@@ -3,8 +3,6 @@
 > **The fastest way to build a professional Fluid droplet integration**  
 > Perfect for AI-assisted development with Cursor, Bolt, and other AI tools
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
-
 ## 🎯 What is This?
 
 This is a **complete, production-ready template** for building Fluid platform droplet integrations. It provides everything you need to create a professional integration service that works seamlessly with the Fluid ecosystem.
@@ -13,7 +11,7 @@ This is a **complete, production-ready template** for building Fluid platform dr
 - 🎨 **Beautiful React frontend** with TypeScript and Tailwind CSS
 - 🔧 **Robust Node.js backend** with Express and PostgreSQL
 - 🗄️ **Complete database schema** with migrations
-- 🚀 **One-click Render deployment** with automatic environment setup
+- 🚀 **Easy deployment** with Render, Vercel, Heroku, or any platform
 - 📝 **Comprehensive configuration forms** for user onboarding
 - 🔐 **Built-in security** with validation and error handling
 - 📊 **Activity logging** and webhook processing
@@ -23,22 +21,32 @@ This is a **complete, production-ready template** for building Fluid platform dr
 
 ## 🏃‍♂️ Quick Start (3 Steps to Live Droplet)
 
-### Step 1: Get the Template
+### Step 1: Fork & Clone the Template
 ```bash
-git clone https://github.com/your-org/fluid-droplet-template.git
+# 1. Fork this repository on GitHub
+# 2. Clone your fork
+git clone https://github.com/YOUR_USERNAME/fluid-droplet-template.git
 cd fluid-droplet-template
+
+# 3. Make it your own
+git remote set-url origin https://github.com/YOUR_USERNAME/YOUR_DROPLET_NAME.git
 ```
 
-### Step 2: Deploy to Render (One-Click)
+### Step 2: Deploy to Your Platform
+**Option A: Render (Recommended)**
 1. **Create Render account** → [render.com/register](https://render.com/register)
-2. **Connect your GitHub** account
-3. **Push this repo** to your GitHub
-4. **Deploy with Blueprint** → [render.com/deploy](https://render.com/deploy) (paste your repo URL)
+2. **Connect your GitHub** account  
+3. **Deploy with Blueprint** → Use your forked repo URL
+
+**Option B: Any Platform**
+- Deploy frontend as static site
+- Deploy backend as Node.js service
+- Add PostgreSQL database
 
 ### Step 3: Create Your Droplet
 ```bash
 # After deployment, get your Fluid API key and run:
-FLUID_API_KEY=your_fluid_api_key EMBED_URL=https://your-frontend.onrender.com/ node scripts/create-droplet.js
+FLUID_API_KEY=your_fluid_api_key EMBED_URL=https://your-frontend-url.com/ node scripts/create-droplet.js
 ```
 
 **That's it!** Your droplet is live and ready for installation in Fluid.
@@ -63,9 +71,10 @@ This approach deploys your template first, then configures it. Perfect for getti
 
 #### 2. Fork and Deploy
 1. **Fork this repository** to your GitHub account
-2. In Render dashboard: **New** → **Blueprint**
-3. **Paste your forked repo URL**
-4. **Deploy** (takes ~5 minutes)
+2. **Clone your forked repo** locally
+3. **Push to your own GitHub repo** (rename as needed)
+4. In Render dashboard: **New** → **Blueprint**
+5. **Paste your repo URL** and **Deploy** (takes ~5 minutes)
 
 The `render.yaml` file automatically creates:
 - ✅ **Frontend service** (React app)
@@ -94,11 +103,7 @@ VITE_API_BASE_URL=https://your-backend-name.onrender.com
 
 #### 4. Create Your Droplet
 ```bash
-# Clone your repo locally
-git clone https://github.com/yourusername/your-droplet-name.git
-cd your-droplet-name
-
-# Install dependencies
+# In your local repo directory
 npm install
 
 # Create droplet in Fluid platform
@@ -129,8 +134,13 @@ npm run migrate
 
 Perfect if you want to customize before deploying.
 
-#### 1. Install Dependencies
+#### 1. Fork and Clone
 ```bash
+# Fork the repository on GitHub, then:
+git clone https://github.com/YOUR_USERNAME/fluid-droplet-template.git
+cd fluid-droplet-template
+
+# Install dependencies
 npm run install:all
 ```
 
@@ -687,21 +697,11 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 💬 Support
 
-### Need Help?
-- 📧 **Email**: support@yourcompany.com
-- 💬 **Discord**: [Your Community](https://discord.gg/your-community)  
-- 📖 **Wiki**: [GitHub Wiki](https://github.com/your-org/fluid-droplet-template/wiki)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/your-org/fluid-droplet-template/issues)
-
-### Professional Services
-Need help building your integration? We offer:
-- 🎨 **Custom UI/UX design**
-- ⚙️ **Complex API integrations** 
-- 🚀 **Performance optimization**
-- 📊 **Analytics and monitoring**
-- 🔒 **Enterprise security**
-
-**Contact us**: [hello@yourcompany.com](mailto:hello@yourcompany.com)
+### Community Resources
+- 🏠 **Fluid Platform**: [fluid.app](https://fluid.app)
+- 📖 **Fluid API Docs**: [api.fluid.app/docs](https://api.fluid.app/docs)
+- 🐛 **Issues**: Use GitHub Issues in your forked repository
+- 📖 **Wiki**: Create documentation in your own repo
 
 ---
 
@@ -711,8 +711,6 @@ Need help building your integration? We offer:
 
 **Made with ❤️ for the Fluid community**
 
-[![Stars](https://img.shields.io/github/stars/your-org/fluid-droplet-template?style=social)](https://github.com/your-org/fluid-droplet-template)
-[![Forks](https://img.shields.io/github/forks/your-org/fluid-droplet-template?style=social)](https://github.com/your-org/fluid-droplet-template)
-[![Issues](https://img.shields.io/github/issues/your-org/fluid-droplet-template)](https://github.com/your-org/fluid-droplet-template/issues)
+Fork this template, build your integration, and deploy to any platform of your choice!
 
 </div>

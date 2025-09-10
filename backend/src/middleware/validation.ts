@@ -42,20 +42,25 @@ export function validateDropletConfig(req: Request, res: Response, next: NextFun
  * Validate webhook event
  */
 export function validateWebhookEvent(req: Request, res: Response, next: NextFunction) {
+  // More flexible webhook validation - Fluid may send different formats
   const webhookSchema = Joi.object({
-    id: Joi.string().required(),
-    type: Joi.string().required(),
-    data: Joi.object().required(),
-    timestamp: Joi.string().isoDate().required(),
-    source: Joi.string().required()
-  })
+    id: Joi.string().optional(),
+    type: Joi.string().optional(),
+    data: Joi.object().optional(),
+    timestamp: Joi.string().optional(),
+    source: Joi.string().optional(),
+    // Allow any additional fields that Fluid might send
+    // This makes the validation more permissive
+  }).unknown(true)
 
   const { error, value } = webhookSchema.validate(req.body, {
     abortEarly: false,
-    stripUnknown: true
+    stripUnknown: false // Don't strip unknown fields
   })
 
   if (error) {
+    console.log('Webhook validation error:', error.details)
+    console.log('Webhook payload:', JSON.stringify(req.body, null, 2))
     return res.status(400).json({
       error: 'Invalid webhook event',
       message: 'Webhook payload validation failed',

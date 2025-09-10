@@ -9,28 +9,63 @@ Fluid is an integration platform where users install "droplets" (mini-applicatio
 - Connects to external APIs/services on behalf of the user
 - Runs in an iframe within the Fluid portal
 - Handles webhooks and real-time data synchronization
+- Stores data persistently in PostgreSQL database
 
-## Project Structure
+## Project Architecture
 
-This is a complete droplet template with:
-- **Frontend**: React + TypeScript configuration forms
-- **Backend**: Node.js API for Fluid integration
-- **Deployment**: Ready for Render/Docker deployment
+This is a complete full-stack droplet template with:
+- **Frontend**: React 18 + TypeScript + Tailwind CSS (Vite build)
+- **Backend**: Node.js + Express + TypeScript
+- **Database**: PostgreSQL with migrations
+- **Deployment**: Render.com ready with one-click deployment
 
 ```
 fluiddroplets/
-├── frontend/                 # React app (embedded in Fluid)
-│   ├── src/
-│   │   ├── components/       # Reusable UI components
-│   │   ├── pages/           # Configuration forms
-│   │   └── lib/             # Utilities and API clients
-├── backend/                  # Node.js API server
-│   ├── src/
-│   │   ├── routes/          # API endpoints
-│   │   ├── services/        # Business logic
-│   │   └── middleware/      # Authentication, validation
-├── shared/                   # Shared TypeScript types
-└── docs/                    # Documentation
+├── frontend/                     # React app (embedded in Fluid)
+│   ├── entrypoints/             # Main droplet pages
+│   │   ├── DropletConfig.tsx    # Configuration form
+│   │   ├── DropletDashboard.tsx # Dashboard view
+│   │   ├── DropletSetup.tsx     # Setup wizard
+│   │   ├── DropletSuccess.tsx   # Success page
+│   │   └── DropletSettings.tsx  # Settings management
+│   ├── components/              # Reusable UI components
+│   │   ├── Button.tsx           # Button component
+│   │   └── Card.tsx             # Card components
+│   ├── clients/                 # API clients
+│   │   ├── fluidClient.ts       # Fluid platform client
+│   │   └── droplets.ts          # Droplet-specific client
+│   └── lib/                     # Utilities and helpers
+│       ├── api.ts               # Base API client
+│       ├── utils.ts             # Common utilities
+│       └── fontawesome.ts       # Icon configuration
+├── backend/                     # Node.js API server
+│   └── src/
+│       ├── routes/              # API endpoints
+│       │   ├── droplet.ts       # Droplet configuration routes
+│       │   └── webhook.ts       # Webhook handling routes
+│       ├── services/            # Business logic services
+│       │   ├── fluidApi.ts      # Fluid platform integration
+│       │   ├── database.ts      # Database operations
+│       │   └── logger.ts        # Logging utilities
+│       ├── middleware/          # Express middleware
+│       │   ├── validation.ts    # Request validation
+│       │   └── errorHandler.ts  # Error handling
+│       └── types/               # Backend type definitions
+├── database/                    # PostgreSQL database
+│   ├── config.js               # Database configuration
+│   ├── migrate.cjs             # Migration runner
+│   └── migrations/             # SQL migration files
+│       ├── 001_create_droplet_installations.sql
+│       ├── 002_create_activity_logs.sql
+│       ├── 003_create_webhook_events.sql
+│       └── 004_create_custom_data.sql
+├── scripts/                     # Automation scripts
+│   ├── create-droplet.js       # Create droplet in Fluid
+│   ├── enhance-droplet-details.js # Update droplet metadata
+│   └── update-droplet.js       # Update existing droplet
+├── render.yaml                  # Render deployment config
+├── setup-database.sh           # Database setup script
+└── makefile                    # Development shortcuts
 ```
 
 ## Key Principles
@@ -38,212 +73,423 @@ fluiddroplets/
 ### 1. Always Think "Production Ready"
 - Every feature should be production-grade
 - Include proper error handling, validation, and security
-- Follow TypeScript best practices
-- Add comprehensive logging and monitoring
+- Follow TypeScript best practices with strict mode
+- Add comprehensive logging and database persistence
+- Use PostgreSQL transactions for data integrity
 
 ### 2. Fluid Integration Best Practices
 - Forms collect Fluid API keys + service credentials
 - All API calls go through the backend (never expose keys in frontend)
-- Handle iframe embedding gracefully
-- Implement proper webhook handling
-- Follow Fluid's authentication patterns
+- Handle iframe embedding gracefully with proper sizing
+- Implement proper webhook handling with signature verification
+- Follow Fluid's authentication patterns and session management
+- Store all configuration data in PostgreSQL with proper indexing
 
-### 3. Developer Experience
+### 3. Developer Experience & Template Usage
 - Make it easy to customize for different services
 - Clear separation between template code and service-specific code
 - Comprehensive inline documentation
 - Examples for common integration patterns
+- AI-friendly code structure for tools like Cursor and Bolt
+- Database migrations for schema evolution
+
+## Database Schema
+
+The template includes four core tables:
+- **droplet_installations**: Installation configs and auth tokens
+- **activity_logs**: Event tracking and monitoring
+- **webhook_events**: Webhook queue and processing
+- **custom_data**: Flexible JSON storage for service-specific data
+
+All tables use UUIDs, JSONB for flexible data, and proper foreign key constraints.
 
 ## Coding Guidelines
 
-### When Building Forms:
+### When Building Configuration Forms:
 ```typescript
-// ✅ Good: Proper Fluid integration form
+// ✅ Good: Proper Fluid integration form with database persistence
 interface DropletConfig {
-  fluidApiKey: string;           // For Fluid platform auth
-  serviceCredentials: {          // For the actual service
+  integrationName: string;         // User-friendly name
+  companyName: string;            // Company from Fluid
+  environment: 'production' | 'staging' | 'development';
+  fluidApiKey: string;            // For Fluid platform auth
+  serviceCredentials: {           // For the actual service
     apiKey: string;
     secret?: string;
+    endpoint?: string;
   };
-  integrationSettings: {         // Service-specific config
-    webhookUrl?: string;
-    syncFrequency: string;
-  };
+  webhookUrl?: string;            // Optional webhook endpoint
 }
 
-// ❌ Bad: Generic credentials
-interface BadConfig {
-  username: string;
-  password: string;
-}
+// Store in database with encryption
+const installation = await Database.query(`
+  INSERT INTO droplet_installations (company_id, config, authentication_token)
+  VALUES ($1, $2, $3) RETURNING id
+`, [companyId, encryptedConfig, authToken]);
 ```
 
 ### When Building APIs:
 ```typescript
-// ✅ Good: Proper error handling and validation
-app.post('/api/configure', async (req, res) => {
+// ✅ Good: Proper error handling, validation, and database operations
+import { Database } from '../services/database';
+import { FluidApiService } from '../services/fluidApi';
+import { validateDropletConfig } from '../middleware/validation';
+import { logger } from '../services/logger';
+
+app.post('/api/droplet/configure', validateDropletConfig, async (req, res) => {
+  const client = await Database.getClient();
   try {
-    const config = configSchema.parse(req.body);
-    await validateFluidApiKey(config.fluidApiKey);
+    await client.query('BEGIN');
+    
+    const config: DropletConfig = req.body;
+    
+    // Validate Fluid API connection
+    const fluidApi = new FluidApiService(config.fluidApiKey);
+    const companyInfo = await fluidApi.getCompanyInfo(config.fluidApiKey);
+    
+    // Test service connection
     await testServiceConnection(config.serviceCredentials);
     
-    // Store config securely
-    await saveConfiguration(config);
+    // Store configuration in database
+    const result = await client.query(`
+      INSERT INTO droplet_installations (company_id, config, authentication_token, status)
+      VALUES ($1, $2, $3, $4) RETURNING id, created_at
+    `, [companyInfo.id, JSON.stringify(config), config.fluidApiKey, 'active']);
     
-    res.json({ success: true, message: 'Droplet configured successfully' });
+    // Log the configuration event
+    await client.query(`
+      INSERT INTO activity_logs (installation_id, event_type, event_data, status)
+      VALUES ($1, $2, $3, $4)
+    `, [result.rows[0].id, 'configuration_completed', { companyName: config.companyName }, 'success']);
+    
+    await client.query('COMMIT');
+    
+    logger.info('Droplet configured successfully', { 
+      installationId: result.rows[0].id,
+      companyName: config.companyName 
+    });
+    
+    res.json({ 
+      success: true, 
+      installationId: result.rows[0].id,
+      message: 'Droplet configured successfully' 
+    });
+    
   } catch (error) {
+    await client.query('ROLLBACK');
     logger.error('Configuration failed', error);
     res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
   }
 });
 ```
 
 ### When Handling Webhooks:
 ```typescript
-// ✅ Good: Secure webhook handling
-app.post('/webhooks/:service', 
+// ✅ Good: Secure webhook handling with database queuing
+app.post('/api/webhook/:service', 
   validateWebhookSignature,
   async (req, res) => {
     const { service } = req.params;
     const payload = req.body;
     
-    // Process webhook data
-    await processWebhookData(service, payload);
-    
-    res.status(200).send('OK');
+    try {
+      // Store webhook event for processing
+      await Database.query(`
+        INSERT INTO webhook_events (installation_id, event_type, payload, processed)
+        VALUES ($1, $2, $3, $4)
+      `, [req.installationId, service, JSON.stringify(payload), false]);
+      
+      // Process webhook data asynchronously
+      processWebhookData(service, payload).catch(error => {
+        logger.error('Webhook processing failed', { service, error });
+      });
+      
+      res.status(200).json({ received: true });
+    } catch (error) {
+      logger.error('Webhook storage failed', { service, error });
+      res.status(500).json({ error: 'Failed to process webhook' });
+    }
   }
 );
 ```
 
-## UI/UX Standards
+### When Adding Database Migrations:
+```sql
+-- ✅ Good: Proper migration with indexes and constraints
+-- database/migrations/005_add_your_feature.sql
+
+BEGIN;
+
+CREATE TABLE your_new_table (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    installation_id UUID NOT NULL REFERENCES droplet_installations(id) ON DELETE CASCADE,
+    your_field VARCHAR(255) NOT NULL,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_your_new_table_installation ON your_new_table(installation_id);
+CREATE INDEX idx_your_new_table_created ON your_new_table(created_at);
+
+-- Update migration tracking
+INSERT INTO migrations (version, name, executed_at)
+VALUES (5, 'add_your_feature', NOW());
+
+COMMIT;
+```
+
+## UI/UX Standards with Tailwind CSS
 
 ### Modern, Clean Design:
-- Use Tailwind CSS with consistent spacing
-- Glass-morphism cards with subtle shadows
-- Smooth animations and micro-interactions
-- Mobile-responsive layouts
-- Accessible form controls
+- Use Tailwind CSS 4.0 with consistent design system
+- Glass-morphism cards with subtle shadows and borders
+- Smooth animations and micro-interactions with CSS transitions
+- Mobile-responsive layouts with proper breakpoints
+- Accessible form controls with proper ARIA labels
+- FontAwesome icons for consistent iconography
 
 ### Form Design Patterns:
-- Group related fields in cards
-- Show progress indicators for multi-step forms
-- Provide clear validation feedback
-- Include helpful tooltips and examples
-- Test connection buttons for credentials
+```tsx
+// ✅ Good: Modern form with proper validation and feedback
+<Card className="group hover:shadow-lg transition-shadow">
+  <CardHeader>
+    <CardTitle className="flex items-center text-lg">
+      <FontAwesomeIcon icon="key" className="mr-3 h-5 w-5 text-blue-600" />
+      API Configuration
+    </CardTitle>
+    <CardDescription>
+      Connect your service API credentials
+    </CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-6">
+    <div className="form-group">
+      <label className="label">
+        API Key
+        <span className="text-red-500 ml-1">*</span>
+      </label>
+      <div className="relative">
+        <input
+          type="password"
+          className={`input ${error ? 'border-red-300 focus:border-red-500' : ''}`}
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="Enter your API key"
+          required
+        />
+        <Button
+          type="button"
+          size="sm"
+          className="absolute right-2 top-2"
+          onClick={testConnection}
+          disabled={!apiKey || testing}
+        >
+          {testing ? <FontAwesomeIcon icon="spinner" spin /> : <FontAwesomeIcon icon="check" />}
+          Test
+        </Button>
+      </div>
+      {error && (
+        <p className="text-sm text-red-600 mt-1">{error}</p>
+      )}
+      {success && (
+        <p className="text-sm text-green-600 mt-1">✅ Connection successful!</p>
+      )}
+    </div>
+  </CardContent>
+</Card>
+```
 
-## Common Patterns to Implement
+## Service Integration Patterns
 
-### 1. Service Integration Template:
+### 1. Adding New Service Integration:
 When user says "add integration for [service]":
-- Create form fields for that service's API credentials
-- Add service client in backend with proper error handling
-- Implement webhook handlers for that service
-- Add configuration validation
-- Include setup instructions
 
-### 2. Data Sync Patterns:
-When user wants to sync data:
-- Implement bidirectional sync with conflict resolution
-- Add batch processing for large datasets
-- Include retry logic with exponential backoff
-- Add progress tracking and status updates
+1. **Create service client**:
+```typescript
+// backend/src/services/yourService.ts
+export class YourServiceClient {
+  constructor(private config: ServiceConfig) {}
+  
+  async testConnection(): Promise<boolean> {
+    // Test API connection
+  }
+  
+  async syncData(): Promise<SyncResult> {
+    // Implement data synchronization
+  }
+}
+```
 
-### 3. Webhook Processing:
-When setting up webhooks:
-- Validate webhook signatures
-- Implement idempotency for duplicate events
-- Add proper error handling and retries
-- Log all webhook events for debugging
+2. **Add configuration form**:
+```tsx
+// frontend/entrypoints/YourServiceConfig.tsx
+export function YourServiceConfig() {
+  // Service-specific configuration form
+}
+```
 
-## File Naming and Organization
+3. **Create database migration**:
+```sql
+-- database/migrations/XXX_add_your_service.sql
+CREATE TABLE your_service_data (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    installation_id UUID NOT NULL REFERENCES droplet_installations(id),
+    service_data JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
 
-### Frontend:
-- Components: `PascalCase.tsx` (e.g., `ApiKeyForm.tsx`)
-- Pages: `PascalCase.tsx` (e.g., `ConfigurationPage.tsx`)
-- Utilities: `camelCase.ts` (e.g., `apiClient.ts`)
-- Types: `types.ts` or `[feature].types.ts`
+4. **Add webhook handlers**:
+```typescript
+// backend/src/routes/webhook.ts
+router.post('/your-service', async (req, res) => {
+  await processYourServiceWebhook(req.body);
+  res.status(200).send('OK');
+});
+```
 
-### Backend:
-- Routes: `[entity].routes.ts` (e.g., `configuration.routes.ts`)
-- Services: `[entity].service.ts` (e.g., `fluid.service.ts`)
-- Models: `[entity].model.ts` (e.g., `droplet.model.ts`)
+## Environment Configuration
+
+### Required Environment Variables:
+```env
+# Fluid Platform Integration
+FLUID_API_KEY=PT-your_fluid_builder_api_key
+DROPLET_ID=drp_your_droplet_uuid
+FLUID_API_URL=https://api.fluid.app
+FLUID_WEBHOOK_SECRET=your_webhook_signature_secret
+
+# Database (Auto-generated by Render)
+DATABASE_URL=postgresql://user:pass@host:port/database
+
+# Security (Auto-generated by Render)
+JWT_SECRET=auto_generated_jwt_secret
+ENCRYPTION_KEY=auto_generated_encryption_key
+
+# Service Credentials (Add your own)
+YOUR_SERVICE_API_KEY=your_service_api_key
+YOUR_SERVICE_SECRET=your_service_secret
+
+# Application
+NODE_ENV=production
+PORT=3001
+FRONTEND_URL=https://your-frontend.onrender.com
+```
+
+## Deployment with Render
+
+The `render.yaml` file automatically deploys:
+- Frontend (Static Site) 
+- Backend (Node.js Service)
+- PostgreSQL Database
+
+Key deployment steps:
+1. Fork the repository
+2. Connect to Render
+3. Deploy with Blueprint
+4. Set environment variables
+5. Run database migrations
+6. Create droplet with script
 
 ## Security Requirements
 
 ### Always Implement:
-- Environment variable validation
-- API key encryption at rest
-- Request rate limiting
-- Input sanitization and validation
-- HTTPS enforcement
-- CORS configuration
+- Environment variable validation on startup
+- API key encryption at rest using ENCRYPTION_KEY
+- Request rate limiting with express-rate-limit
+- Input sanitization and validation with Joi/Zod
+- HTTPS enforcement in production
+- CORS configuration for specific origins
 - Webhook signature verification
+- PostgreSQL parameterized queries (prevents SQL injection)
+- Connection pooling with proper timeouts
 
 ### Never Do:
-- Expose API keys in frontend code
-- Store credentials in plain text
-- Skip input validation
-- Log sensitive information
+- Expose API keys in frontend code or logs
+- Store credentials in plain text in database
+- Skip input validation on any endpoint
+- Log sensitive information (API keys, passwords)
 - Use default secrets in production
+- Commit .env files to version control
+- Allow SQL injection with string concatenation
 
-## Deployment Standards
+## Development Workflow
 
-### Environment Variables:
-```env
-# Fluid Integration
-FLUID_API_KEY=your_fluid_api_key
-FLUID_WEBHOOK_SECRET=your_webhook_secret
+### Scripts Available:
+```bash
+# Full-stack development
+npm run dev:full              # Start frontend + backend
+npm run build:full            # Build both for production
+npm run test:full             # Run all tests
 
-# Service Credentials (example)
-EXAMPLE_SERVICE_API_KEY=service_api_key
-EXAMPLE_SERVICE_SECRET=service_secret
+# Database operations
+npm run migrate               # Run pending migrations  
+npm run migrate:status        # Check migration status
+npm run setup:db             # Automated PostgreSQL setup
 
-# Application
-NODE_ENV=production
-PORT=3000
-DATABASE_URL=your_database_url
-JWT_SECRET=your_jwt_secret
+# Droplet management
+node scripts/create-droplet.js       # Create in Fluid platform
+node scripts/enhance-droplet-details.js # Update metadata
 ```
 
-### Docker Configuration:
-- Multi-stage builds for optimization
-- Non-root user for security
-- Health checks included
-- Proper logging configuration
+### Testing Pattern:
+```typescript
+// ✅ Good: Comprehensive testing
+describe('Droplet Configuration', () => {
+  beforeEach(async () => {
+    // Setup test database
+    await Database.query('BEGIN');
+  });
+  
+  afterEach(async () => {
+    await Database.query('ROLLBACK');
+  });
+  
+  it('should configure droplet successfully', async () => {
+    const config = { /* valid config */ };
+    const response = await request(app)
+      .post('/api/droplet/configure')
+      .send(config)
+      .expect(200);
+      
+    expect(response.body.success).toBe(true);
+    
+    // Verify database state
+    const installation = await Database.query(
+      'SELECT * FROM droplet_installations WHERE id = $1',
+      [response.body.installationId]
+    );
+    expect(installation.rows).toHaveLength(1);
+  });
+});
+```
 
-## Documentation Standards
+## AI-Assisted Development
 
-### Always Include:
-- Setup instructions with prerequisites
-- Environment variable documentation
-- API endpoint documentation
-- Webhook payload examples
-- Troubleshooting guides
-- Customization examples
+This template is optimized for AI tools like Cursor and Bolt:
 
-## Response Style
+### When User Requests Features:
+1. **Understand the service**: What API are they integrating?
+2. **Plan the implementation**: Form + Backend + Database + Webhooks
+3. **Build incrementally**: Start with types, then API, then UI
+4. **Include migrations**: Always update database schema properly
+5. **Add comprehensive error handling**: Production-ready code only
+6. **Test the integration**: Provide testing examples
 
-### When User Asks for Features:
-1. **Understand the intent**: What service are they integrating?
-2. **Plan the implementation**: Frontend form + Backend API + Webhooks
-3. **Build production-ready code**: Include all error handling, validation, security
-4. **Provide examples**: Show how to customize for their specific needs
-5. **Add documentation**: Explain how it works and how to extend it
+### Common Prompts to Handle:
+- "Add Shopify integration" → Create Shopify client, forms, webhook handlers
+- "Add dashboard metrics" → Query activity_logs, create charts
+- "Add bulk import feature" → Background job processing, progress tracking
+- "Add email notifications" → Email service integration, templates
 
-### Code Quality Expectations:
-- TypeScript with strict mode enabled
-- Comprehensive error handling
-- Input validation with Zod or similar
-- Proper logging with context
-- Unit tests for critical functions
-- Integration tests for API endpoints
+### Response Pattern:
+Always provide:
+- Complete, working TypeScript code
+- Database migration if needed
+- Frontend components with proper styling
+- Error handling and validation
+- Testing examples
+- Documentation updates
 
-### When Building:
-- Start with the data model/types
-- Build the backend API first
-- Create the frontend forms
-- Add webhook handling
-- Include deployment configuration
-- Write documentation
-
-This template should enable anyone to create professional-grade Fluid droplets by describing what they want to build in natural language.
+This template enables building professional Fluid droplets through natural language instructions while maintaining production-grade code quality and security standards.
