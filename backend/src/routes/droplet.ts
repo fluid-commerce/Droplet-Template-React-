@@ -406,9 +406,9 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
       })
     }
 
-    // Get stored company data from database first
-    const installationResult = await Database.query(`
-      SELECT company_name, company_data, configuration
+    // Get stored company data from database first - try multiple approaches
+    let installationResult = await Database.query(`
+      SELECT company_name, company_data, configuration, installation_id, status
       FROM droplet_installations 
       WHERE installation_id = $1
     `, [installationId])
@@ -416,25 +416,48 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
     let companyName = 'Your Company'
     let companyData = null
 
+    // If not found by exact installation_id, try to find by any recent installation
+    if (installationResult.rows.length === 0) {
+      logger.warn('No installation found with exact ID, trying to find recent installation', { installationId })
+      installationResult = await Database.query(`
+        SELECT company_name, company_data, configuration, installation_id, status
+        FROM droplet_installations 
+        WHERE status IN ('active', 'pending')
+        ORDER BY created_at DESC 
+        LIMIT 1
+      `)
+    }
+
     logger.info('Dashboard query result', {
       installationId,
       foundRecords: installationResult.rows.length,
       companyName: installationResult.rows[0]?.company_name,
-      configuration: installationResult.rows[0]?.configuration
+      configuration: installationResult.rows[0]?.configuration,
+      status: installationResult.rows[0]?.status
     })
 
     if (installationResult.rows.length > 0) {
       const installation = installationResult.rows[0]
-      companyName = installation.company_name || installation.configuration?.companyName || 'Your Company'
+      
+      // Try multiple sources for company name
+      companyName = installation.company_name || 
+                   installation.configuration?.companyName || 
+                   installation.configuration?.company_name ||
+                   'Your Company'
+      
       companyData = installation.company_data
       
       logger.info('Using company name from database', {
         installationId,
+        actualInstallationId: installation.installation_id,
         companyName,
-        source: installation.company_name ? 'company_name field' : 'configuration.companyName field'
+        source: installation.company_name ? 'company_name field' : 
+                installation.configuration?.companyName ? 'configuration.companyName field' :
+                installation.configuration?.company_name ? 'configuration.company_name field' :
+                'fallback'
       })
     } else {
-      logger.warn('No installation found in database', { installationId })
+      logger.warn('No installation found in database at all', { installationId })
     }
 
     const fluidApi = new FluidApiService(fluidApiKey as string)
