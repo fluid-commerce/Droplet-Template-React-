@@ -49,6 +49,13 @@ export function DropletAutoSetup() {
           return
         }
 
+        // If we have any installation ID that's not 'new-installation', don't run auto-setup
+        if (installationId && installationId !== 'new-installation') {
+          console.log('⚠️ Have existing installation ID, redirecting to dashboard without auto-setup')
+          navigate(`/dashboard?installation_id=${installationId}&fluid_api_key=${authToken || 'unknown'}`)
+          return
+        }
+
         console.log('🔍 Auto-setup checking:', {
           installationId,
           companyId, 
@@ -67,6 +74,14 @@ export function DropletAutoSetup() {
         const statusResponse = await apiClient.get(`/api/droplet/status/${installationId || 'new-installation'}`)
         
         console.log('📊 Status response:', statusResponse.data)
+        
+        // If we get a successful response with an active installation, go directly to dashboard
+        if (statusResponse.data.success && statusResponse.data.data?.status === 'active') {
+          console.log('✅ Found active installation, redirecting to dashboard immediately')
+          const data = statusResponse.data.data
+          navigate(`/dashboard?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey || authToken}`)
+          return
+        }
         
         if (statusResponse.data.success) {
           const data = statusResponse.data.data
