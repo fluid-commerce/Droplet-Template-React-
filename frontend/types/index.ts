@@ -86,3 +86,27 @@ export interface WebhookSubscription {
   createdAt: string
   updatedAt: string
 }
+
+// Brand guidelines types
+export interface BrandGuidelines {
+  id: number
+  name: string
+  logo_url: string | null
+  icon_url: string | null
+  favicon_url: string | null
+  color: string | null
+  secondary_color: string | null
+  default_og_image: string | null
+  default_fallback_image: string | null
+  default_og_description: string | null
+  meta: {
+    request_id: string
+    timestamp: string
+  }
+}
+
+export interface BrandGuidelinesResponse {
+  data: BrandGuidelines
+  success: boolean
+  message?: string
+}

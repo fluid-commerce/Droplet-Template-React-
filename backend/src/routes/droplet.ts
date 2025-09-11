@@ -971,6 +971,187 @@ router.post('/cleanup', rateLimits.config, async (req: Request, res: Response) =
 })
 
 /**
+ * POST /api/droplet/test-webhook
+ * Test webhook by creating a test order in Fluid
+ */
+router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: Request, res: Response) => {
+  try {
+    const { webhookType, testData } = req.body
+    const tenantInstallationId = req.tenant!.installationId
+    const tenantApiKey = req.tenant!.authenticationToken
+
+    logger.info('Starting webhook test', {
+      installationId: tenantInstallationId,
+      webhookType: webhookType || 'order.created'
+    })
+
+    const fluidApi = new FluidApiService(tenantApiKey)
+    
+    let testResult: any = {}
+    let webhookEventId: string | null = null
+
+    // Create test order in Fluid
+    if (webhookType === 'order.created' || !webhookType) {
+      try {
+        logger.info('Creating test order in Fluid', { installationId: tenantInstallationId })
+        
+        const orderResult = await fluidApi.createTestOrder(tenantApiKey, testData)
+        
+        testResult = {
+          type: 'order.created',
+          success: true,
+          orderId: orderResult?.id || orderResult?.order?.id,
+          orderData: orderResult,
+          createdAt: new Date().toISOString()
+        }
+        
+        logger.info('Test order created successfully', {
+          installationId: tenantInstallationId,
+          orderId: testResult.orderId
+        })
+
+        // Log test webhook activity
+        await Database.logActivity({
+          installation_id: tenantInstallationId,
+          activity_type: 'webhook_test',
+          description: 'Test webhook order created in Fluid',
+          details: {
+            webhookType: 'order.created',
+            orderId: testResult.orderId,
+            testData: testData || 'default'
+          },
+          status: 'success'
+        })
+
+      } catch (orderError: any) {
+        logger.error('Failed to create test order in Fluid', { 
+          installationId: tenantInstallationId 
+        }, orderError)
+
+        testResult = {
+          type: 'order.created',
+          success: false,
+          error: orderError.message || 'Failed to create test order',
+          details: orderError.data || orderError.response?.data
+        }
+
+        // Log failed test
+        await Database.logActivity({
+          installation_id: tenantInstallationId,
+          activity_type: 'webhook_test',
+          description: 'Test webhook order creation failed',
+          details: {
+            webhookType: 'order.created',
+            error: orderError.message,
+            testData: testData || 'default'
+          },
+          status: 'error'
+        })
+      }
+    }
+
+    // Check for recent webhook events (Fluid should send webhook back to us)
+    const recentWebhooks = await Database.query(`
+      SELECT id, type, event_name, data, created_at, processing_status
+      FROM webhook_events 
+      WHERE installation_id = $1 
+        AND created_at > NOW() - INTERVAL '5 minutes'
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `, [tenantInstallationId])
+
+    const webhookEvents = recentWebhooks.rows.map((row: any) => ({
+      id: row.id,
+      type: row.type || row.event_name,
+      data: row.data,
+      createdAt: row.created_at,
+      processingStatus: row.processing_status
+    }))
+
+    return res.json({
+      success: true,
+      message: 'Webhook test completed',
+      data: {
+        test: testResult,
+        recentWebhooks: webhookEvents,
+        installationId: tenantInstallationId,
+        testedAt: new Date().toISOString()
+      }
+    })
+
+  } catch (error: any) {
+    logger.error('Webhook test error:', error)
+    
+    return res.status(error.statusCode || 500).json({
+      error: 'Webhook test failed',
+      message: error.message || 'An error occurred during webhook testing'
+    })
+  }
+})
+
+/**
+ * GET /api/droplet/webhook-logs/:installationId
+ * Get webhook event logs for an installation
+ */
+router.get('/webhook-logs/:installationId', requireTenantAuth, rateLimits.tenant, async (req: Request, res: Response) => {
+  try {
+    const tenantInstallationId = req.tenant!.installationId
+    const { limit = 50, offset = 0 } = req.query
+
+    // Get webhook events for this tenant only
+    const webhookLogs = await Database.query(`
+      SELECT id, type, event_name, data, created_at, processing_status, retry_count
+      FROM webhook_events 
+      WHERE installation_id = $1 
+      ORDER BY created_at DESC 
+      LIMIT $2 OFFSET $3
+    `, [tenantInstallationId, parseInt(limit as string), parseInt(offset as string)])
+
+    // Get activity logs related to webhook testing
+    const activityLogs = await Database.query(`
+      SELECT id, activity_type, description, details, status, created_at
+      FROM activity_logs 
+      WHERE installation_id = $1 
+        AND activity_type IN ('webhook_test', 'webhook')
+      ORDER BY created_at DESC 
+      LIMIT $2 OFFSET $3
+    `, [tenantInstallationId, parseInt(limit as string), parseInt(offset as string)])
+
+    const logs = {
+      webhookEvents: webhookLogs.rows.map((row: any) => ({
+        id: row.id,
+        type: row.type || row.event_name,
+        data: row.data,
+        createdAt: row.created_at,
+        processingStatus: row.processing_status,
+        retryCount: row.retry_count || 0
+      })),
+      activityLogs: activityLogs.rows.map((row: any) => ({
+        id: row.id,
+        type: row.activity_type,
+        description: row.description,
+        details: row.details,
+        status: row.status,
+        createdAt: row.created_at
+      }))
+    }
+
+    return res.json({
+      success: true,
+      data: logs
+    })
+
+  } catch (error: any) {
+    logger.error('Failed to fetch webhook logs:', error)
+    
+    return res.status(error.statusCode || 500).json({
+      error: 'Failed to fetch logs',
+      message: error.message || 'An error occurred while fetching webhook logs'
+    })
+  }
+})
+
+/**
  * Validate service credentials
  */
 async function validateServiceCredentials(config: DropletConfig): Promise<{ valid: boolean; errors: string[] }> {

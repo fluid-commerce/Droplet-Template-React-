@@ -199,6 +199,58 @@ export class FluidApiService {
   }
 
   /**
+   * Create a test order for webhook testing
+   */
+  async createTestOrder(authToken: string, orderData?: any): Promise<any> {
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    const orderClient = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 30000,
+    })
+
+    const defaultOrderData = {
+      customer_email: 'test@example.com',
+      customer_name: 'Test Customer',
+      total: 99.99,
+      currency: 'USD',
+      items: [
+        {
+          name: 'Test Product',
+          quantity: 1,
+          price: 99.99,
+          sku: 'TEST-SKU-001'
+        }
+      ],
+      billing_address: {
+        street: '123 Test Street',
+        city: 'Test City',
+        state: 'Test State',
+        zip: '12345',
+        country: 'US'
+      },
+      metadata: {
+        source: 'webhook_test',
+        created_by: 'fluiddroplets_testing'
+      }
+    }
+
+    const finalOrderData = { ...defaultOrderData, ...orderData }
+    
+    try {
+      const response = await orderClient.post('/orders', { order: finalOrderData })
+      return response.data
+    } catch (error: any) {
+      logger.error('Failed to create test order', { orderData: finalOrderData }, error)
+      throw error
+    }
+  }
+
+  /**
    * Health check
    */
   async healthCheck(): Promise<{ status: string; timestamp: string }> {

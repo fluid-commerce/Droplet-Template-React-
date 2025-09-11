@@ -4,6 +4,9 @@ import { Button } from '@/components/Button'
 import { Card, CardContent } from '@/components/Card'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { apiClient } from '@/lib/api'
+import { FluidClient } from '@/clients/fluidClient'
+import { BrandGuidelines } from '@/types'
+import { WebhookTester } from '@/components/WebhookTester'
 
 interface DashboardData {
   companyName: string
@@ -19,12 +22,15 @@ export function DropletDashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [brandGuidelines, setBrandGuidelines] = useState<BrandGuidelines | null>(null)
   
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
     status: true,
     activity: false,
-    actions: false
+    actions: false,
+    configuration: false,
+    webhooks: false
   })
 
   useEffect(() => {
@@ -40,6 +46,9 @@ export function DropletDashboard() {
         setIsLoading(false)
         return
       }
+
+      // Fetch brand guidelines
+      await fetchBrandGuidelines(fluidApiKey)
 
       // Development mode: Use mock data for localhost testing
       const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -139,6 +148,22 @@ export function DropletDashboard() {
     }))
   }
 
+  const fetchBrandGuidelines = async (apiKey: string) => {
+    try {
+      const fluidClient = new FluidClient({
+        apiUrl: 'https://api.fluid.app',
+        apiKey: apiKey,
+        environment: 'production'
+      })
+      
+      const guidelines = await fluidClient.getBrandGuidelines()
+      setBrandGuidelines(guidelines)
+    } catch (error) {
+      console.warn('Failed to fetch brand guidelines:', error)
+      // Continue without brand guidelines - use fallback styling
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
@@ -180,69 +205,41 @@ export function DropletDashboard() {
       <div className="max-w-4xl mx-auto p-4 py-6">
         <Card className="overflow-hidden">
           {/* Header Section */}
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white p-8">
+          <div 
+            className="text-white p-8"
+            style={{
+              background: brandGuidelines?.color 
+                ? `linear-gradient(135deg, ${brandGuidelines.color}, ${brandGuidelines.secondary_color || brandGuidelines.color})`
+                : 'linear-gradient(135deg, #2563eb, #1d4ed8, #3730a3)'
+            }}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-                  {dashboardData?.companyName || 'Your Business'}
-                </h1>
-                <p className="text-blue-100 text-sm sm:text-base">
-                  Integration Dashboard
-                </p>
+              <div className="flex items-center gap-4">
+                {brandGuidelines?.logo_url && (
+                  <img 
+                    src={brandGuidelines.logo_url} 
+                    alt={`${brandGuidelines.name} logo`}
+                    className="w-12 h-12 object-contain bg-white/10 rounded-lg p-2 backdrop-blur-sm"
+                    onError={(e) => {
+                      // Hide logo if it fails to load
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                )}
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+                    {brandGuidelines?.name || dashboardData?.companyName || 'Your Business'}
+                  </h1>
+                  <p className="text-white/80 text-sm sm:text-base">
+                    Integration Dashboard
+                  </p>
+                </div>
               </div>
-              <Button 
-                onClick={handleSyncData} 
-                variant="outline" 
-                loading={isSyncing} 
-                disabled={isSyncing}
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm"
-              >
-                <FontAwesomeIcon icon="sync" className="mr-2" />
-                {isSyncing ? 'Syncing...' : 'Sync Data'}
-              </Button>
             </div>
           </div>
 
           {/* Content Section - Compact with Collapsible Sections */}
           <div className="p-4 sm:p-6 space-y-4">
-            {/* Status Overview - Always Visible */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon="check-circle" className="text-green-600 text-sm" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600">API</p>
-                    <p className="text-sm font-semibold text-green-700">Connected</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon="database" className="text-blue-600 text-sm" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600">Sync</p>
-                    <p className="text-sm font-semibold text-blue-700">Active</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-lg p-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon="project-diagram" className="text-purple-600 text-sm" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600">Webhooks</p>
-                    <p className="text-sm font-semibold text-purple-700">Live</p>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Recent Activity - Collapsible */}
             <div className="border border-gray-200 rounded-lg">
@@ -350,6 +347,118 @@ export function DropletDashboard() {
                       <span className="text-xs text-gray-500 text-left">Open Fluid platform</span>
                     </Button>
 
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Configuration - Collapsible */}
+            <div className="border border-gray-200 rounded-lg">
+              <button
+                onClick={() => toggleSection('configuration')}
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon="cog" className="text-gray-600 text-sm" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-900">Configuration</h3>
+                    <p className="text-xs text-gray-500">API sync and webhook settings</p>
+                  </div>
+                </div>
+                <FontAwesomeIcon 
+                  icon={expandedSections.configuration ? "chevron-up" : "chevron-down"} 
+                  className="text-gray-400 text-sm" 
+                />
+              </button>
+              
+              {expandedSections.configuration && (
+                <div className="px-4 pb-4 border-t border-gray-100">
+                  <div className="grid grid-cols-3 gap-3 mt-4">
+                    <button 
+                      onClick={() => {
+                        // TODO: Implement API configuration
+                        console.log('API configuration clicked')
+                      }}
+                      className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                          <FontAwesomeIcon icon="check-circle" className="text-green-600 text-sm" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">API</p>
+                          <p className="text-sm font-semibold text-green-700">Connected</p>
+                        </div>
+                      </div>
+                    </button>
+
+                    <button 
+                      onClick={() => {
+                        // TODO: Implement sync configuration
+                        console.log('Sync configuration clicked')
+                      }}
+                      className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-3 hover:from-blue-100 hover:to-cyan-100 transition-colors"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <FontAwesomeIcon icon="database" className="text-blue-600 text-sm" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">Sync</p>
+                          <p className="text-sm font-semibold text-blue-700">Active</p>
+                        </div>
+                      </div>
+                    </button>
+
+                    <button 
+                      onClick={() => toggleSection('webhooks')}
+                      className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-lg p-3 hover:from-purple-100 hover:to-violet-100 transition-colors"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <FontAwesomeIcon icon="project-diagram" className="text-purple-600 text-sm" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">Webhooks</p>
+                          <p className="text-sm font-semibold text-purple-700">Live</p>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Webhook Testing - Collapsible */}
+            <div className="border border-gray-200 rounded-lg">
+              <button
+                onClick={() => toggleSection('webhooks')}
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon="webhook" className="text-gray-600 text-sm" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-900">Webhook Testing</h3>
+                    <p className="text-xs text-gray-500">Test and monitor webhook events</p>
+                  </div>
+                </div>
+                <FontAwesomeIcon 
+                  icon={expandedSections.webhooks ? "chevron-up" : "chevron-down"} 
+                  className="text-gray-400 text-sm" 
+                />
+              </button>
+              
+              {expandedSections.webhooks && (
+                <div className="px-4 pb-4 border-t border-gray-100">
+                  <div className="mt-4">
+                    <WebhookTester 
+                      installationId={installationId}
+                      fluidApiKey={fluidApiKey}
+                    />
                   </div>
                 </div>
               )}

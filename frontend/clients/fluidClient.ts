@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios'
-import { FluidConfig, ApiResponse, ErrorResponse } from '@/types'
+import { FluidConfig, ApiResponse, ErrorResponse, BrandGuidelines } from '@/types'
 
 /**
  * Main client for communicating with the Fluid platform
@@ -134,5 +134,13 @@ export class FluidClient {
    */
   async healthCheck(): Promise<ApiResponse<{ status: string; timestamp: string }>> {
     return this.get('/health')
+  }
+
+  /**
+   * Get brand guidelines settings
+   */
+  async getBrandGuidelines(): Promise<BrandGuidelines> {
+    const response = await this.get<BrandGuidelines>('/api/settings/brand_guidelines')
+    return response.data
   }
 }
