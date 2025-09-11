@@ -6,10 +6,10 @@
  * This script creates a new droplet in the Fluid platform using the Fluid API.
  * 
  * Usage:
- *   FLUID_API_KEY=your_key EMBED_URL=https://your-frontend.com/ node scripts/create-droplet.js
+ *   FLUID_API_KEY=your_key EMBED_URL=https://your-frontend.com/ WEBHOOK_URL=https://your-backend.com/api/webhooks/fluid node scripts/create-droplet.js
  *   
  * Or with all options:
- *   FLUID_API_KEY=your_key EMBED_URL=https://your-frontend.com/ DROPLET_NAME="My Droplet" DROPLET_DESCRIPTION="My awesome integration" LOGO_URL=https://logo.com/logo.png node scripts/create-droplet.js
+ *   FLUID_API_KEY=your_key EMBED_URL=https://your-frontend.com/ WEBHOOK_URL=https://your-backend.com/api/webhooks/fluid DROPLET_NAME="My Droplet" DROPLET_DESCRIPTION="My awesome integration" LOGO_URL=https://logo.com/logo.png node scripts/create-droplet.js
  */
 
 import axios from 'axios'
@@ -67,6 +67,7 @@ function getConfiguration() {
   const config = {
     fluidApiKey: process.env.FLUID_API_KEY,
     embedUrl: process.env.EMBED_URL,
+    webhookUrl: process.env.WEBHOOK_URL,
     dropletName: process.env.DROPLET_NAME || packageJson.name || 'Fluid Droplet Template',
     description: process.env.DROPLET_DESCRIPTION || packageJson.description || 'A custom Fluid droplet integration',
     logoUrl: process.env.LOGO_URL || 'https://via.placeholder.com/200x200/4F46E5/FFFFFF?text=DROPLET',
@@ -96,6 +97,16 @@ function validateConfiguration(config) {
     }
   }
 
+  if (!config.webhookUrl) {
+    errors.push('WEBHOOK_URL environment variable is required')
+  } else {
+    try {
+      new URL(config.webhookUrl)
+    } catch (error) {
+      errors.push('WEBHOOK_URL must be a valid URL')
+    }
+  }
+
   if (!config.dropletName || config.dropletName.trim().length === 0) {
     errors.push('Droplet name cannot be empty')
   }
@@ -118,6 +129,7 @@ async function createDroplet(config) {
   const dropletData = {
     name: config.dropletName,
     embed_url: config.embedUrl,
+    webhook_url: config.webhookUrl,
     active: true,
     settings: {
       marketplace_page: {
@@ -135,6 +147,7 @@ async function createDroplet(config) {
 
   logInfo(`Creating droplet: ${config.dropletName}`)
   logInfo(`Embed URL: ${config.embedUrl}`)
+  logInfo(`Webhook URL: ${config.webhookUrl}`)
   logInfo(`API URL: ${config.fluidApiUrl}`)
 
   try {
@@ -209,7 +222,12 @@ async function main() {
       validationErrors.forEach(error => logError(`  • ${error}`))
       console.log()
       logInfo('Usage:')
-      logInfo('  FLUID_API_KEY=your_key EMBED_URL=https://your-frontend.com/ node scripts/create-droplet.js')
+      logInfo('  FLUID_API_KEY=your_key EMBED_URL=https://your-frontend.com/ WEBHOOK_URL=https://your-backend.com/api/webhooks/fluid node scripts/create-droplet.js')
+      console.log()
+      logInfo('Required environment variables:')
+      logInfo('  FLUID_API_KEY=your_fluid_api_key')
+      logInfo('  EMBED_URL=https://your-frontend.com/')
+      logInfo('  WEBHOOK_URL=https://your-backend.com/api/webhooks/fluid')
       console.log()
       logInfo('Optional environment variables:')
       logInfo('  DROPLET_NAME="My Droplet"')
