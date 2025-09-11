@@ -71,7 +71,7 @@ export function DropletUninstall() {
                   // Try to get droplet ID from URL params or environment
                   const dropletId = searchParams.get('droplet_id') || 
                                   searchParams.get('droplet_uuid') ||
-                                  process.env.REACT_APP_DROPLET_ID ||
+                                  import.meta.env.VITE_DROPLET_ID ||
                                   'your-droplet-id'
                   
                   // Redirect to Fluid droplet details page
@@ -122,7 +122,7 @@ export function DropletUninstall() {
                   // Try to get droplet ID from URL params or environment
                   const dropletId = searchParams.get('droplet_id') || 
                                   searchParams.get('droplet_uuid') ||
-                                  process.env.REACT_APP_DROPLET_ID ||
+                                  import.meta.env.VITE_DROPLET_ID ||
                                   'your-droplet-id'
                   
                   // Redirect to Fluid droplet details page

@@ -127,7 +127,7 @@ export function DropletDashboard() {
       })
       
       // Redirect to uninstall success page with proper parameters
-      const dropletId = searchParams.get('droplet_id') || process.env.REACT_APP_DROPLET_ID
+      const dropletId = searchParams.get('droplet_id') || import.meta.env.VITE_DROPLET_ID
       const uninstallUrl = dropletId 
         ? `/uninstall?installation_id=${installationId}&fluid_api_key=${fluidApiKey}&droplet_id=${dropletId}`
         : `/uninstall?installation_id=${installationId}&fluid_api_key=${fluidApiKey}`
