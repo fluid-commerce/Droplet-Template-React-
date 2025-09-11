@@ -65,13 +65,23 @@ export function DropletUninstall() {
             <p className="text-gray-600 mb-6 leading-relaxed">
               The droplet has been successfully uninstalled and all data has been removed.
             </p>
-            <Button 
-              onClick={() => window.close()} 
-              className="w-full"
-            >
-              <FontAwesomeIcon icon="times" className="mr-2" />
-              Close Window
-            </Button>
+            <div className="space-y-3">
+              <Button 
+                onClick={() => window.close()} 
+                className="w-full"
+              >
+                <FontAwesomeIcon icon="times" className="mr-2" />
+                Close Window
+              </Button>
+              <Button 
+                onClick={() => window.location.href = 'https://fluid.app'} 
+                variant="outline"
+                className="w-full"
+              >
+                <FontAwesomeIcon icon="external-link-alt" className="mr-2" />
+                Return to Fluid
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

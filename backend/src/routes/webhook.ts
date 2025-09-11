@@ -198,13 +198,31 @@ async function handleDropletUninstalled(event: WebhookEvent) {
   try {
     const Database = getDatabaseService()
     
-    // Extract installation information from the webhook payload
+    // Extract installation information from multiple possible locations in webhook payload
     const companyData = event.data?.company || {}
-    const installationId = companyData.droplet_installation_uuid || event.data?.droplet_installation_uuid || event.data?.installation_id
-    const companyId = event.data?.company_id || event.data?.fluid_company_id || companyData.fluid_company_id
+    const installationId = companyData.droplet_installation_uuid || 
+                          event.data?.droplet_installation_uuid || 
+                          event.data?.installation_id ||
+                          companyData.installation_id
+    const companyId = event.data?.company_id || 
+                     event.data?.fluid_company_id || 
+                     companyData.fluid_company_id
+    
+    logger.info('Uninstall webhook payload analysis', {
+      eventId: event.id,
+      installationId: installationId || 'not_found',
+      companyId: companyId || 'not_found',
+      hasCompanyData: !!event.data?.company,
+      payloadKeys: Object.keys(event.data || {}),
+      companyDataKeys: Object.keys(companyData)
+    })
     
     if (!installationId) {
-      logger.error('Missing installation ID in uninstall webhook payload', { eventData: event.data })
+      logger.error('Missing installation ID in uninstall webhook payload', { 
+        eventData: event.data,
+        companyData: companyData,
+        allKeys: Object.keys(event.data || {})
+      })
       return
     }
 
@@ -213,6 +231,17 @@ async function handleDropletUninstalled(event: WebhookEvent) {
       companyId,
       eventId: event.id
     })
+
+    // First, check if installation exists
+    const existingInstallation = await Database.getInstallation(installationId)
+    if (!existingInstallation) {
+      logger.warn('Installation not found in database during uninstall', {
+        installationId,
+        companyId,
+        eventId: event.id
+      })
+      return
+    }
 
     // Delete the installation and all related data (CASCADE should handle related data)
     const result = await Database.query(
@@ -224,7 +253,8 @@ async function handleDropletUninstalled(event: WebhookEvent) {
       logger.info('Installation successfully removed from database', {
         installationId,
         companyId,
-        deletedRows: result.rowCount
+        deletedRows: result.rowCount,
+        eventId: event.id
       })
     } else {
       logger.warn('Installation not found in database during uninstall', {
