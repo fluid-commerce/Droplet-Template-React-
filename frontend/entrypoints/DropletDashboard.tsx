@@ -154,6 +154,11 @@ export function DropletDashboard() {
     }))
   }
 
+  const formatColor = (color: string | null | undefined) => {
+    if (!color) return undefined
+    return color.startsWith('#') ? color : `#${color}`
+  }
+
 
   if (isLoading) {
     return (
@@ -200,7 +205,7 @@ export function DropletDashboard() {
             className="text-white p-8"
             style={{
               background: brandGuidelines?.color 
-                ? `linear-gradient(135deg, ${brandGuidelines.color}, ${brandGuidelines.secondary_color || brandGuidelines.color})`
+                ? `linear-gradient(135deg, ${formatColor(brandGuidelines.color)}, ${formatColor(brandGuidelines.secondary_color || brandGuidelines.color)})`
                 : 'linear-gradient(135deg, #2563eb, #1d4ed8, #3730a3)'
             }}
           >
@@ -208,7 +213,8 @@ export function DropletDashboard() {
             {import.meta.env.DEV && (
               <div className="text-xs opacity-50 mb-2">
                 Debug: Brand guidelines {brandGuidelines ? 'loaded' : 'not loaded'} - 
-                Color: {brandGuidelines?.color || 'fallback blue'}
+                Color: {formatColor(brandGuidelines?.color) || 'fallback blue'} - 
+                Company: {brandGuidelines?.name || 'Unknown'}
               </div>
             )}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

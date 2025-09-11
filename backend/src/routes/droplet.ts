@@ -1058,7 +1058,7 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
 
     // Check for recent webhook events (Fluid should send webhook back to us)
     const recentWebhooks = await Database.query(`
-      SELECT id, type, event_name, data, created_at, processing_status
+      SELECT id, event_type, payload, created_at, processing_status
       FROM webhook_events 
       WHERE installation_id = $1 
         AND created_at > NOW() - INTERVAL '5 minutes'
@@ -1068,8 +1068,8 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
 
     const webhookEvents = recentWebhooks.rows.map((row: any) => ({
       id: row.id,
-      type: row.type || row.event_name,
-      data: row.data,
+      type: row.event_type,
+      data: row.payload,
       createdAt: row.created_at,
       processingStatus: row.processing_status
     }))
@@ -1106,7 +1106,7 @@ router.get('/webhook-logs/:installationId', requireTenantAuth, rateLimits.tenant
 
     // Get webhook events for this tenant only
     const webhookLogs = await Database.query(`
-      SELECT id, type, event_name, data, created_at, processing_status, retry_count
+      SELECT id, event_type, payload, created_at, processing_status
       FROM webhook_events 
       WHERE installation_id = $1 
       ORDER BY created_at DESC 
@@ -1126,11 +1126,11 @@ router.get('/webhook-logs/:installationId', requireTenantAuth, rateLimits.tenant
     const logs = {
       webhookEvents: webhookLogs.rows.map((row: any) => ({
         id: row.id,
-        type: row.type || row.event_name,
-        data: row.data,
+        type: row.event_type,
+        data: row.payload,
         createdAt: row.created_at,
         processingStatus: row.processing_status,
-        retryCount: row.retry_count || 0
+        retryCount: 0
       })),
       activityLogs: activityLogs.rows.map((row: any) => ({
         id: row.id,
