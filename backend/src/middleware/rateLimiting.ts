@@ -43,6 +43,7 @@ export const generalRateLimit = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: getClientIdentifier, // Use our custom IP resolver
   handler: (req, res) => {
     logger.warn('Rate limit exceeded', {
       ip: req.ip,
@@ -112,6 +113,7 @@ export const webhookRateLimit = rateLimit({
     error: 'Webhook rate limit exceeded',
     message: 'Too many webhook requests, please check your webhook configuration'
   },
+  keyGenerator: getClientIdentifier, // Use our custom IP resolver
   handler: (req, res) => {
     logger.warn('Webhook rate limit exceeded', {
       ip: req.ip,
@@ -134,6 +136,7 @@ export const testConnectionRateLimit = rateLimit({
     error: 'Test connection rate limit exceeded',
     message: 'Too many test connection requests, please try again later'
   },
+  keyGenerator: getClientIdentifier, // Use our custom IP resolver
   handler: (req, res) => {
     logger.warn('Test connection rate limit exceeded', {
       ip: req.ip,

@@ -18,8 +18,8 @@ export function verifyWebhookSignature(req: Request, res: Response, next: NextFu
     // Get signature from headers (try different possible header names)
     const signature = req.headers['x-fluid-signature'] || 
                      req.headers['x-webhook-signature'] || 
-                     req.headers['x-signature'] ||
-                     req.headers['auth-token'] // Fluid might use auth-token
+                     req.headers['x-signature']
+                     // Note: auth-token is NOT a signature, it's an authentication token
 
     if (!signature) {
       logger.warn('Webhook received without signature', {
@@ -28,9 +28,9 @@ export function verifyWebhookSignature(req: Request, res: Response, next: NextFu
         possibleSignatureHeaders: [
           req.headers['x-fluid-signature'],
           req.headers['x-webhook-signature'], 
-          req.headers['x-signature'],
-          req.headers['auth-token']
-        ].filter(Boolean)
+          req.headers['x-signature']
+        ].filter(Boolean),
+        hasAuthToken: !!req.headers['auth-token']
       })
       
       // In development or if webhook secret not configured, allow unsigned webhooks
