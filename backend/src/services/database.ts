@@ -1,6 +1,7 @@
 import { Pool, PoolClient } from 'pg'
 import { DropletInstallation, DropletConfig } from '../types'
 import { logger } from './logger'
+import { encrypt, decrypt } from '../utils/encryption'
 
 export interface ActivityLog {
   id: string
@@ -78,11 +79,14 @@ export class DatabaseService {
           status, configuration, created_at, updated_at, company_name, company_data
       `
       
+      // Encrypt the authentication token before storing
+      const encryptedToken = encrypt(installation.authenticationToken)
+      
       const values = [
         installation.id, // Using the ID as installation_id
         installation.dropletId,
         installation.companyId,
-        installation.authenticationToken,
+        encryptedToken, // Store encrypted token
         installation.status,
         JSON.stringify(installation.configuration),
         installation.configuration.companyName,
@@ -92,11 +96,20 @@ export class DatabaseService {
       const result = await client.query(query, values)
       const row = result.rows[0]
 
+      // Log installation creation for audit trail
+      logger.info('Installation created successfully', {
+        installationId: row.installation_id,
+        companyId: row.company_id,
+        dropletId: row.droplet_id,
+        status: row.status,
+        hasEncryptedToken: !!encryptedToken
+      })
+
       return {
         id: row.installation_id,
         dropletId: row.droplet_id,
         companyId: row.company_id,
-        authenticationToken: row.authentication_token,
+        authenticationToken: decrypt(row.authentication_token), // Decrypt for return
         status: row.status,
         configuration: row.configuration,
         createdAt: row.created_at.toISOString(),
@@ -118,15 +131,24 @@ export class DatabaseService {
       const result = await client.query(query, [installationId])
       
       if (result.rows.length === 0) {
+        logger.debug('Installation not found', { installationId })
         return null
       }
 
       const row = result.rows[0]
+      
+      // Log access for audit trail (without sensitive data)
+      logger.debug('Installation accessed', {
+        installationId: row.installation_id,
+        companyId: row.company_id,
+        status: row.status
+      })
+
       return {
         id: row.installation_id,
         dropletId: row.droplet_id,
         companyId: row.company_id,
-        authenticationToken: row.authentication_token,
+        authenticationToken: decrypt(row.authentication_token), // Decrypt token
         status: row.status,
         configuration: row.configuration,
         createdAt: row.created_at.toISOString(),
@@ -156,7 +178,7 @@ export class DatabaseService {
 
       if (updates.authenticationToken !== undefined) {
         setParts.push(`authentication_token = $${valueIndex++}`)
-        values.push(updates.authenticationToken)
+        values.push(encrypt(updates.authenticationToken)) // Encrypt before storing
       }
 
       setParts.push(`updated_at = NOW()`)
@@ -178,11 +200,20 @@ export class DatabaseService {
       }
 
       const row = result.rows[0]
+      
+      // Log update for audit trail
+      logger.info('Installation updated successfully', {
+        installationId: row.installation_id,
+        companyId: row.company_id,
+        updatedFields: Object.keys(updates),
+        status: row.status
+      })
+
       return {
         id: row.installation_id,
         dropletId: row.droplet_id,
         companyId: row.company_id,
-        authenticationToken: row.authentication_token,
+        authenticationToken: decrypt(row.authentication_token), // Decrypt for return
         status: row.status,
         configuration: row.configuration,
         createdAt: row.created_at.toISOString(),

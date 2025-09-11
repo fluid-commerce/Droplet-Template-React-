@@ -4,16 +4,21 @@ import { FluidApiService } from '../services/fluidApi'
 import { getDatabaseService } from '../services/database'
 import { DropletConfig } from '../types'
 import { validateDropletConfig } from '../middleware/validation'
+import { requireTenantAuth, optionalTenantAuth } from '../middleware/tenantAuth'
+import { rateLimits } from '../middleware/rateLimiting'
 import { logger } from '../services/logger'
 
 const router = Router()
 const Database = getDatabaseService()
 
+// Apply general rate limiting to all routes
+router.use(rateLimits.general)
+
 /**
  * POST /api/droplet/configure
  * Handle droplet configuration submission
  */
-router.post('/configure', validateDropletConfig, async (req: Request, res: Response) => {
+router.post('/configure', rateLimits.config, validateDropletConfig, async (req: Request, res: Response) => {
   try {
     const config: DropletConfig = req.body
     const { installationId } = req.body
@@ -192,34 +197,45 @@ router.post('/configure', validateDropletConfig, async (req: Request, res: Respo
  * GET /api/droplet/status/:installationId
  * Get droplet installation status and company information
  */
-router.get('/status/:installationId', async (req: Request, res: Response) => {
+router.get('/status/:installationId', optionalTenantAuth, async (req: Request, res: Response) => {
   try {
     const { installationId } = req.params
     const { fluidApiKey } = req.query
 
-    // For new installations or specific installation IDs, check if we have stored company info from webhook
-    if (installationId === 'new-installation' || installationId) {
+    // Handle new installations vs existing installations
+    if (installationId === 'new-installation') {
+      // For new installations, return default state
+      return res.json({
+        success: true,
+        data: {
+          connected: false,
+          installationId: 'new-installation',
+          companyName: 'Your Company',
+          companyId: null,
+          lastSync: null,
+          userCount: 0,
+          status: 'pending',
+          createdAt: null,
+          updatedAt: null,
+          integrationName: 'My Integration',
+          environment: 'production',
+          fluidApiKey: '',
+          companyLogo: null
+        }
+      })
+    }
+
+    // For specific installation IDs, check if we have stored data
+    if (installationId) {
       try {
         const Database = getDatabaseService()
         
-        let result
-        if (installationId === 'new-installation') {
-          // Look for any recent installation with company data (pending or active)
-          result = await Database.query(`
-            SELECT installation_id, company_id, configuration, authentication_token, status, company_name, created_at, updated_at
-            FROM droplet_installations 
-            WHERE status IN ('pending', 'active') 
-            ORDER BY created_at DESC 
-            LIMIT 1
-          `)
-        } else {
-          // Look for the specific installation ID
-          result = await Database.query(`
-            SELECT installation_id, company_id, configuration, authentication_token, status, company_name, created_at, updated_at
-            FROM droplet_installations 
-            WHERE installation_id = $1
-          `, [installationId])
-        }
+        // Only look for the specific installation ID - no fallback to other tenants
+        const result = await Database.query(`
+          SELECT installation_id, company_id, configuration, authentication_token, status, company_name, created_at, updated_at
+          FROM droplet_installations 
+          WHERE installation_id = $1
+        `, [installationId])
         
         if (result.rows.length > 0) {
           const installation = result.rows[0]
@@ -269,27 +285,21 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
           })
         }
       } catch (error: any) {
-        logger.warn('Failed to check for stored company data', { error: error.message })
+        logger.warn('Failed to check for stored installation data', { 
+          installationId,
+          error: error.message 
+        })
+        
+        return res.status(500).json({
+          error: 'Database error',
+          message: 'Failed to retrieve installation data'
+        })
       }
       
-      // Default response if no stored data found
-      return res.json({
-        success: true,
-        data: {
-          connected: false,
-          installationId: 'new-installation',
-          companyName: 'Your Company',
-          companyId: null,
-          lastSync: null,
-          userCount: 0,
-          status: 'pending',
-          createdAt: null,
-          updatedAt: null,
-          integrationName: 'My Integration',
-          environment: 'production',
-          fluidApiKey: '',
-          companyLogo: null
-        }
+      // If no stored data found for this specific installation, return 404
+      return res.status(404).json({
+        error: 'Installation not found',
+        message: 'No installation found with the provided ID'
       })
     }
 
@@ -347,7 +357,7 @@ router.get('/status/:installationId', async (req: Request, res: Response) => {
  * POST /api/droplet/test-connection
  * Test Fluid API connection
  */
-router.post('/test-connection', async (req: Request, res: Response) => {
+router.post('/test-connection', rateLimits.testConnection, async (req: Request, res: Response) => {
   try {
     const { fluidApiKey } = req.body
 
@@ -394,81 +404,58 @@ router.post('/test-connection', async (req: Request, res: Response) => {
  * GET /api/droplet/dashboard/:installationId
  * Get dashboard data for an installation
  */
-router.get('/dashboard/:installationId', async (req: Request, res: Response) => {
+router.get('/dashboard/:installationId', requireTenantAuth, rateLimits.tenant, async (req: Request, res: Response) => {
   try {
-    const { installationId } = req.params
-    const { fluidApiKey } = req.query
+    // Use tenant from auth middleware - guaranteed to be the correct tenant
+    const tenantInstallationId = req.tenant!.installationId
+    const tenantCompanyId = req.tenant!.companyId
+    const apiKey = req.tenant!.authenticationToken
 
-    if (!fluidApiKey) {
-      return res.status(400).json({
-        error: 'Missing Fluid API key',
-        message: 'Fluid API key is required to load dashboard data'
-      })
-    }
+    logger.info('Loading dashboard for authenticated tenant', {
+      installationId: tenantInstallationId,
+      companyId: tenantCompanyId
+    })
 
-    // Get stored company data from database first - try multiple approaches
-    let installationResult = await Database.query(`
-      SELECT company_name, company_data, configuration, installation_id, status
+    // Get stored company data for this specific tenant only
+    const installationResult = await Database.query(`
+      SELECT company_name, company_data, configuration, installation_id, status, created_at, updated_at
       FROM droplet_installations 
       WHERE installation_id = $1
-    `, [installationId])
+    `, [tenantInstallationId])
 
     let companyName = 'Your Company'
     let companyData = null
 
-    // If not found by exact installation_id, try to find by any recent installation
     if (installationResult.rows.length === 0) {
-      logger.warn('No installation found with exact ID, trying to find recent installation', { installationId })
-      installationResult = await Database.query(`
-        SELECT company_name, company_data, configuration, installation_id, status
-        FROM droplet_installations 
-        WHERE status IN ('active', 'pending')
-        ORDER BY created_at DESC 
-        LIMIT 1
-      `)
-    }
-
-    logger.info('Dashboard query result', {
-      installationId,
-      foundRecords: installationResult.rows.length,
-      companyName: installationResult.rows[0]?.company_name,
-      configuration: installationResult.rows[0]?.configuration,
-      status: installationResult.rows[0]?.status
-    })
-
-    if (installationResult.rows.length > 0) {
-      const installation = installationResult.rows[0]
-      
-      // Try multiple sources for company name - prioritize configuration.companyName first
-      companyName = installation.configuration?.companyName || 
-                   installation.configuration?.company_name ||
-                   installation.company_name || 
-                   'Your Company'
-      
-      companyData = installation.company_data
-      
-      logger.info('Using company name from database', {
-        installationId,
-        actualInstallationId: installation.installation_id,
-        companyName,
-        source: installation.configuration?.companyName ? 'configuration.companyName field' :
-                installation.configuration?.company_name ? 'configuration.company_name field' :
-                installation.company_name ? 'company_name field' : 
-                'fallback'
+      // This should not happen since auth middleware verified the installation exists
+      logger.error('Authenticated tenant installation not found in database', {
+        installationId: tenantInstallationId
       })
-    } else {
-      logger.warn('No installation found in database at all', { installationId })
+      
+      return res.status(500).json({
+        error: 'Installation data inconsistent',
+        message: 'Installation authentication succeeded but data not found'
+      })
     }
 
-    // Don't call Fluid API to avoid overwriting correct company name with wrong data
-    // The database already has the correct company name from webhook/configuration
-    logger.info('Using company name from database without Fluid API fallback', {
-      installationId,
-      companyName,
-      source: 'database_only'
-    })
+    const installation = installationResult.rows[0]
     
-    // Get real users data from Fluid API
+    // Extract company name from configuration or fallback
+    companyName = installation.configuration?.companyName || 
+                 installation.configuration?.company_name ||
+                 installation.company_name || 
+                 'Your Company'
+    
+    companyData = installation.company_data
+    
+    logger.info('Using company data for authenticated tenant', {
+      installationId: tenantInstallationId,
+      companyId: tenantCompanyId,
+      companyName,
+      status: installation.status
+    })
+
+    // Get real data from Fluid API using the authenticated tenant's API key
     let users = []
     let tiles = []
     let pages = []
@@ -477,7 +464,7 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
     const companyClient = axios.create({
       baseURL: `${fluidApiUrl}/api`,
       headers: {
-        'Authorization': `Bearer ${fluidApiKey}`,
+        'Authorization': `Bearer ${apiKey}`, // Use tenant's API key from auth
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
@@ -542,30 +529,28 @@ router.get('/dashboard/:installationId', async (req: Request, res: Response) => 
  * POST /api/droplet/sync
  * Sync data with Fluid platform
  */
-router.post('/sync', async (req: Request, res: Response) => {
+router.post('/sync', requireTenantAuth, rateLimits.tenant, async (req: Request, res: Response) => {
   try {
-    const { installationId, fluidApiKey } = req.body
+    // Use authenticated tenant data instead of request body
+    const tenantInstallationId = req.tenant!.installationId
+    const tenantApiKey = req.tenant!.authenticationToken
 
-    if (!installationId || !fluidApiKey) {
-      return res.status(400).json({
-        error: 'Missing required parameters',
-        message: 'Installation ID and Fluid API key are required'
-      })
-    }
-
-    const fluidApi = new FluidApiService(fluidApiKey)
+    const fluidApi = new FluidApiService(tenantApiKey)
     
     // Perform data sync
-    logger.info('Starting data sync', { installationId })
+    logger.info('Starting data sync for authenticated tenant', { 
+      installationId: tenantInstallationId,
+      companyId: req.tenant!.companyId
+    })
     
     // Sync real data from Fluid API
-    const companyInfo = await fluidApi.getCompanyInfo(fluidApiKey)
+    const companyInfo = await fluidApi.getCompanyInfo(tenantApiKey)
     
     const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
     const companyClient = axios.create({
       baseURL: `${fluidApiUrl}/api`,
       headers: {
-        'Authorization': `Bearer ${fluidApiKey}`,
+        'Authorization': `Bearer ${tenantApiKey}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
@@ -594,7 +579,7 @@ router.post('/sync', async (req: Request, res: Response) => {
       success: true,
       message: 'Data synchronized successfully',
       data: {
-        installationId,
+        installationId: tenantInstallationId,
         syncedAt: new Date().toISOString(),
         recordsUpdated,
         companyName: companyInfo.company_name || companyInfo.name
@@ -615,51 +600,53 @@ router.post('/sync', async (req: Request, res: Response) => {
  * POST /api/droplet/disconnect
  * Disconnect droplet installation
  */
-router.post('/disconnect', async (req: Request, res: Response) => {
+router.post('/disconnect', requireTenantAuth, rateLimits.config, async (req: Request, res: Response) => {
   try {
-    const { installationId } = req.body
+    // Use authenticated tenant data - no need for request body validation
+    const tenantInstallationId = req.tenant!.installationId
+    const tenantCompanyId = req.tenant!.companyId
 
-    if (!installationId) {
-      return res.status(400).json({
-        error: 'Missing installation ID',
-        message: 'Installation ID is required to disconnect'
-      })
-    }
+    logger.info('Disconnecting authenticated tenant installation', { 
+      installationId: tenantInstallationId,
+      companyId: tenantCompanyId
+    })
 
-    logger.info('Disconnecting installation', { installationId })
-
-    // Delete the installation from database
+    // Delete the tenant's installation from database (and only theirs)
     const result = await Database.query(
       'DELETE FROM droplet_installations WHERE installation_id = $1',
-      [installationId]
+      [tenantInstallationId]
     )
 
     if (result.rowCount === 0) {
-      logger.warn('Installation not found for disconnection', { installationId })
-      return res.status(404).json({
-        error: 'Installation not found',
-        message: 'No installation found with the provided ID'
+      // This should not happen since auth middleware verified the installation exists
+      logger.error('Authenticated installation not found for disconnection', { 
+        installationId: tenantInstallationId 
+      })
+      return res.status(500).json({
+        error: 'Installation data inconsistent',
+        message: 'Installation authentication succeeded but data not found'
       })
     }
 
-    // Also clean up related data
+    // Also clean up related data (CASCADE should handle this, but explicit cleanup for audit)
     await Database.query(
       'DELETE FROM activity_logs WHERE installation_id = $1',
-      [installationId]
+      [tenantInstallationId]
     )
 
     await Database.query(
       'DELETE FROM webhook_events WHERE installation_id = $1',
-      [installationId]
+      [tenantInstallationId]
     )
 
     await Database.query(
       'DELETE FROM custom_data WHERE installation_id = $1',
-      [installationId]
+      [tenantInstallationId]
     )
 
-    logger.info('Installation disconnected and cleaned up successfully', { 
-      installationId,
+    logger.info('Tenant installation disconnected and cleaned up successfully', { 
+      installationId: tenantInstallationId,
+      companyId: tenantCompanyId,
       deletedRows: result.rowCount 
     })
 
@@ -667,7 +654,7 @@ router.post('/disconnect', async (req: Request, res: Response) => {
       success: true,
       message: 'Droplet disconnected and cleaned up successfully',
       data: {
-        installationId,
+        installationId: tenantInstallationId,
         disconnectedAt: new Date().toISOString(),
         deletedRows: result.rowCount
       }
@@ -685,11 +672,37 @@ router.post('/disconnect', async (req: Request, res: Response) => {
 
 /**
  * POST /api/droplet/cleanup
- * Clean up orphaned installations (for admin use)
+ * Clean up orphaned installations (for admin use only - requires specific admin key)
  */
-router.post('/cleanup', async (req: Request, res: Response) => {
+router.post('/cleanup', rateLimits.config, async (req: Request, res: Response) => {
   try {
-    logger.info('Starting cleanup of orphaned installations')
+    // Require admin authorization for cleanup operations
+    const adminKey = req.headers['x-admin-key']
+    const expectedAdminKey = process.env.ADMIN_CLEANUP_KEY
+
+    if (!expectedAdminKey) {
+      return res.status(503).json({
+        error: 'Cleanup disabled',
+        message: 'Admin cleanup functionality is disabled (ADMIN_CLEANUP_KEY not configured)'
+      })
+    }
+
+    if (!adminKey || adminKey !== expectedAdminKey) {
+      logger.warn('Unauthorized cleanup attempt', {
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        hasAdminKey: !!adminKey
+      })
+      
+      return res.status(403).json({
+        error: 'Unauthorized',
+        message: 'Admin access required for cleanup operations'
+      })
+    }
+
+    logger.info('Starting admin cleanup of orphaned installations', {
+      adminIp: req.ip
+    })
 
     // Find installations that might be orphaned (no recent activity)
     const orphanedInstallations = await Database.query(`

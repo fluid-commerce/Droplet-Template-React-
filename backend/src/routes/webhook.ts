@@ -1,46 +1,46 @@
 import { Router, Request, Response } from 'express'
 import { validateWebhookEvent } from '../middleware/validation'
+import { verifyWebhookSignature, validateWebhookPayload } from '../middleware/webhookSecurity'
+import { rateLimits } from '../middleware/rateLimiting'
 import { WebhookEvent } from '../types'
 import { logger } from '../services/logger'
 import { getDatabaseService } from '../services/database'
 
 const router = Router()
 
+// Apply webhook-specific rate limiting
+router.use(rateLimits.webhook)
+
 /**
  * POST /api/webhook/fluid
  * Handle webhooks from Fluid platform
  */
-router.post('/fluid', validateWebhookEvent, async (req: Request, res: Response) => {
+router.post('/fluid', verifyWebhookSignature, validateWebhookPayload, validateWebhookEvent, async (req: Request, res: Response) => {
   try {
-    // Log the raw webhook payload for debugging
-    logger.info('Received Fluid webhook', {
-      headers: req.headers,
-      body: req.body,
-      method: req.method,
-      url: req.url
+    // Use webhook context from validation middleware
+    const webhookContext = req.webhookContext
+    const eventType = webhookContext?.eventType || req.body.type || req.body.event_name
+    
+    // Log the verified webhook for debugging (without sensitive data)
+    logger.info('Processing verified Fluid webhook', {
+      eventType,
+      installationId: webhookContext?.installationId || 'not_found',
+      companyId: webhookContext?.companyId || 'not_found',
+      hasSignature: !!req.headers['x-fluid-signature'] || !!req.headers['x-webhook-signature'],
+      ip: req.ip
     })
 
-    // Fluid sends data directly in the body, not nested under 'data'
+    // Use the validated webhook context
     const event: WebhookEvent = {
-      id: req.body.id,
-      type: req.body.type,
-      event_name: req.body.event_name,
-      data: req.body, // The entire body is the data
-      timestamp: req.body.timestamp,
-      source: req.body.source
+      id: req.body.id || `webhook_${Date.now()}`,
+      type: eventType,
+      event_name: eventType,
+      data: req.body,
+      timestamp: req.body.timestamp || new Date().toISOString(),
+      source: req.body.source || 'fluid_platform'
     }
 
-    logger.info('Parsed Fluid webhook event', {
-      id: event.id,
-      type: event.type,
-      timestamp: event.timestamp,
-      source: event.source
-    })
-
     // Handle different webhook event types
-    // Fluid sends event_name in the body, not type
-    const eventType = event.type || event.event_name || req.body.event_name
-    
     switch (eventType) {
       case 'droplet_installed':
         await handleDropletInstalled(event)
@@ -63,7 +63,12 @@ router.post('/fluid', validateWebhookEvent, async (req: Request, res: Response) 
         break
       
       default:
-        logger.warn('Unhandled webhook event type', { eventType: event.type, eventId: event.id })
+        logger.warn('Unhandled webhook event type', { 
+          eventType: eventType, 
+          eventId: event.id,
+          installationId: webhookContext?.installationId,
+          companyId: webhookContext?.companyId
+        })
     }
 
     res.json({
