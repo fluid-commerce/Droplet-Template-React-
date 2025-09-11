@@ -19,6 +19,7 @@ import {
   faBuilding,
   faKey,
   faDatabase,
+  faPlay,
   faPlayCircle,
   faTachometerAlt,
   faUnlink,
@@ -69,6 +70,7 @@ library.add(
   faBuilding,
   faKey,
   faDatabase,
+  faPlay,
   faPlayCircle,
   
   // Dashboard icons

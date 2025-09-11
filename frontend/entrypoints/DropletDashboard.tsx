@@ -161,14 +161,40 @@ export function DropletDashboard() {
 
 
   if (isLoading) {
+    const primaryColor = formatColor(brandGuidelines?.color) || '#2563eb'
+    const secondaryColor = formatColor(brandGuidelines?.secondary_color || brandGuidelines?.color) || '#1d4ed8'
+    const lightColor = brandGuidelines?.color ? `${formatColor(brandGuidelines.color)}20` : '#2563eb20'
+    
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <div 
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{
+          background: brandGuidelines?.color 
+            ? `linear-gradient(135deg, ${lightColor}, ${formatColor(brandGuidelines.color)}10)`
+            : 'linear-gradient(135deg, #f8fafc, #e0e7ff, #c7d2fe)'
+        }}
+      >
         <div className="text-center">
           <div className="relative">
-            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-6"></div>
-            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-blue-400 rounded-full animate-spin mx-auto" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+            <div 
+              className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-6"
+              style={{
+                borderColor: `${primaryColor}20`,
+                borderTopColor: primaryColor
+              }}
+            ></div>
+            <div 
+              className="absolute inset-0 w-16 h-16 border-4 border-transparent rounded-full animate-spin mx-auto" 
+              style={{ 
+                borderTopColor: secondaryColor,
+                animationDirection: 'reverse', 
+                animationDuration: '1.5s' 
+              }}
+            ></div>
           </div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Loading Dashboard</h3>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+            Loading {brandGuidelines?.name || 'Dashboard'}
+          </h3>
           <p className="text-gray-600">Setting up your integration overview...</p>
         </div>
       </div>

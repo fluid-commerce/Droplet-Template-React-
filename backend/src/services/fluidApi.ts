@@ -223,7 +223,7 @@ export class FluidApiService {
   }
 
   /**
-   * Create a test order for webhook testing
+   * Create a test order for webhook testing using Fluid's API structure
    */
   async createTestOrder(authToken: string, orderData?: any): Promise<any> {
     const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
@@ -237,39 +237,62 @@ export class FluidApiService {
       timeout: 30000,
     })
 
+    const orderNumber = `TEST-${Date.now()}`
+    
     const defaultOrderData = {
+      order_number: orderNumber,
       customer_email: 'test@example.com',
-      customer_name: 'Test Customer',
-      total: 99.99,
-      currency: 'USD',
+      customer_firstname: 'Test',
+      customer_lastname: 'Customer',
+      affiliate: {
+        email: 'test-affiliate@example.com'
+      },
+      ship_to: {
+        address1: '123 Test Street',
+        city: 'Test City',
+        state: 'UT',
+        postal_code: '12345'
+      },
       items: [
         {
+          sku: 'TEST-SKU-001',
           name: 'Test Product',
+          image_url: 'https://via.placeholder.com/150',
           quantity: 1,
-          price: 99.99,
-          sku: 'TEST-SKU-001'
+          unit_price: 149.99
         }
       ],
-      billing_address: {
-        street: '123 Test Street',
-        city: 'Test City',
-        state: 'Test State',
-        zip: '12345',
-        country: 'US'
-      },
-      metadata: {
-        source: 'webhook_test',
-        created_by: 'fluiddroplets_testing'
-      }
+      amount_paid: 149.99
     }
 
-    const finalOrderData = { ...defaultOrderData, ...orderData }
+    const finalOrderData = { 
+      ...defaultOrderData, 
+      ...orderData,
+      order_number: orderData?.order_number || orderNumber
+    }
     
     try {
-      const response = await orderClient.post('/orders', { order: finalOrderData })
+      logger.info('Creating order in Fluid with correct API structure', { 
+        orderNumber: finalOrderData.order_number,
+        endpoint: '/company/orders.json'
+      })
+      
+      const response = await orderClient.post('/company/orders.json', { 
+        order: finalOrderData 
+      })
+      
+      logger.info('Test order created successfully in Fluid', {
+        orderNumber: finalOrderData.order_number,
+        response: response.data
+      })
+      
       return response.data
     } catch (error: any) {
-      logger.error('Failed to create test order', { orderData: finalOrderData }, error)
+      logger.error('Failed to create test order in Fluid', { 
+        orderData: finalOrderData,
+        endpoint: '/company/orders.json',
+        error: error.response?.data || error.message 
+      }, error)
       throw error
     }
   }
