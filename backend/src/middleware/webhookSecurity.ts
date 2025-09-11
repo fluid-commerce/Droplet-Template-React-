@@ -15,14 +15,20 @@ export function verifyWebhookSignature(req: Request, res: Response, next: NextFu
       return next()
     }
 
-    // Get signature from headers (try different possible header names)
+    // Check for auth-token first (Fluid's preferred method)
+    const authToken = req.headers['auth-token']
+    if (authToken && authToken === webhookSecret) {
+      logger.debug('Webhook authenticated via auth-token')
+      return next()
+    }
+
+    // Fallback to signature-based verification
     const signature = req.headers['x-fluid-signature'] || 
                      req.headers['x-webhook-signature'] || 
                      req.headers['x-signature']
-                     // Note: auth-token is NOT a signature, it's an authentication token
 
-    if (!signature) {
-      logger.warn('Webhook received without signature', {
+    if (!signature && !authToken) {
+      logger.warn('Webhook received without valid authentication', {
         headers: req.headers,
         hasSecret: !!webhookSecret,
         possibleSignatureHeaders: [
@@ -30,7 +36,8 @@ export function verifyWebhookSignature(req: Request, res: Response, next: NextFu
           req.headers['x-webhook-signature'], 
           req.headers['x-signature']
         ].filter(Boolean),
-        hasAuthToken: !!req.headers['auth-token']
+        hasAuthToken: !!req.headers['auth-token'],
+        authTokenMatches: authToken === webhookSecret
       })
       
       // In development or if webhook secret not configured, allow unsigned webhooks
@@ -49,8 +56,21 @@ export function verifyWebhookSignature(req: Request, res: Response, next: NextFu
       }
       
       return res.status(401).json({
-        error: 'Webhook signature required',
-        message: 'Webhooks must include a valid signature header'
+        error: 'Webhook authentication failed',
+        message: 'Webhooks must include a valid auth-token or signature header'
+      })
+    }
+
+    // If auth-token was provided but didn't match, reject
+    if (authToken && authToken !== webhookSecret) {
+      logger.warn('Invalid webhook auth-token', {
+        providedToken: (authToken as string).substring(0, 10) + '...',
+        expectedToken: webhookSecret.substring(0, 10) + '...'
+      })
+      
+      return res.status(401).json({
+        error: 'Invalid webhook auth-token',
+        message: 'Webhook auth-token verification failed'
       })
     }
 
