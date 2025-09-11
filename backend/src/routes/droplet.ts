@@ -572,23 +572,61 @@ router.get('/dashboard/:installationId', optionalTenantAuth, rateLimits.tenant, 
  * POST /api/droplet/sync
  * Sync data with Fluid platform
  */
-router.post('/sync', requireTenantAuth, rateLimits.tenant, async (req: Request, res: Response) => {
+router.post('/sync', optionalTenantAuth, rateLimits.tenant, async (req: Request, res: Response) => {
   try {
-    // Use authenticated tenant data instead of request body
-    const tenantInstallationId = req.tenant!.installationId
-    const tenantApiKey = req.tenant!.authenticationToken
+    // Handle both authenticated and request body scenarios
+    let tenantInstallationId: string
+    let tenantApiKey: string
+
+    if (req.tenant) {
+      // Use authenticated tenant data (preferred)
+      tenantInstallationId = req.tenant.installationId
+      tenantApiKey = req.tenant.authenticationToken
+    } else {
+      // Fallback to request body for compatibility
+      const { installationId, fluidApiKey } = req.body
+
+      if (!installationId || !fluidApiKey) {
+        return res.status(400).json({
+          error: 'Missing required parameters',
+          message: 'Installation ID and Fluid API key are required'
+        })
+      }
+
+      // Verify the API key owns this installation
+      const installation = await Database.getInstallation(installationId)
+      if (!installation) {
+        return res.status(404).json({
+          error: 'Installation not found',
+          message: 'No installation found with the provided ID'
+        })
+      }
+
+      if (installation.authenticationToken !== fluidApiKey) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You do not have access to this installation'
+        })
+      }
+
+      tenantInstallationId = installation.id
+      tenantApiKey = installation.authenticationToken
+    }
 
     const fluidApi = new FluidApiService(tenantApiKey)
     
     // Perform data sync
-    logger.info('Starting data sync for authenticated tenant', { 
-      installationId: tenantInstallationId,
-      companyId: req.tenant!.companyId
+    logger.info('Starting data sync for tenant', { 
+      installationId: tenantInstallationId
     })
     
-    // Sync real data from Fluid API
+    // Get latest company info and update database
     const companyInfo = await fluidApi.getCompanyInfo(tenantApiKey)
     
+    // Update company data in database
+    await Database.updateCompanyData(tenantInstallationId, companyInfo)
+    
+    // Sync latest data from Fluid API
     const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
     const companyClient = axios.create({
       baseURL: `${fluidApiUrl}/api`,
@@ -608,15 +646,64 @@ router.post('/sync', requireTenantAuth, rateLimits.tenant, async (req: Request, 
     ])
     
     let recordsUpdated = 0
+    let syncDetails: any = {}
+    
     if (usersResponse.status === 'fulfilled') {
-      recordsUpdated += usersResponse.value.data?.length || 0
+      const users = usersResponse.value.data
+      recordsUpdated += users?.length || 0
+      syncDetails.users = users?.length || 0
+      
+      // Store users data
+      if (users && users.length > 0) {
+        await Database.query(`
+          INSERT INTO custom_data (installation_id, data_type, data_key, data_value, updated_at)
+          VALUES ($1, $2, $3, $4, NOW())
+          ON CONFLICT (installation_id, data_type, data_key) 
+          DO UPDATE SET data_value = $4, updated_at = NOW()
+        `, [tenantInstallationId, 'sync_data', 'users', JSON.stringify(users)])
+      }
     }
+    
     if (tilesResponse.status === 'fulfilled') {
-      recordsUpdated += tilesResponse.value.data?.length || 0
+      const tiles = tilesResponse.value.data
+      recordsUpdated += tiles?.length || 0
+      syncDetails.tiles = tiles?.length || 0
+      
+      // Store tiles data
+      if (tiles && tiles.length > 0) {
+        await Database.query(`
+          INSERT INTO custom_data (installation_id, data_type, data_key, data_value, updated_at)
+          VALUES ($1, $2, $3, $4, NOW())
+          ON CONFLICT (installation_id, data_type, data_key) 
+          DO UPDATE SET data_value = $4, updated_at = NOW()
+        `, [tenantInstallationId, 'sync_data', 'tiles', JSON.stringify(tiles)])
+      }
     }
+    
     if (pagesResponse.status === 'fulfilled') {
-      recordsUpdated += pagesResponse.value.data?.length || 0
+      const pages = pagesResponse.value.data
+      recordsUpdated += pages?.length || 0
+      syncDetails.pages = pages?.length || 0
+      
+      // Store pages data
+      if (pages && pages.length > 0) {
+        await Database.query(`
+          INSERT INTO custom_data (installation_id, data_type, data_key, data_value, updated_at)
+          VALUES ($1, $2, $3, $4, NOW())
+          ON CONFLICT (installation_id, data_type, data_key) 
+          DO UPDATE SET data_value = $4, updated_at = NOW()
+        `, [tenantInstallationId, 'sync_data', 'pages', JSON.stringify(pages)])
+      }
     }
+    
+    // Log sync activity
+    await Database.logActivity({
+      installation_id: tenantInstallationId,
+      activity_type: 'sync',
+      description: 'Data synchronized with Fluid platform',
+      details: syncDetails,
+      status: 'success'
+    })
 
     return res.json({
       success: true,

@@ -19,6 +19,13 @@ export function DropletDashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Collapsible sections state
+  const [expandedSections, setExpandedSections] = useState({
+    status: true,
+    activity: false,
+    actions: false
+  })
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -66,6 +73,13 @@ export function DropletDashboard() {
     } finally {
       setIsSyncing(false)
     }
+  }
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }))
   }
 
   if (isLoading) {
@@ -132,122 +146,155 @@ export function DropletDashboard() {
             </div>
           </div>
 
-          {/* Content Section - Single Scrollable Area */}
-          <div className="p-6 sm:p-8 space-y-8">
-            {/* Status Overview */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon="check-circle" className="text-green-600" />
+          {/* Content Section - Compact with Collapsible Sections */}
+          <div className="p-4 sm:p-6 space-y-4">
+            {/* Status Overview - Always Visible */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon="check-circle" className="text-green-600 text-sm" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">API Status</p>
-                    <p className="text-lg font-semibold text-green-700">Connected</p>
+                    <p className="text-xs font-medium text-gray-600">API</p>
+                    <p className="text-sm font-semibold text-green-700">Connected</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon="database" className="text-blue-600" />
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon="database" className="text-blue-600 text-sm" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Data Sync</p>
-                    <p className="text-lg font-semibold text-blue-700">Active</p>
+                    <p className="text-xs font-medium text-gray-600">Sync</p>
+                    <p className="text-sm font-semibold text-blue-700">Active</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon="webhook" className="text-purple-600" />
+              <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-lg p-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon="webhook" className="text-purple-600 text-sm" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Webhooks</p>
-                    <p className="text-lg font-semibold text-purple-700">Live</p>
+                    <p className="text-xs font-medium text-gray-600">Webhooks</p>
+                    <p className="text-sm font-semibold text-purple-700">Live</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Recent Activity */}
-            <div>
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <FontAwesomeIcon icon="clock" className="text-gray-600 text-sm" />
+            {/* Recent Activity - Collapsible */}
+            <div className="border border-gray-200 rounded-lg">
+              <button
+                onClick={() => toggleSection('activity')}
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon="clock" className="text-gray-600 text-sm" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-900">Recent Activity</h3>
+                    <p className="text-xs text-gray-500">
+                      {dashboardData?.recentActivity?.length || 0} events
+                    </p>
+                  </div>
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
-              </div>
+                <FontAwesomeIcon 
+                  icon={expandedSections.activity ? "chevron-up" : "chevron-down"} 
+                  className="text-gray-400 text-sm" 
+                />
+              </button>
               
-              <div className="space-y-3">
-                {dashboardData?.recentActivity?.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50/50 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <FontAwesomeIcon icon="info-circle" className="text-blue-600 text-sm" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 mb-1">{activity.description}</p>
-                      <p className="text-xs text-gray-500 mb-2">
-                        {new Date(activity.timestamp).toLocaleString()}
-                      </p>
-                      {activity.details && (
-                        <p className="text-xs text-gray-600 bg-white/60 rounded-lg p-2 border border-gray-100">
-                          {activity.details}
-                        </p>
-                      )}
-                    </div>
+              {expandedSections.activity && (
+                <div className="px-4 pb-4 border-t border-gray-100">
+                  <div className="space-y-2 mt-4 max-h-64 overflow-y-auto">
+                    {dashboardData?.recentActivity?.map((activity, index) => (
+                      <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50/50 rounded-lg">
+                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <FontAwesomeIcon icon="info-circle" className="text-blue-600 text-xs" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900">{activity.description}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(activity.timestamp).toLocaleString()}
+                          </p>
+                          {activity.details && (
+                            <p className="text-xs text-gray-600 mt-1 bg-white/60 rounded p-2">
+                              {activity.details}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )) || (
+                      <div className="text-center py-8">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <FontAwesomeIcon icon="inbox" className="text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 text-sm">No activity yet</p>
+                      </div>
+                    )}
                   </div>
-                )) || (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FontAwesomeIcon icon="inbox" className="text-gray-400 text-xl" />
-                    </div>
-                    <p className="text-gray-500 font-medium">No activity yet</p>
-                    <p className="text-gray-400 text-sm mt-1">Activity will appear here once your integration starts working</p>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Quick Actions */}
-            <div>
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <FontAwesomeIcon icon="bolt" className="text-gray-600 text-sm" />
+            {/* Quick Actions - Collapsible */}
+            <div className="border border-gray-200 rounded-lg">
+              <button
+                onClick={() => toggleSection('actions')}
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon="bolt" className="text-gray-600 text-sm" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-900">Quick Actions</h3>
+                    <p className="text-xs text-gray-500">Manage your integration</p>
+                  </div>
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900">Quick Actions</h2>
-              </div>
+                <FontAwesomeIcon 
+                  icon={expandedSections.actions ? "chevron-up" : "chevron-down"} 
+                  className="text-gray-400 text-sm" 
+                />
+              </button>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Button 
-                  onClick={handleSyncData} 
-                  variant="outline" 
-                  loading={isSyncing} 
-                  disabled={isSyncing}
-                  className="h-auto p-4 flex flex-col items-start space-y-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <FontAwesomeIcon icon="sync" className="text-sm" />
-                    <span className="font-medium">Sync Data</span>
+              {expandedSections.actions && (
+                <div className="px-4 pb-4 border-t border-gray-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                    <Button 
+                      onClick={handleSyncData} 
+                      variant="outline" 
+                      loading={isSyncing} 
+                      disabled={isSyncing}
+                      className="h-auto p-3 flex flex-col items-start space-y-1"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <FontAwesomeIcon icon="sync" className="text-sm" />
+                        <span className="font-medium text-sm">Sync Data</span>
+                      </div>
+                      <span className="text-xs text-gray-500 text-left">Update integration data</span>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="h-auto p-3 flex flex-col items-start space-y-1"
+                      onClick={() => window.open('https://fluid.app', '_blank')}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <FontAwesomeIcon icon="external-link-alt" className="text-sm" />
+                        <span className="font-medium text-sm">Visit Fluid</span>
+                      </div>
+                      <span className="text-xs text-gray-500 text-left">Open Fluid platform</span>
+                    </Button>
                   </div>
-                  <span className="text-xs text-gray-500 text-left">Update your integration data</span>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="h-auto p-4 flex flex-col items-start space-y-2"
-                  onClick={() => window.open('https://fluid.app', '_blank')}
-                >
-                  <div className="flex items-center space-x-2">
-                    <FontAwesomeIcon icon="external-link-alt" className="text-sm" />
-                    <span className="font-medium">Visit Fluid</span>
-                  </div>
-                  <span className="text-xs text-gray-500 text-left">Open Fluid platform</span>
-                </Button>
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </Card>

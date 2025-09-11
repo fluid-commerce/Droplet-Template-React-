@@ -30,7 +30,12 @@ import {
   faChartLine,
   faClock,
   faHistory,
-  faUser as faUserIcon
+  faUser as faUserIcon,
+  faRefresh,
+  faInbox,
+  faBolt,
+  faExternalLinkAlt,
+  faProjectDiagram as faWebhook
 } from '@fortawesome/free-solid-svg-icons'
 import { faGithub, faTwitter } from '@fortawesome/free-brands-svg-icons'
 
@@ -76,6 +81,11 @@ library.add(
   faClock,
   faHistory,
   faUserIcon,
+  faRefresh,
+  faInbox,
+  faBolt,
+  faExternalLinkAlt,
+  faWebhook,
   
   // Brand icons
   faGithub,
