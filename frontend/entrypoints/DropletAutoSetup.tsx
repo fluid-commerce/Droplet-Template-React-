@@ -85,10 +85,27 @@ export function DropletAutoSetup() {
         // Use DRI as installation ID if no installation_id is provided
         const effectiveInstallationId = installationId || dri || 'new-installation'
         
+        // Development mode: Allow testing without Fluid parameters
+        const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        
         // Only run auto-setup if we have the necessary parameters for a new installation
         if (!authToken && !dri) {
-          setError('Missing required parameters for installation. Please install the droplet from Fluid.')
-          return
+          if (isDevelopment) {
+            // In development, redirect to dashboard with mock data
+            const mockSessionData = {
+              installationId: 'dev-installation-123',
+              fluidApiKey: 'dev-api-key',
+              companyName: 'Development Company',
+              integrationName: 'Development Integration',
+              timestamp: new Date().toISOString()
+            }
+            localStorage.setItem('droplet_session_dev-api-key', JSON.stringify(mockSessionData))
+            navigate(`/dashboard?installation_id=dev-installation-123&fluid_api_key=dev-api-key`)
+            return
+          } else {
+            setError('Missing required parameters for installation. Please install the droplet from Fluid.')
+            return
+          }
         }
 
         // Check if we have a webhook-configured installation

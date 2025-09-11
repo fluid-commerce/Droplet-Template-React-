@@ -18,7 +18,6 @@ export function DropletDashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
-  const [isUninstalling, setIsUninstalling] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
   // Collapsible sections state
@@ -38,6 +37,32 @@ export function DropletDashboard() {
 
       if (!fluidApiKey) {
         setError('Missing Fluid API key')
+        setIsLoading(false)
+        return
+      }
+
+      // Development mode: Use mock data for localhost testing
+      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      if (isDevelopment && installationId === 'dev-installation-123') {
+        setDashboardData({
+          companyName: 'Development Company',
+          recentActivity: [
+            {
+              id: '1',
+              type: 'configuration',
+              message: 'Droplet configured successfully',
+              timestamp: new Date().toISOString(),
+              status: 'success'
+            },
+            {
+              id: '2', 
+              type: 'sync',
+              message: 'Data synchronized with Fluid platform',
+              timestamp: new Date(Date.now() - 300000).toISOString(),
+              status: 'success'
+            }
+          ]
+        })
         setIsLoading(false)
         return
       }
@@ -106,40 +131,6 @@ export function DropletDashboard() {
     }
   }
 
-  const handleUninstall = async () => {
-    if (!installationId || !fluidApiKey) return
-    
-    const confirmed = window.confirm('Are you sure you want to uninstall this droplet? This will remove all data and cannot be undone.')
-    if (!confirmed) return
-
-    setIsUninstalling(true)
-    try {
-      await apiClient.post('/api/droplet/uninstall', {
-        installationId,
-        fluidApiKey
-      })
-      
-      // Clear localStorage and redirect to uninstall success page
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('droplet_session_') || key.includes(installationId)) {
-          localStorage.removeItem(key)
-        }
-      })
-      
-      // Redirect to uninstall success page with proper parameters
-      const dropletId = searchParams.get('droplet_id') || import.meta.env.VITE_DROPLET_ID
-      const uninstallUrl = dropletId 
-        ? `/uninstall?installation_id=${installationId}&fluid_api_key=${fluidApiKey}&droplet_id=${dropletId}`
-        : `/uninstall?installation_id=${installationId}&fluid_api_key=${fluidApiKey}`
-      
-      window.location.href = uninstallUrl
-    } catch (err: any) {
-      console.error('Failed to uninstall:', err)
-      setError(err.response?.data?.message || 'Failed to uninstall droplet')
-    } finally {
-      setIsUninstalling(false)
-    }
-  }
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -243,7 +234,7 @@ export function DropletDashboard() {
               <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-lg p-3">
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon="webhook" className="text-purple-600 text-sm" />
+                    <FontAwesomeIcon icon="project-diagram" className="text-purple-600 text-sm" />
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-600">Webhooks</p>
@@ -332,14 +323,14 @@ export function DropletDashboard() {
               
               {expandedSections.actions && (
                 <div className="px-4 pb-4 border-t border-gray-100">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                    <Button 
-                      onClick={handleSyncData} 
-                      variant="outline" 
-                      loading={isSyncing} 
-                      disabled={isSyncing || isUninstalling}
-                      className="h-auto p-3 flex flex-col items-start space-y-1"
-                    >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <Button 
+                  onClick={handleSyncData} 
+                  variant="outline"
+                  loading={isSyncing} 
+                  disabled={isSyncing}
+                  className="h-auto p-3 flex flex-col items-start space-y-1"
+                >
                       <div className="flex items-center space-x-2">
                         <FontAwesomeIcon icon="sync" className="text-sm" />
                         <span className="font-medium text-sm">Sync Data</span>
@@ -350,7 +341,6 @@ export function DropletDashboard() {
                     <Button 
                       variant="outline" 
                       className="h-auto p-3 flex flex-col items-start space-y-1"
-                      disabled={isUninstalling}
                       onClick={() => window.open('https://fluid.app', '_blank')}
                     >
                       <div className="flex items-center space-x-2">
@@ -360,19 +350,6 @@ export function DropletDashboard() {
                       <span className="text-xs text-gray-500 text-left">Open Fluid platform</span>
                     </Button>
 
-                    <Button 
-                      onClick={handleUninstall}
-                      variant="outline"
-                      loading={isUninstalling}
-                      disabled={isSyncing || isUninstalling}
-                      className="h-auto p-3 flex flex-col items-start space-y-1 border-red-200 hover:bg-red-50 hover:border-red-300"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <FontAwesomeIcon icon="trash" className="text-sm text-red-600" />
-                        <span className="font-medium text-sm text-red-600">Uninstall</span>
-                      </div>
-                      <span className="text-xs text-gray-500 text-left">Remove this droplet</span>
-                    </Button>
                   </div>
                 </div>
               )}
