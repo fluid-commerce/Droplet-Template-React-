@@ -67,19 +67,33 @@ export function DropletUninstall() {
             </p>
             <div className="space-y-3">
               <Button 
+                onClick={() => {
+                  // Try to get droplet ID from URL params or environment
+                  const dropletId = searchParams.get('droplet_id') || 
+                                  searchParams.get('droplet_uuid') ||
+                                  process.env.REACT_APP_DROPLET_ID ||
+                                  'your-droplet-id'
+                  
+                  // Redirect to Fluid droplet details page
+                  if (dropletId && dropletId !== 'your-droplet-id') {
+                    window.location.href = `https://fluid.app/droplets/${dropletId}`
+                  } else {
+                    // Fallback to Fluid marketplace if no droplet ID
+                    window.location.href = 'https://fluid.app/marketplace'
+                  }
+                }} 
+                className="w-full"
+              >
+                <FontAwesomeIcon icon="external-link-alt" className="mr-2" />
+                View Droplet Details
+              </Button>
+              <Button 
                 onClick={() => window.close()} 
+                variant="outline"
                 className="w-full"
               >
                 <FontAwesomeIcon icon="times" className="mr-2" />
                 Close Window
-              </Button>
-              <Button 
-                onClick={() => window.location.href = 'https://fluid.app'} 
-                variant="outline"
-                className="w-full"
-              >
-                <FontAwesomeIcon icon="external-link-alt" className="mr-2" />
-                Return to Fluid
               </Button>
             </div>
           </CardContent>
@@ -102,6 +116,28 @@ export function DropletUninstall() {
               <Button onClick={handleUninstall} className="w-full" disabled={isUninstalling}>
                 <FontAwesomeIcon icon="refresh" className="mr-2" />
                 Retry Uninstall
+              </Button>
+              <Button 
+                onClick={() => {
+                  // Try to get droplet ID from URL params or environment
+                  const dropletId = searchParams.get('droplet_id') || 
+                                  searchParams.get('droplet_uuid') ||
+                                  process.env.REACT_APP_DROPLET_ID ||
+                                  'your-droplet-id'
+                  
+                  // Redirect to Fluid droplet details page
+                  if (dropletId && dropletId !== 'your-droplet-id') {
+                    window.location.href = `https://fluid.app/droplets/${dropletId}`
+                  } else {
+                    // Fallback to Fluid marketplace if no droplet ID
+                    window.location.href = 'https://fluid.app/marketplace'
+                  }
+                }} 
+                variant="outline"
+                className="w-full"
+              >
+                <FontAwesomeIcon icon="external-link-alt" className="mr-2" />
+                Return to Droplet
               </Button>
               <Button 
                 onClick={() => window.close()} 
