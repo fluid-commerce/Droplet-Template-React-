@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit'
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
 import { Request } from 'express'
 import { logger } from '../services/logger'
 
@@ -10,6 +10,8 @@ const getClientIdentifier = (req: Request): string => {
   }
   
   // For production with proxy, use the trusted forwarded IP
+  let clientIP = req.ip || req.socket.remoteAddress || 'unknown'
+  
   if (process.env.NODE_ENV === 'production') {
     // Get the real client IP from X-Forwarded-For or CF-Connecting-IP
     const cfIp = req.headers['cf-connecting-ip'] as string
@@ -17,16 +19,15 @@ const getClientIdentifier = (req: Request): string => {
     const trueClientIp = req.headers['true-client-ip'] as string
     
     // Prefer Cloudflare's connecting IP, then true client IP, then forwarded for
-    if (cfIp) return `ip:${cfIp}`
-    if (trueClientIp) return `ip:${trueClientIp}`
-    if (forwardedFor) {
-      const ip = forwardedFor.split(',')[0].trim()
-      return `ip:${ip}`
+    if (cfIp) clientIP = cfIp
+    else if (trueClientIp) clientIP = trueClientIp
+    else if (forwardedFor) {
+      clientIP = forwardedFor.split(',')[0].trim()
     }
   }
   
-  // Fallback to Express IP (works with trust proxy)
-  return `ip:${req.ip || req.socket.remoteAddress || 'unknown'}`
+  // Use express-rate-limit's IPv6-safe IP key generator with our resolved IP
+  return ipKeyGenerator(clientIP)
 }
 
 /**
