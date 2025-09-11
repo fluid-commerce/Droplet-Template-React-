@@ -162,10 +162,10 @@ export function DropletDashboard() {
 
   if (isLoading) {
     // Use brand colors if available, otherwise use default blue
-    const primaryColor = brandGuidelines?.color ? formatColor(brandGuidelines.color) : '#2563eb'
+    const primaryColor = brandGuidelines?.color ? formatColor(brandGuidelines.color) : '#f26e26' // Default to orange
     const secondaryColor = brandGuidelines?.secondary_color ? formatColor(brandGuidelines.secondary_color) : 
-                          brandGuidelines?.color ? formatColor(brandGuidelines.color) : '#1d4ed8'
-    const lightColor = brandGuidelines?.color ? `${formatColor(brandGuidelines.color)}20` : '#2563eb20'
+                          brandGuidelines?.color ? formatColor(brandGuidelines.color) : '#f26e26' // Default to orange
+    const lightColor = brandGuidelines?.color ? `${formatColor(brandGuidelines.color)}20` : '#f26e2620'
     
     return (
       <div 
@@ -248,7 +248,10 @@ export function DropletDashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-4">
                 {brandGuidelines?.logo_url && (
-                  <div className="w-24 h-24 bg-white rounded-xl p-2 shadow-lg flex items-center justify-center">
+                  <div 
+                    className="w-24 h-24 rounded-xl p-2 shadow-lg flex items-center justify-center"
+                    style={{ backgroundColor: 'white' }}
+                  >
                     <img 
                       src={brandGuidelines.logo_url} 
                       alt={`${brandGuidelines.name} logo`}
@@ -489,6 +492,7 @@ export function DropletDashboard() {
               {expandedSections.webhooks && (
                 <div className="px-4 pb-4 border-t border-gray-100">
                   <div className="mt-4">
+
 
                     {installationId && fluidApiKey ? (
                       <WebhookTester 
