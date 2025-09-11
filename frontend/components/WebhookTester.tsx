@@ -52,8 +52,7 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
         }
       }, {
         headers: {
-          'Authorization': `Bearer ${fluidApiKey}`,
-          'X-Installation-ID': installationId
+          'Authorization': `Bearer ${fluidApiKey}`
         }
       })
 

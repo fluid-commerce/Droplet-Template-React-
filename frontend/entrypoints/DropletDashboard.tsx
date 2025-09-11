@@ -10,6 +10,7 @@ import { WebhookTester } from '@/components/WebhookTester'
 interface DashboardData {
   companyName: string
   recentActivity: any[]
+  brandGuidelines?: any
 }
 
 export function DropletDashboard() {
@@ -46,9 +47,6 @@ export function DropletDashboard() {
         return
       }
 
-      // Fetch brand guidelines
-      await fetchBrandGuidelines(fluidApiKey)
-
       // Development mode: Use mock data for localhost testing
       const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       if (isDevelopment && installationId === 'dev-installation-123') {
@@ -77,7 +75,16 @@ export function DropletDashboard() {
 
       try {
         const response = await apiClient.get(`/api/droplet/dashboard/${installationId}?fluidApiKey=${fluidApiKey}`)
-        setDashboardData(response.data.data)
+        const data = response.data.data
+        setDashboardData(data)
+        
+        // Extract brand guidelines from dashboard data
+        if (data.brandGuidelines) {
+          console.log('Brand guidelines loaded from dashboard:', data.brandGuidelines)
+          setBrandGuidelines(data.brandGuidelines)
+        } else {
+          console.log('No brand guidelines found in dashboard data')
+        }
       } catch (err: any) {
         console.error('Failed to load dashboard data:', err)
         
@@ -147,25 +154,6 @@ export function DropletDashboard() {
     }))
   }
 
-  const fetchBrandGuidelines = async (apiKey: string) => {
-    try {
-      console.log('Fetching brand guidelines with API key:', apiKey.substring(0, 10) + '...')
-      
-      // Use the backend API which handles Fluid authentication properly
-      const response = await apiClient.get('/api/settings/brand_guidelines', {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`
-        }
-      })
-      
-      console.log('Successfully fetched brand guidelines:', response.data)
-      setBrandGuidelines(response.data)
-    } catch (error) {
-      console.warn('Failed to fetch brand guidelines:', error)
-      console.log('Will use fallback styling')
-      // Continue without brand guidelines - use fallback styling
-    }
-  }
 
   if (isLoading) {
     return (

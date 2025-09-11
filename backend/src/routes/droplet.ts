@@ -502,6 +502,7 @@ router.get('/dashboard/:installationId', optionalTenantAuth, rateLimits.tenant, 
     let users = []
     let tiles = []
     let pages = []
+    let brandGuidelines = null
     
     const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
     const companyClient = axios.create({
@@ -515,10 +516,11 @@ router.get('/dashboard/:installationId', optionalTenantAuth, rateLimits.tenant, 
     })
     
     // Fetch real data from Fluid
-    const [usersResponse, tilesResponse, pagesResponse] = await Promise.allSettled([
+    const [usersResponse, tilesResponse, pagesResponse, brandGuidelinesResponse] = await Promise.allSettled([
       companyClient.get('/company/users'),
       companyClient.get('/company/tiles'),
-      companyClient.get('/company/pages')
+      companyClient.get('/company/pages'),
+      companyClient.get('/settings/brand_guidelines')
     ])
     
     if (usersResponse.status === 'fulfilled') {
@@ -530,10 +532,14 @@ router.get('/dashboard/:installationId', optionalTenantAuth, rateLimits.tenant, 
     if (pagesResponse.status === 'fulfilled') {
       pages = pagesResponse.value.data || []
     }
+    if (brandGuidelinesResponse.status === 'fulfilled') {
+      brandGuidelines = brandGuidelinesResponse.value.data
+    }
     
     // Build dashboard data from real Fluid API responses
     const dashboardData = {
       companyName: companyName,
+      brandGuidelines: brandGuidelines,
       recentActivity: [
         {
           description: 'Last sync completed',
@@ -966,40 +972,6 @@ router.post('/cleanup', rateLimits.config, async (req: Request, res: Response) =
     return res.status(error.statusCode || 500).json({
       error: 'Cleanup failed',
       message: error.message || 'An error occurred during cleanup'
-    })
-  }
-})
-
-/**
- * GET /api/settings/brand_guidelines
- * Get brand guidelines for the authenticated company
- */
-router.get('/settings/brand_guidelines', requireTenantAuth, rateLimits.tenant, async (req: Request, res: Response) => {
-  try {
-    const { authenticationToken } = req.tenant!
-    
-    
-    // Create Fluid API client with the authenticated token
-    const fluidApi = new FluidApiService(authenticationToken)
-    
-    // Fetch brand guidelines from Fluid platform
-    const brandGuidelines = await fluidApi.getBrandGuidelines(authenticationToken)
-    
-    logger.info('Brand guidelines fetched successfully', {
-      installationId: req.tenant?.installationId,
-      companyId: req.tenant?.companyId
-    })
-    
-    res.json(brandGuidelines)
-  } catch (error: any) {
-    logger.error('Failed to fetch brand guidelines', {
-      installationId: req.tenant?.installationId,
-      error: error.message
-    }, error)
-    
-    res.status(500).json({
-      error: 'Failed to fetch brand guidelines',
-      message: error.message || 'An error occurred while fetching brand guidelines'
     })
   }
 })
