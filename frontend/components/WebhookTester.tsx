@@ -44,6 +44,7 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
     try {
       const response = await apiClient.post('/api/droplet/test-webhook', {
         webhookType,
+        installationId,
         testData: {
           customer_name: 'Test Customer from Dashboard',
           total: 149.99,
