@@ -30,7 +30,8 @@
     "test:prod": "TEST_API_URL=https://your-backend.onrender.com node tests/droplet.test.js",
     "create-droplet": "node scripts/create-droplet.js",
     "update-droplet": "node scripts/update-droplet.js",
-    "check-droplet": "node scripts/check-droplet.js"
+    "check-droplet": "node scripts/check-droplet.js",
+    "delete-droplet": "node scripts/delete-droplet.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
