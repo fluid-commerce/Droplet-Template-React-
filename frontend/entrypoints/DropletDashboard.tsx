@@ -476,7 +476,7 @@ export function DropletDashboard() {
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon="webhook" className="text-gray-600 text-sm" />
+                    <FontAwesomeIcon icon="link" className="text-gray-600 text-sm" />
                   </div>
                   <div className="text-left">
                     <h3 className="font-semibold text-gray-900">Webhook Testing</h3>

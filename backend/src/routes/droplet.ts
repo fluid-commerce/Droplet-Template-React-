@@ -996,12 +996,12 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
     let testResult: any = {}
     let webhookEventId: string | null = null
 
-    // Create test order in Fluid
+    // Create test order in Fluid using builder API key with installation context
     if (webhookType === 'order.created' || !webhookType) {
       try {
-        logger.info('Creating test order in Fluid', { installationId: tenantInstallationId })
+        logger.info('Creating test order in Fluid using builder API key', { installationId: tenantInstallationId })
         
-        const orderResult = await fluidApi.createTestOrder(tenantApiKey, testData)
+        const orderResult = await fluidApi.createTestOrder(tenantInstallationId, testData)
         
         testResult = {
           type: 'order.created',

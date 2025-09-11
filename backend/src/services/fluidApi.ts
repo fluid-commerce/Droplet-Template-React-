@@ -223,46 +223,54 @@ export class FluidApiService {
   }
 
   /**
-   * Create a test order for webhook testing using Fluid's API structure
+   * Create a test order for webhook testing using builder's API key with installation context
    */
-  async createTestOrder(authToken: string, orderData?: any): Promise<any> {
+  async createTestOrder(installationId: string, orderData?: any): Promise<any> {
     const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    
+    // Use builder's API key instead of customer's API key for order creation
+    const builderApiKey = process.env.FLUID_API_KEY
+    if (!builderApiKey) {
+      throw new Error('Builder API key not configured')
+    }
+    
     const orderClient = axios.create({
       baseURL: `${fluidApiUrl}/api`,
       headers: {
-        'Authorization': `Bearer ${authToken}`,
+        'Authorization': `Bearer ${builderApiKey}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'X-Droplet-Installation-ID': installationId, // Specify which customer installation this is for
       },
       timeout: 30000,
     })
 
-    const orderNumber = `TEST-${Date.now()}`
+    const orderNumber = `TEST-${Date.now()}-${installationId.slice(-6)}`
     
     const defaultOrderData = {
       order_number: orderNumber,
-      customer_email: 'test@example.com',
-      customer_firstname: 'Test',
-      customer_lastname: 'Customer',
+      customer_email: 'jane.doe@testmail.com',
+      customer_firstname: 'Jane',
+      customer_lastname: 'Doe',
       affiliate: {
-        email: 'test-affiliate@example.com'
+        email: 'partner@businessmail.com'
       },
       ship_to: {
-        address1: '123 Test Street',
-        city: 'Test City',
-        state: 'UT',
-        postal_code: '12345'
+        address1: '456 Commerce Way',
+        city: 'Business City',
+        state: 'CA',
+        postal_code: '90210'
       },
       items: [
         {
-          sku: 'TEST-SKU-001',
-          name: 'Test Product',
+          sku: 'DEMO-PRODUCT-123',
+          name: 'Sample Business Item',
           image_url: 'https://via.placeholder.com/150',
-          quantity: 1,
-          unit_price: 149.99
+          quantity: 2,
+          unit_price: 89.95
         }
       ],
-      amount_paid: 149.99
+      amount_paid: 179.90
     }
 
     const finalOrderData = { 
@@ -272,58 +280,39 @@ export class FluidApiService {
     }
     
     try {
-      // Try production endpoint first
-      logger.info('Creating order in Fluid with correct API structure', { 
+      // Create order using builder's API key with installation context
+      logger.info('Creating order using builder API key with installation context', { 
         orderNumber: finalOrderData.order_number,
+        installationId: installationId,
         endpoint: '/company/orders.json'
       })
       
-      let response
-      try {
-        response = await orderClient.post('/company/orders.json', { 
-          order: finalOrderData 
-        })
-      } catch (prodError: any) {
-        // If production fails with 401, try the mock/test endpoint
-        if (prodError.response?.status === 401) {
-          logger.info('Production endpoint failed with 401, trying test endpoint', {
-            orderNumber: finalOrderData.order_number,
-            endpoint: '/_mock/docs/apis/fluid.api/company/orders.json'
-          })
-          
-          // Create test client pointing to docs mock endpoint
-          const testOrderClient = axios.create({
-            baseURL: 'https://docs.fluid.app',
-            headers: {
-              'Authorization': `Bearer ${authToken}`,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            timeout: 30000,
-          })
-          
-          response = await testOrderClient.post('/_mock/docs/apis/fluid.api/company/orders.json', { 
-            order: finalOrderData 
-          })
-          
-          logger.info('Test endpoint succeeded', { orderNumber: finalOrderData.order_number })
-        } else {
-          throw prodError
-        }
-      }
+      const response = await orderClient.post('/company/orders.json', { 
+        order: finalOrderData 
+      })
       
       logger.info('Test order created successfully in Fluid', {
         orderNumber: finalOrderData.order_number,
+        installationId: installationId,
         response: response.data
       })
       
       return response.data
     } catch (error: any) {
-      logger.error('Failed to create test order in Fluid', { 
+      logger.error('Failed to create test order in Fluid using builder API key', { 
         orderData: finalOrderData,
+        installationId: installationId,
         endpoint: '/company/orders.json',
-        error: error.response?.data || error.message 
+        error: error.response?.data || error.message,
+        statusCode: error.response?.status
       }, error)
+      
+      // If we get a 401, it might mean the builder API key doesn't have the right permissions
+      // or the installation context isn't working properly
+      if (error.response?.status === 401) {
+        throw new Error('Builder API key authorization failed. Check if the API key has order creation permissions and the installation context is correct.')
+      }
+      
       throw error
     }
   }

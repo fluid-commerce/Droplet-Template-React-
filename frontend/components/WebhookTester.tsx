@@ -46,8 +46,8 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
         webhookType,
         installationId,
         testData: {
-          customer_name: 'Test Customer from Dashboard',
-          total: 149.99,
+          customer_name: 'Jane Doe from Dashboard',
+          total: 179.90,
           currency: 'USD'
         }
       }, {
@@ -96,26 +96,27 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
 
   return (
     <div className="space-y-4">
-      {/* Webhook Testing Section */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-semibold text-gray-900">Webhook Testing</h3>
-            <p className="text-xs text-gray-500">Test webhook creation and responses</p>
+      {/* API-style Webhook Testing Section */}
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="border-b border-gray-100">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center space-x-3">
+              <span className="font-semibold text-gray-900">Create Order</span>
+              <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">POST</span>
+            </div>
+            <Button
+              onClick={() => handleTestWebhook('order.created')}
+              loading={isLoading}
+              disabled={isLoading}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Test
+            </Button>
           </div>
         </div>
 
-        <div className="space-y-3">
-          <Button
-            onClick={() => handleTestWebhook('order.created')}
-            loading={isLoading}
-            disabled={isLoading}
-            className="w-full justify-start"
-          >
-            <FontAwesomeIcon icon="play" className="mr-2" />
-            Test Order Created Webhook
-          </Button>
-
+        <div className="p-4">
           {testResult && (
             <div className={`p-4 rounded-lg border ${
               testResult.success 
