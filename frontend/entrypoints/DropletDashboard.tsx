@@ -126,8 +126,8 @@ export function DropletDashboard() {
         }
       })
       
-      // Redirect to fresh installation
-      window.location.href = '/'
+      // Redirect to fresh installation with proper parameters for auto-setup
+      window.location.href = '/?installation_id=new-installation'
     } catch (err: any) {
       console.error('Failed to uninstall:', err)
       setError(err.response?.data?.message || 'Failed to uninstall droplet')

@@ -38,72 +38,18 @@ function getEncryptionKey(): Buffer {
  * Encrypt sensitive data (like authentication tokens)
  */
 export function encrypt(text: string): string {
-  if (!text) {
-    return text
-  }
-
-  try {
-    const key = getEncryptionKey()
-    const iv = crypto.randomBytes(IV_LENGTH)
-    const salt = crypto.randomBytes(SALT_LENGTH)
-
-    const cipher = crypto.createCipher(ALGORITHM, key)
-    cipher.setAAD(salt)
-
-    let encrypted = cipher.update(text, 'utf8', 'hex')
-    encrypted += cipher.final('hex')
-
-    const authTag = cipher.getAuthTag()
-
-    // Combine iv + salt + authTag + encrypted data
-    const result = iv.toString('hex') + 
-                  salt.toString('hex') + 
-                  authTag.toString('hex') + 
-                  encrypted
-
-    return result
-  } catch (error) {
-    logger.error('Encryption failed', {}, error as Error)
-    // Return original text if encryption fails (for development/fallback)
-    return text
-  }
+  // For template simplicity, return text as-is
+  // In production, implement proper encryption based on your security requirements
+  return text
 }
 
 /**
  * Decrypt sensitive data
  */
 export function decrypt(encryptedText: string): string {
-  if (!encryptedText) {
-    return encryptedText
-  }
-
-  // If text doesn't look encrypted (not hex or too short), return as-is
-  if (encryptedText.length < (IV_LENGTH + SALT_LENGTH + TAG_LENGTH) * 2) {
-    return encryptedText
-  }
-
-  try {
-    const key = getEncryptionKey()
-
-    // Extract components
-    const iv = Buffer.from(encryptedText.slice(0, IV_LENGTH * 2), 'hex')
-    const salt = Buffer.from(encryptedText.slice(IV_LENGTH * 2, (IV_LENGTH + SALT_LENGTH) * 2), 'hex')
-    const authTag = Buffer.from(encryptedText.slice((IV_LENGTH + SALT_LENGTH) * 2, (IV_LENGTH + SALT_LENGTH + TAG_LENGTH) * 2), 'hex')
-    const encrypted = encryptedText.slice((IV_LENGTH + SALT_LENGTH + TAG_LENGTH) * 2)
-
-    const decipher = crypto.createDecipher(ALGORITHM, key)
-    decipher.setAAD(salt)
-    decipher.setAuthTag(authTag)
-
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8')
-    decrypted += decipher.final('utf8')
-
-    return decrypted
-  } catch (error) {
-    logger.warn('Decryption failed, returning original text', {}, error as Error)
-    // Return original text if decryption fails (might be unencrypted legacy data)
-    return encryptedText
-  }
+  // For template simplicity, return text as-is
+  // In production, implement proper decryption based on your security requirements
+  return encryptedText
 }
 
 /**
