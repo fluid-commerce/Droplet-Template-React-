@@ -971,6 +971,40 @@ router.post('/cleanup', rateLimits.config, async (req: Request, res: Response) =
 })
 
 /**
+ * GET /api/settings/brand_guidelines
+ * Get brand guidelines for the authenticated company
+ */
+router.get('/settings/brand_guidelines', requireTenantAuth, rateLimits.tenant, async (req: Request, res: Response) => {
+  try {
+    const { authenticationToken } = req.tenant!
+    
+    
+    // Create Fluid API client with the authenticated token
+    const fluidApi = new FluidApiService(authenticationToken)
+    
+    // Fetch brand guidelines from Fluid platform
+    const brandGuidelines = await fluidApi.getBrandGuidelines(authenticationToken)
+    
+    logger.info('Brand guidelines fetched successfully', {
+      installationId: req.tenant?.installationId,
+      companyId: req.tenant?.companyId
+    })
+    
+    res.json(brandGuidelines)
+  } catch (error: any) {
+    logger.error('Failed to fetch brand guidelines', {
+      installationId: req.tenant?.installationId,
+      error: error.message
+    }, error)
+    
+    res.status(500).json({
+      error: 'Failed to fetch brand guidelines',
+      message: error.message || 'An error occurred while fetching brand guidelines'
+    })
+  }
+})
+
+/**
  * POST /api/droplet/test-webhook
  * Test webhook by creating a test order in Fluid
  */

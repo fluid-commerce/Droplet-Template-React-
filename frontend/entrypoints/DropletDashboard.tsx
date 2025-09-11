@@ -4,7 +4,6 @@ import { Button } from '@/components/Button'
 import { Card, CardContent } from '@/components/Card'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { apiClient } from '@/lib/api'
-import { FluidClient } from '@/clients/fluidClient'
 import { BrandGuidelines } from '@/types'
 import { WebhookTester } from '@/components/WebhookTester'
 
@@ -150,16 +149,20 @@ export function DropletDashboard() {
 
   const fetchBrandGuidelines = async (apiKey: string) => {
     try {
-      const fluidClient = new FluidClient({
-        apiUrl: 'https://api.fluid.app',
-        apiKey: apiKey,
-        environment: 'production'
+      console.log('Fetching brand guidelines with API key:', apiKey.substring(0, 10) + '...')
+      
+      // Use the backend API which handles Fluid authentication properly
+      const response = await apiClient.get('/api/settings/brand_guidelines', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`
+        }
       })
       
-      const guidelines = await fluidClient.getBrandGuidelines()
-      setBrandGuidelines(guidelines)
+      console.log('Successfully fetched brand guidelines:', response.data)
+      setBrandGuidelines(response.data)
     } catch (error) {
       console.warn('Failed to fetch brand guidelines:', error)
+      console.log('Will use fallback styling')
       // Continue without brand guidelines - use fallback styling
     }
   }
@@ -213,6 +216,13 @@ export function DropletDashboard() {
                 : 'linear-gradient(135deg, #2563eb, #1d4ed8, #3730a3)'
             }}
           >
+            {/* Debug info - remove in production */}
+            {import.meta.env.DEV && (
+              <div className="text-xs opacity-50 mb-2">
+                Debug: Brand guidelines {brandGuidelines ? 'loaded' : 'not loaded'} - 
+                Color: {brandGuidelines?.color || 'fallback blue'}
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-4">
                 {brandGuidelines?.logo_url && (

@@ -49,6 +49,11 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
           total: 149.99,
           currency: 'USD'
         }
+      }, {
+        headers: {
+          'Authorization': `Bearer ${fluidApiKey}`,
+          'X-Installation-ID': installationId
+        }
       })
 
       setTestResult(response.data.data.test)

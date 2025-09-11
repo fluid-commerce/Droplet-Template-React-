@@ -199,6 +199,30 @@ export class FluidApiService {
   }
 
   /**
+   * Get brand guidelines settings
+   */
+  async getBrandGuidelines(authToken: string): Promise<any> {
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    const brandClient = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 30000,
+    })
+
+    try {
+      const response = await brandClient.get('/settings/brand_guidelines')
+      return response.data
+    } catch (error: any) {
+      logger.error('Failed to get brand guidelines', { error: error.message })
+      throw error
+    }
+  }
+
+  /**
    * Create a test order for webhook testing
    */
   async createTestOrder(authToken: string, orderData?: any): Promise<any> {

@@ -140,7 +140,24 @@ export class FluidClient {
    * Get brand guidelines settings
    */
   async getBrandGuidelines(): Promise<BrandGuidelines> {
-    const response = await this.get<BrandGuidelines>('/api/settings/brand_guidelines')
-    return response.data
+    try {
+      const response = await this.client.get('/api/settings/brand_guidelines')
+      console.log('Brand guidelines API response:', response.data)
+      
+      // The API might return the data directly or wrapped in a response object
+      if (response.data && typeof response.data === 'object') {
+        // If it's wrapped in a response object, extract the data
+        if (response.data.data) {
+          return response.data.data
+        }
+        // If it's the data directly
+        return response.data
+      }
+      
+      throw new Error('Invalid response format')
+    } catch (error) {
+      console.error('Brand guidelines API error:', error)
+      throw error
+    }
   }
 }
