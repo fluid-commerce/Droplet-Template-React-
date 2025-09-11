@@ -119,15 +119,20 @@ export function DropletDashboard() {
         fluidApiKey
       })
       
-      // Clear localStorage and redirect to installation page
+      // Clear localStorage and redirect to uninstall success page
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('droplet_session_') || key.includes(installationId)) {
           localStorage.removeItem(key)
         }
       })
       
-      // Redirect to fresh installation with proper parameters for auto-setup
-      window.location.href = '/?installation_id=new-installation'
+      // Redirect to uninstall success page with proper parameters
+      const dropletId = searchParams.get('droplet_id') || process.env.REACT_APP_DROPLET_ID
+      const uninstallUrl = dropletId 
+        ? `/uninstall?installation_id=${installationId}&fluid_api_key=${fluidApiKey}&droplet_id=${dropletId}`
+        : `/uninstall?installation_id=${installationId}&fluid_api_key=${fluidApiKey}`
+      
+      window.location.href = uninstallUrl
     } catch (err: any) {
       console.error('Failed to uninstall:', err)
       setError(err.response?.data?.message || 'Failed to uninstall droplet')

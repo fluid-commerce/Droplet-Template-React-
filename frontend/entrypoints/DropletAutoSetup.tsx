@@ -92,7 +92,20 @@ export function DropletAutoSetup() {
         }
 
         // Check if we have a webhook-configured installation
-        const statusResponse = await apiClient.get(`/api/droplet/status/${effectiveInstallationId}`)
+        let statusResponse
+        try {
+          statusResponse = await apiClient.get(`/api/droplet/status/${effectiveInstallationId}`)
+        } catch (error: any) {
+          // Handle 404 or other errors - installation not found
+          if (error.response?.status === 404) {
+            setError('Installation not found or has been uninstalled. Please install the droplet from Fluid.')
+            return
+          }
+          // For other errors, continue with the flow below
+          console.warn('Status check failed, continuing with setup flow:', error.message)
+          setError('Failed to check installation status. Please try again.')
+          return
+        }
         
         // If we get a successful response with an active installation, redirect immediately to dashboard
         if (statusResponse.data.success && statusResponse.data.data?.status === 'active') {
@@ -110,6 +123,12 @@ export function DropletAutoSetup() {
           
           // Redirect immediately to dashboard for active installations
           navigate(`/dashboard?installation_id=${data.installationId}&fluid_api_key=${data.fluidApiKey || authToken}`)
+          return
+        }
+        
+        // If installation is not found (404) or inactive, show setup page
+        if (!statusResponse.data.success || statusResponse.data.data?.status === 'inactive' || statusResponse.data.data?.status === 'uninstalled') {
+          setError('Installation not found or has been uninstalled. Please uninstall and install the droplet again.')
           return
         }
         
