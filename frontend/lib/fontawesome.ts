@@ -35,7 +35,9 @@ import {
   faInbox,
   faBolt,
   faExternalLinkAlt,
-  faProjectDiagram as faWebhook
+  faProjectDiagram as faWebhook,
+  faChevronUp,
+  faChevronDown
 } from '@fortawesome/free-solid-svg-icons'
 import { faGithub, faTwitter } from '@fortawesome/free-brands-svg-icons'
 
@@ -86,6 +88,8 @@ library.add(
   faBolt,
   faExternalLinkAlt,
   faWebhook,
+  faChevronUp,
+  faChevronDown,
   
   // Brand icons
   faGithub,

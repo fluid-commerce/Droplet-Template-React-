@@ -34,8 +34,17 @@ export function verifyWebhookSignature(req: Request, res: Response, next: NextFu
       })
       
       // In development or if webhook secret not configured, allow unsigned webhooks
+      // Also allow for new installation webhooks that create the installation
       if (process.env.NODE_ENV === 'development' || !webhookSecret) {
         logger.warn('Allowing unsigned webhook (development mode or no secret configured)')
+        return next()
+      }
+      
+      // Allow webhooks for new installations (installation creation)
+      const payload = req.body
+      const eventType = payload.type || payload.event_name
+      if (eventType === 'droplet_installed' || eventType === 'droplet.installed') {
+        logger.info('Allowing installation webhook without signature')
         return next()
       }
       

@@ -2,23 +2,31 @@ import rateLimit from 'express-rate-limit'
 import { Request } from 'express'
 import { logger } from '../services/logger'
 
-// Helper function to properly handle IPv6 addresses
+// Helper function to properly handle IPv6 addresses and trust proxy
 const getClientIdentifier = (req: Request): string => {
   // Use tenant installation ID if available (preferred for tenant-scoped limiting)
   if (req.tenant?.installationId) {
     return `tenant:${req.tenant.installationId}`
   }
   
-  // Use forwarded IP from proxy (Render, Cloudflare, etc.)
-  const forwardedFor = req.headers['x-forwarded-for']
-  if (forwardedFor) {
-    const ip = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0]
-    return `ip:${ip.trim()}`
+  // For production with proxy, use the trusted forwarded IP
+  if (process.env.NODE_ENV === 'production') {
+    // Get the real client IP from X-Forwarded-For or CF-Connecting-IP
+    const cfIp = req.headers['cf-connecting-ip'] as string
+    const forwardedFor = req.headers['x-forwarded-for'] as string
+    const trueClientIp = req.headers['true-client-ip'] as string
+    
+    // Prefer Cloudflare's connecting IP, then true client IP, then forwarded for
+    if (cfIp) return `ip:${cfIp}`
+    if (trueClientIp) return `ip:${trueClientIp}`
+    if (forwardedFor) {
+      const ip = forwardedFor.split(',')[0].trim()
+      return `ip:${ip}`
+    }
   }
   
-  // Use direct IP connection
-  const clientIp = req.socket.remoteAddress || req.ip || 'unknown'
-  return `ip:${clientIp}`
+  // Fallback to Express IP (works with trust proxy)
+  return `ip:${req.ip || req.socket.remoteAddress || 'unknown'}`
 }
 
 /**
