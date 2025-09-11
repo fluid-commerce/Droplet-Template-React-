@@ -46,6 +46,21 @@ export function DropletDashboard() {
         setDashboardData(response.data.data)
       } catch (err: any) {
         console.error('Failed to load dashboard data:', err)
+        
+        // If installation not found (404) or forbidden (403), it was likely uninstalled
+        if (err.response?.status === 404 || err.response?.status === 403) {
+          // Clear localStorage and redirect to fresh installation
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('droplet_session_') || key.includes(installationId!)) {
+              localStorage.removeItem(key)
+            }
+          })
+          
+          // Redirect to installation flow
+          window.location.href = '/'
+          return
+        }
+        
         setError(err.response?.data?.message || 'Failed to load dashboard data')
       } finally {
         setIsLoading(false)
@@ -69,6 +84,21 @@ export function DropletDashboard() {
       setDashboardData(response.data.data)
     } catch (err: any) {
       console.error('Failed to sync data:', err)
+      
+      // If installation not found (404) or forbidden (403), it was likely uninstalled
+      if (err.response?.status === 404 || err.response?.status === 403) {
+        // Clear localStorage and redirect to fresh installation
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('droplet_session_') || key.includes(installationId!)) {
+            localStorage.removeItem(key)
+          }
+        })
+        
+        // Redirect to installation flow
+        window.location.href = '/'
+        return
+      }
+      
       setError(err.response?.data?.message || 'Failed to sync data')
     } finally {
       setIsSyncing(false)
