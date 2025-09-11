@@ -161,8 +161,10 @@ export function DropletDashboard() {
 
 
   if (isLoading) {
-    const primaryColor = formatColor(brandGuidelines?.color) || '#2563eb'
-    const secondaryColor = formatColor(brandGuidelines?.secondary_color || brandGuidelines?.color) || '#1d4ed8'
+    // Use brand colors if available, otherwise use default blue
+    const primaryColor = brandGuidelines?.color ? formatColor(brandGuidelines.color) : '#2563eb'
+    const secondaryColor = brandGuidelines?.secondary_color ? formatColor(brandGuidelines.secondary_color) : 
+                          brandGuidelines?.color ? formatColor(brandGuidelines.color) : '#1d4ed8'
     const lightColor = brandGuidelines?.color ? `${formatColor(brandGuidelines.color)}20` : '#2563eb20'
     
     return (
@@ -249,7 +251,7 @@ export function DropletDashboard() {
                   <img 
                     src={brandGuidelines.logo_url} 
                     alt={`${brandGuidelines.name} logo`}
-                    className="w-12 h-12 object-contain bg-white/10 rounded-lg p-2 backdrop-blur-sm"
+                    className="w-24 h-24 object-contain bg-white/10 rounded-xl p-3 backdrop-blur-sm"
                     onError={(e) => {
                       // Hide logo if it fails to load
                       e.currentTarget.style.display = 'none'
@@ -485,10 +487,16 @@ export function DropletDashboard() {
               {expandedSections.webhooks && (
                 <div className="px-4 pb-4 border-t border-gray-100">
                   <div className="mt-4">
-                    <WebhookTester 
-                      installationId={installationId}
-                      fluidApiKey={fluidApiKey}
-                    />
+                    {installationId && fluidApiKey ? (
+                      <WebhookTester 
+                        installationId={installationId}
+                        fluidApiKey={fluidApiKey}
+                      />
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">Webhook testing requires installation ID and API key</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
