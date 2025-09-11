@@ -801,6 +801,93 @@ router.post('/disconnect', requireTenantAuth, rateLimits.config, async (req: Req
 })
 
 /**
+ * POST /api/droplet/uninstall
+ * Handle manual uninstall (for cases where webhook doesn't fire)
+ */
+router.post('/uninstall', rateLimits.config, async (req: Request, res: Response) => {
+  try {
+    const { installationId, fluidApiKey } = req.body
+    
+    if (!installationId) {
+      return res.status(400).json({
+        error: 'Missing installation ID',
+        message: 'Installation ID is required for uninstall'
+      })
+    }
+
+    if (!fluidApiKey) {
+      return res.status(400).json({
+        error: 'Missing Fluid API key',
+        message: 'Fluid API key is required for uninstall verification'
+      })
+    }
+
+    logger.info('Processing manual uninstall request', { 
+      installationId: installationId,
+      hasApiKey: !!fluidApiKey
+    })
+
+    // Verify the API key owns this installation
+    const installation = await Database.getInstallation(installationId)
+    if (!installation) {
+      return res.status(404).json({
+        error: 'Installation not found',
+        message: 'No installation found with the provided ID'
+      })
+    }
+
+    if (installation.authenticationToken !== fluidApiKey) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You do not have access to this installation'
+      })
+    }
+
+    // Delete the installation and all related data
+    const result = await Database.query(
+      'DELETE FROM droplet_installations WHERE installation_id = $1',
+      [installationId]
+    )
+
+    if (result.rowCount === 0) {
+      return res.status(500).json({
+        error: 'Uninstall failed',
+        message: 'Installation could not be removed from database'
+      })
+    }
+
+    // Clean up related data explicitly
+    await Database.query('DELETE FROM activity_logs WHERE installation_id = $1', [installationId])
+    await Database.query('DELETE FROM webhook_events WHERE installation_id = $1', [installationId])
+    await Database.query('DELETE FROM custom_data WHERE installation_id = $1', [installationId])
+
+    logger.info('Manual uninstall completed successfully', { 
+      installationId: installationId,
+      companyId: installation.companyId,
+      deletedRows: result.rowCount 
+    })
+
+    return res.json({
+      success: true,
+      message: 'Droplet uninstalled successfully',
+      data: {
+        installationId: installationId,
+        uninstalledAt: new Date().toISOString(),
+        deletedRows: result.rowCount
+      }
+    })
+
+  } catch (error: any) {
+    logger.error('Manual uninstall error:', error)
+    
+    return res.status(error.statusCode || 500).json({
+      error: 'Uninstall failed',
+      message: error.message || 'An error occurred during uninstall'
+    })
+  }
+})
+
+/**
  * POST /api/droplet/cleanup
  * Clean up orphaned installations (for admin use only - requires specific admin key)
  */

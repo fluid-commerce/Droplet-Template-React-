@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { DropletAutoSetup } from '@/entrypoints/DropletAutoSetup'
 import { DropletDashboard } from '@/entrypoints/DropletDashboard'
+import { DropletUninstall } from '@/entrypoints/DropletUninstall'
 
 function App() {
   const navigate = useNavigate()
@@ -37,6 +38,7 @@ function App() {
       <Routes>
         <Route path="/" element={<DropletAutoSetup />} />
         <Route path="/dashboard" element={<DropletDashboard />} />
+        <Route path="/uninstall" element={<DropletUninstall />} />
       </Routes>
     </div>
   )

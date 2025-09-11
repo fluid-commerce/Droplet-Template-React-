@@ -43,22 +43,29 @@ router.post('/fluid', verifyWebhookSignature, validateWebhookPayload, validateWe
     // Handle different webhook event types
     switch (eventType) {
       case 'droplet_installed':
+      case 'droplet.installed':
         await handleDropletInstalled(event)
         break
       
+      case 'droplet_uninstalled':
       case 'droplet.uninstalled':
+      case 'droplet_removed':
+      case 'droplet.removed':
         await handleDropletUninstalled(event)
         break
       
       case 'droplet.updated':
+      case 'droplet_updated':
         await handleDropletUpdated(event)
         break
       
       case 'company.created':
+      case 'company_created':
         await handleCompanyCreated(event)
         break
       
       case 'company.updated':
+      case 'company_updated':
         await handleCompanyUpdated(event)
         break
       
@@ -67,7 +74,8 @@ router.post('/fluid', verifyWebhookSignature, validateWebhookPayload, validateWe
           eventType: eventType, 
           eventId: event.id,
           installationId: webhookContext?.installationId,
-          companyId: webhookContext?.companyId
+          companyId: webhookContext?.companyId,
+          fullPayload: req.body // Log full payload for debugging
         })
     }
 
