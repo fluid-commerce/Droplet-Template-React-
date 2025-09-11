@@ -181,10 +181,18 @@ async function main() {
     console.log()
     log('📋 Updated Droplet Details:', 'cyan')
     log(`   ID: ${config.dropletId}`, 'bright')
-    log(`   Name: ${droplet.name}`)
-    log(`   Embed URL: ${droplet.embed_url}`)
-    log(`   Webhook URL: ${droplet.webhook_url}`)
+    log(`   Name: ${droplet.name || 'Unknown'}`)
+    log(`   Embed URL: ${droplet.embed_url || 'Not set'}`)
+    log(`   Webhook URL: ${droplet.webhook_url || 'Not set'}`)
     log(`   Status: ${droplet.active ? 'Active' : 'Inactive'}`)
+    
+    // Verify the webhook URL was actually set
+    if (!droplet.webhook_url || droplet.webhook_url === 'undefined') {
+      logWarning('⚠️  Webhook URL may not have been set properly')
+      logInfo('Try running the script again or check your Fluid dashboard')
+    } else {
+      logSuccess('✅ Webhook URL successfully configured!')
+    }
     
     console.log()
     log('🚀 Next Steps:', 'cyan')

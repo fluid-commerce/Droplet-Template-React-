@@ -101,7 +101,15 @@ function validateConfiguration(config) {
     errors.push('WEBHOOK_URL environment variable is required')
   } else {
     try {
-      new URL(config.webhookUrl)
+      const webhookUrl = new URL(config.webhookUrl)
+      // Ensure it's HTTPS in production
+      if (webhookUrl.protocol !== 'https:' && !config.webhookUrl.includes('localhost')) {
+        logWarning('Webhook URL should use HTTPS for production deployments')
+      }
+      // Ensure it ends with the correct path
+      if (!config.webhookUrl.endsWith('/api/webhooks/fluid')) {
+        logWarning('Webhook URL should end with "/api/webhooks/fluid"')
+      }
     } catch (error) {
       errors.push('WEBHOOK_URL must be a valid URL')
     }
@@ -273,8 +281,10 @@ async function main() {
     log('2. Set DROPLET_ID in your deployment environment variables')
     log('3. Run database migrations: npm run migrate')
     log('4. Test your droplet by installing it in Fluid')
+    log('5. Verify webhook functionality by uninstalling/reinstalling')
     console.log()
     log('🔗 Your droplet should now be available in the Fluid platform!', 'green')
+    log('📝 Important: Make sure your webhook URL is accessible from Fluid!', 'yellow')
 
   } catch (error) {
     console.log()
