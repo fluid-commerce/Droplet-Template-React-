@@ -112,23 +112,26 @@ async function updateDroplet(config) {
   logInfo(`Current embed URL: ${currentDroplet.embed_url}`)
   logInfo(`Current webhook URL: ${currentDroplet.webhook_url || 'NOT SET'}`)
 
-  // Update with webhook URL
+  // Update with webhook URL - try minimal update first
   const updatedDropletData = {
-    ...currentDroplet,
     webhook_url: config.webhookUrl
   }
 
   logInfo(`Updating droplet with webhook URL: ${config.webhookUrl}`)
+  logInfo(`Sending update data: ${JSON.stringify({ droplet: updatedDropletData }, null, 2)}`)
 
   try {
-    const response = await client.put(`/droplets/${config.dropletId}`, {
+    // Try PATCH first for partial updates
+    const response = await client.patch(`/droplets/${config.dropletId}`, {
       droplet: updatedDropletData
     })
 
     return response.data
   } catch (error) {
     if (error.response) {
-      throw new Error(`API Error ${error.response.status}: ${error.response.data?.message || error.response.statusText}`)
+      // Log more details about the error for debugging
+      logError(`Full error response: ${JSON.stringify(error.response.data, null, 2)}`)
+      throw new Error(`API Error ${error.response.status}: ${error.response.data?.message || JSON.stringify(error.response.data) || error.response.statusText}`)
     } else if (error.request) {
       throw new Error('Network Error: Could not reach Fluid API. Please check your internet connection and API URL.')
     } else {

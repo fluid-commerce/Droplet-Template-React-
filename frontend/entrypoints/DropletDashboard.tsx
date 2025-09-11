@@ -18,6 +18,7 @@ export function DropletDashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isUninstalling, setIsUninstalling] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
   // Collapsible sections state
@@ -102,6 +103,36 @@ export function DropletDashboard() {
       setError(err.response?.data?.message || 'Failed to sync data')
     } finally {
       setIsSyncing(false)
+    }
+  }
+
+  const handleUninstall = async () => {
+    if (!installationId || !fluidApiKey) return
+    
+    const confirmed = window.confirm('Are you sure you want to uninstall this droplet? This will remove all data and cannot be undone.')
+    if (!confirmed) return
+
+    setIsUninstalling(true)
+    try {
+      await apiClient.post('/api/droplet/uninstall', {
+        installationId,
+        fluidApiKey
+      })
+      
+      // Clear localStorage and redirect to installation page
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('droplet_session_') || key.includes(installationId)) {
+          localStorage.removeItem(key)
+        }
+      })
+      
+      // Redirect to fresh installation
+      window.location.href = '/'
+    } catch (err: any) {
+      console.error('Failed to uninstall:', err)
+      setError(err.response?.data?.message || 'Failed to uninstall droplet')
+    } finally {
+      setIsUninstalling(false)
     }
   }
 
@@ -296,12 +327,12 @@ export function DropletDashboard() {
               
               {expandedSections.actions && (
                 <div className="px-4 pb-4 border-t border-gray-100">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
                     <Button 
                       onClick={handleSyncData} 
                       variant="outline" 
                       loading={isSyncing} 
-                      disabled={isSyncing}
+                      disabled={isSyncing || isUninstalling}
                       className="h-auto p-3 flex flex-col items-start space-y-1"
                     >
                       <div className="flex items-center space-x-2">
@@ -314,6 +345,7 @@ export function DropletDashboard() {
                     <Button 
                       variant="outline" 
                       className="h-auto p-3 flex flex-col items-start space-y-1"
+                      disabled={isUninstalling}
                       onClick={() => window.open('https://fluid.app', '_blank')}
                     >
                       <div className="flex items-center space-x-2">
@@ -321,6 +353,20 @@ export function DropletDashboard() {
                         <span className="font-medium text-sm">Visit Fluid</span>
                       </div>
                       <span className="text-xs text-gray-500 text-left">Open Fluid platform</span>
+                    </Button>
+
+                    <Button 
+                      onClick={handleUninstall}
+                      variant="outline"
+                      loading={isUninstalling}
+                      disabled={isSyncing || isUninstalling}
+                      className="h-auto p-3 flex flex-col items-start space-y-1 border-red-200 hover:bg-red-50 hover:border-red-300"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <FontAwesomeIcon icon="trash" className="text-sm text-red-600" />
+                        <span className="font-medium text-sm text-red-600">Uninstall</span>
+                      </div>
+                      <span className="text-xs text-gray-500 text-left">Remove this droplet</span>
                     </Button>
                   </div>
                 </div>
