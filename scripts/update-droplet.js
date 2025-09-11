@@ -112,19 +112,46 @@ async function updateDroplet(config) {
   logInfo(`Current embed URL: ${currentDroplet.embed_url}`)
   logInfo(`Current webhook URL: ${currentDroplet.webhook_url || 'NOT SET'}`)
 
-  // Update with webhook URL - try minimal update first
+  // Update with webhook URL - fix validation issues
   const updatedDropletData = {
-    webhook_url: config.webhookUrl
+    webhook_url: config.webhookUrl,
+    webhookUrl: config.webhookUrl,
+    webhook_endpoint: config.webhookUrl,
+    webhookEndpoint: config.webhookUrl,
+    settings: {
+      ...currentDroplet.settings,
+      webhook_url: config.webhookUrl,
+      webhookUrl: config.webhookUrl,
+      // Fix validation issues
+      details_page: {
+        ...currentDroplet.settings.details_page,
+        features: currentDroplet.settings.details_page?.features || []
+      },
+      service_operational_countries: currentDroplet.settings.service_operational_countries || []
+    }
   }
 
   logInfo(`Updating droplet with webhook URL: ${config.webhookUrl}`)
   logInfo(`Sending update data: ${JSON.stringify({ droplet: updatedDropletData }, null, 2)}`)
 
   try {
-    // Try PATCH first for partial updates
-    const response = await client.patch(`/droplets/${config.dropletId}`, {
-      droplet: updatedDropletData
-    })
+    // Try PUT first for full updates, then PATCH as fallback
+    let response
+    try {
+      logInfo('Trying PUT request...')
+      response = await client.put(`/droplets/${config.dropletId}`, {
+        droplet: updatedDropletData
+      })
+    } catch (putError) {
+      logInfo('PUT failed, trying PATCH...')
+      response = await client.patch(`/droplets/${config.dropletId}`, {
+        droplet: updatedDropletData
+      })
+    }
+
+    // Debug: Log the full response
+    logInfo('Full API response:')
+    logInfo(JSON.stringify(response.data, null, 2))
 
     return response.data
   } catch (error) {
@@ -189,7 +216,9 @@ async function main() {
     // Verify the webhook URL was actually set
     if (!droplet.webhook_url || droplet.webhook_url === 'undefined') {
       logWarning('⚠️  Webhook URL may not have been set properly')
-      logInfo('Try running the script again or check your Fluid dashboard')
+      logInfo('Note: Some Fluid API versions may not return webhook_url in the response')
+      logInfo('Check your Fluid dashboard to verify the webhook URL was set')
+      logInfo('If webhook URL cannot be updated, you may need to recreate the droplet')
     } else {
       logSuccess('✅ Webhook URL successfully configured!')
     }
