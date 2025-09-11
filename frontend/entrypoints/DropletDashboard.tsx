@@ -248,15 +248,17 @@ export function DropletDashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-4">
                 {brandGuidelines?.logo_url && (
-                  <img 
-                    src={brandGuidelines.logo_url} 
-                    alt={`${brandGuidelines.name} logo`}
-                    className="w-24 h-24 object-contain bg-white/10 rounded-xl p-3 backdrop-blur-sm"
-                    onError={(e) => {
-                      // Hide logo if it fails to load
-                      e.currentTarget.style.display = 'none'
-                    }}
-                  />
+                  <div className="w-24 h-24 bg-white rounded-xl p-2 shadow-lg flex items-center justify-center">
+                    <img 
+                      src={brandGuidelines.logo_url} 
+                      alt={`${brandGuidelines.name} logo`}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        // Hide logo if it fails to load
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
+                  </div>
                 )}
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-bold mb-2">
@@ -487,6 +489,7 @@ export function DropletDashboard() {
               {expandedSections.webhooks && (
                 <div className="px-4 pb-4 border-t border-gray-100">
                   <div className="mt-4">
+
                     {installationId && fluidApiKey ? (
                       <WebhookTester 
                         installationId={installationId}
