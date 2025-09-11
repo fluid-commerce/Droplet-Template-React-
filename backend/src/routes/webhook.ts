@@ -187,11 +187,64 @@ async function handleDropletUninstalled(event: WebhookEvent) {
     installationId: event.data?.installation_id
   })
   
-  // Implementation would include:
-  // - Clean up data
-  // - Remove webhooks
-  // - Send goodbye email
-  // - Update analytics
+  try {
+    const Database = getDatabaseService()
+    
+    // Extract installation information from the webhook payload
+    const companyData = event.data?.company || {}
+    const installationId = companyData.droplet_installation_uuid || event.data?.droplet_installation_uuid || event.data?.installation_id
+    const companyId = event.data?.company_id || event.data?.fluid_company_id || companyData.fluid_company_id
+    
+    if (!installationId) {
+      logger.error('Missing installation ID in uninstall webhook payload', { eventData: event.data })
+      return
+    }
+
+    logger.info('Removing installation from database', {
+      installationId,
+      companyId,
+      eventId: event.id
+    })
+
+    // Delete the installation and all related data (CASCADE should handle related data)
+    const result = await Database.query(
+      'DELETE FROM droplet_installations WHERE installation_id = $1',
+      [installationId]
+    )
+
+    if (result.rowCount > 0) {
+      logger.info('Installation successfully removed from database', {
+        installationId,
+        companyId,
+        deletedRows: result.rowCount
+      })
+    } else {
+      logger.warn('Installation not found in database during uninstall', {
+        installationId,
+        companyId
+      })
+    }
+
+    // Clean up any remaining related data explicitly (belt and suspenders approach)
+    await Database.query('DELETE FROM activity_logs WHERE installation_id = $1', [installationId])
+    await Database.query('DELETE FROM webhook_events WHERE installation_id = $1', [installationId])
+    await Database.query('DELETE FROM custom_data WHERE installation_id = $1', [installationId])
+
+    // Log the uninstallation activity (to a separate log table if needed)
+    logger.info('Droplet uninstallation completed successfully', {
+      installationId,
+      companyId,
+      eventId: event.id,
+      timestamp: new Date().toISOString()
+    })
+
+  } catch (error: any) {
+    logger.error('Failed to process droplet uninstallation', {
+      eventId: event.id,
+      error: error.message,
+      installationId: event.data?.installation_id || event.data?.droplet_installation_uuid
+    })
+  }
 }
 
 /**
