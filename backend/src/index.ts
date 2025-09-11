@@ -19,6 +19,9 @@ validateEnvironmentVariables()
 const app = express()
 const PORT = process.env.PORT || 3001
 
+// Trust proxy for production deployment (Render, Cloudflare, etc.)
+app.set('trust proxy', true)
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: isDevelopment() ? false : undefined,

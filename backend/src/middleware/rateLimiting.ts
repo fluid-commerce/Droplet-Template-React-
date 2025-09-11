@@ -2,6 +2,25 @@ import rateLimit from 'express-rate-limit'
 import { Request } from 'express'
 import { logger } from '../services/logger'
 
+// Helper function to properly handle IPv6 addresses
+const getClientIdentifier = (req: Request): string => {
+  // Use tenant installation ID if available (preferred for tenant-scoped limiting)
+  if (req.tenant?.installationId) {
+    return `tenant:${req.tenant.installationId}`
+  }
+  
+  // Use forwarded IP from proxy (Render, Cloudflare, etc.)
+  const forwardedFor = req.headers['x-forwarded-for']
+  if (forwardedFor) {
+    const ip = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0]
+    return `ip:${ip.trim()}`
+  }
+  
+  // Use direct IP connection
+  const clientIp = req.socket.remoteAddress || req.ip || 'unknown'
+  return `ip:${clientIp}`
+}
+
 /**
  * Rate limiting configuration for different endpoint types
  */
@@ -38,10 +57,7 @@ export const tenantRateLimit = rateLimit({
     error: 'Tenant rate limit exceeded',
     message: 'Too many requests for this installation, please try again later'
   },
-  keyGenerator: (req: Request) => {
-    // Use tenant installation ID if available, otherwise fall back to IP
-    return req.tenant?.installationId || req.ip || 'unknown'
-  },
+  keyGenerator: getClientIdentifier,
   handler: (req, res) => {
     logger.warn('Tenant rate limit exceeded', {
       installationId: req.tenant?.installationId,
@@ -65,9 +81,7 @@ export const configRateLimit = rateLimit({
     error: 'Configuration rate limit exceeded',
     message: 'Too many configuration requests, please try again later'
   },
-  keyGenerator: (req: Request) => {
-    return req.tenant?.installationId || req.ip || 'unknown'
-  },
+  keyGenerator: getClientIdentifier,
   handler: (req, res) => {
     logger.warn('Configuration rate limit exceeded', {
       installationId: req.tenant?.installationId,

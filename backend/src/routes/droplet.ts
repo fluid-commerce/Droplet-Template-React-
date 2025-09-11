@@ -404,17 +404,60 @@ router.post('/test-connection', rateLimits.testConnection, async (req: Request, 
  * GET /api/droplet/dashboard/:installationId
  * Get dashboard data for an installation
  */
-router.get('/dashboard/:installationId', requireTenantAuth, rateLimits.tenant, async (req: Request, res: Response) => {
+router.get('/dashboard/:installationId', optionalTenantAuth, rateLimits.tenant, async (req: Request, res: Response) => {
   try {
-    // Use tenant from auth middleware - guaranteed to be the correct tenant
-    const tenantInstallationId = req.tenant!.installationId
-    const tenantCompanyId = req.tenant!.companyId
-    const apiKey = req.tenant!.authenticationToken
+    // Handle both authenticated and query parameter scenarios
+    let tenantInstallationId: string
+    let tenantCompanyId: string
+    let apiKey: string
 
-    logger.info('Loading dashboard for authenticated tenant', {
-      installationId: tenantInstallationId,
-      companyId: tenantCompanyId
-    })
+    if (req.tenant) {
+      // Use authenticated tenant data (preferred)
+      tenantInstallationId = req.tenant.installationId
+      tenantCompanyId = req.tenant.companyId
+      apiKey = req.tenant.authenticationToken
+
+      logger.info('Loading dashboard for authenticated tenant', {
+        installationId: tenantInstallationId,
+        companyId: tenantCompanyId
+      })
+    } else {
+      // Fallback to query parameters for compatibility
+      const { installationId } = req.params
+      const { fluidApiKey } = req.query
+
+      if (!installationId || !fluidApiKey) {
+        return res.status(400).json({
+          error: 'Missing required parameters',
+          message: 'Installation ID and Fluid API key are required'
+        })
+      }
+
+      // Verify the API key owns this installation
+      const installation = await Database.getInstallation(installationId)
+      if (!installation) {
+        return res.status(404).json({
+          error: 'Installation not found',
+          message: 'No installation found with the provided ID'
+        })
+      }
+
+      if (installation.authenticationToken !== fluidApiKey) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You do not have access to this installation'
+        })
+      }
+
+      tenantInstallationId = installation.id
+      tenantCompanyId = installation.companyId
+      apiKey = installation.authenticationToken
+
+      logger.info('Loading dashboard via query parameters', {
+        installationId: tenantInstallationId,
+        companyId: tenantCompanyId
+      })
+    }
 
     // Get stored company data for this specific tenant only
     const installationResult = await Database.query(`

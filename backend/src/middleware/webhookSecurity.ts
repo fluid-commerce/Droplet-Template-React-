@@ -18,17 +18,24 @@ export function verifyWebhookSignature(req: Request, res: Response, next: NextFu
     // Get signature from headers (try different possible header names)
     const signature = req.headers['x-fluid-signature'] || 
                      req.headers['x-webhook-signature'] || 
-                     req.headers['x-signature']
+                     req.headers['x-signature'] ||
+                     req.headers['auth-token'] // Fluid might use auth-token
 
     if (!signature) {
       logger.warn('Webhook received without signature', {
         headers: req.headers,
-        hasSecret: !!webhookSecret
+        hasSecret: !!webhookSecret,
+        possibleSignatureHeaders: [
+          req.headers['x-fluid-signature'],
+          req.headers['x-webhook-signature'], 
+          req.headers['x-signature'],
+          req.headers['auth-token']
+        ].filter(Boolean)
       })
       
-      // In development, allow unsigned webhooks
-      if (process.env.NODE_ENV === 'development') {
-        logger.warn('Allowing unsigned webhook in development mode')
+      // In development or if webhook secret not configured, allow unsigned webhooks
+      if (process.env.NODE_ENV === 'development' || !webhookSecret) {
+        logger.warn('Allowing unsigned webhook (development mode or no secret configured)')
         return next()
       }
       
