@@ -304,12 +304,12 @@ export function DropletAutoSetup() {
     )
   }
 
-  // For all other cases, show a simple loading state that will redirect
+  // For all other cases, show a simple high-end spinner while redirecting
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-      <div className="text-center">
-        <FontAwesomeIcon icon="spinner" spin className="text-4xl text-blue-600 mb-4" />
-        <p className="text-lg text-gray-600">Loading Dashboard...</p>
+      <div className="relative">
+        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-blue-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
       </div>
     </div>
   )
