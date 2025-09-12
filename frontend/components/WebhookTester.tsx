@@ -33,6 +33,7 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
   const [recentWebhooks, setRecentWebhooks] = useState<WebhookEvent[]>([])
   const [expandedLogs, setExpandedLogs] = useState<{ [key: string]: boolean }>({})
   const [showJsonData, setShowJsonData] = useState<{ [key: string]: boolean }>({})
+  const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({})
 
   const formatColor = (color: string | null | undefined) => {
     if (!color) return undefined
@@ -81,6 +82,13 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
     setExpandedLogs(prev => ({
       ...prev,
       [logId]: !prev[logId]
+    }))
+  }
+
+  const toggleCategoryExpansion = (categoryName: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryName]: !prev[categoryName]
     }))
   }
 
@@ -199,11 +207,18 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
       {/* Comprehensive API-style Webhook Testing Section */}
       {webhookEndpoints.map((category) => (
         <div key={category.category} className="bg-white rounded-lg border border-gray-200">
-          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+          <button
+            onClick={() => toggleCategoryExpansion(category.category)}
+            className="w-full bg-gray-50 px-4 py-3 border-b border-gray-200 hover:bg-gray-100 transition-colors flex items-center justify-between"
+          >
             <h3 className="font-semibold text-gray-900 text-sm">{category.category}</h3>
-          </div>
+            <FontAwesomeIcon 
+              icon={expandedCategories[category.category] ? "chevron-up" : "chevron-down"} 
+              className="text-gray-400 text-sm" 
+            />
+          </button>
           
-          {category.endpoints.map((endpoint) => (
+          {expandedCategories[category.category] && category.endpoints.map((endpoint) => (
             <div key={endpoint.type} className="border-b border-gray-100 last:border-b-0">
               <div className="flex items-center justify-between p-4">
                 <div className="flex items-center space-x-3">
@@ -242,47 +257,61 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
         </div>
       ))}
 
-      {/* Test Results Section */}
+      {/* Test Results Section - Terminal Style */}
       {testResult && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="space-y-4">
-              {/* Test Status */}
-              <div className={`p-4 rounded-lg border ${
+        <div className="bg-gray-900 rounded-lg border border-gray-700 p-4 font-mono">
+          <div className="space-y-4">
+            {/* Terminal Header */}
+            <div className="flex items-center space-x-2 pb-2 border-b border-gray-700">
+              <div className="flex space-x-1">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              </div>
+              <span className="text-gray-400 text-sm">Webhook Test Terminal</span>
+            </div>
+            
+            {/* Test Status - Terminal Style */}
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-green-400">$</span>
+                <span className="text-white">webhook-test --type={testResult.type}</span>
+              </div>
+              
+              <div className={`p-3 rounded border-l-4 ${
                 testResult.success 
-                  ? 'bg-green-50 border-green-200' 
-                  : 'bg-red-50 border-red-200'
+                  ? 'bg-green-900/20 border-green-500' 
+                  : 'bg-red-900/20 border-red-500'
               }`}>
                 <div className="flex items-center space-x-2 mb-2">
-                  <FontAwesomeIcon 
-                    icon={testResult.success ? "check-circle" : "exclamation-circle"} 
-                    className={`text-sm ${
-                      testResult.success ? 'text-green-600' : 'text-red-600'
-                    }`}
-                  />
-                  <span className={`font-medium text-sm ${
-                    testResult.success ? 'text-green-800' : 'text-red-800'
+                  <span className={`text-sm font-bold ${
+                    testResult.success ? 'text-green-400' : 'text-red-400'
                   }`}>
-                    {testResult.success ? 'Test Successful' : 'Test Failed'}
+                    {testResult.success ? '✓ SUCCESS' : '✗ FAILED'}
+                  </span>
+                  <span className="text-gray-400 text-xs">
+                    {new Date(testResult.createdAt).toLocaleTimeString()}
                   </span>
                 </div>
                 
                 {testResult.success && testResult.resourceId && (
-                  <p className="text-xs text-green-700 mb-2">
-                    {testResult.type.includes('order') ? 'Order' :
-                     testResult.type.includes('product') ? 'Product' :
-                     testResult.type.includes('customer') ? 'Customer' : 'Resource'} ID: {testResult.resourceId}
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-green-300 text-sm">
+                      <span className="text-gray-400">Resource ID:</span> {testResult.resourceId}
+                    </p>
+                    <p className="text-green-300 text-sm">
+                      <span className="text-gray-400">Type:</span> {testResult.type}
+                    </p>
+                  </div>
                 )}
                 
                 {testResult.error && (
-                  <p className="text-xs text-red-700 mb-2">
-                    Error: {testResult.error}
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-red-300 text-sm">
+                      <span className="text-gray-400">Error:</span> {testResult.error}
+                    </p>
+                  </div>
                 )}
-                
-                <p className="text-xs text-gray-600">
-                  {new Date(testResult.createdAt).toLocaleString()}
-                </p>
               </div>
 
               {/* Detailed Logs Section */}
@@ -402,38 +431,41 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
                 </div>
               )}
             </div>
+          </div>
         </div>
       )}
 
-      {/* Recent Webhook Events */}
+      {/* Recent Webhook Events - Terminal Style */}
       {recentWebhooks.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-semibold text-gray-900">Recent Webhook Events</h3>
-              <p className="text-xs text-gray-500">Latest webhook responses from Fluid</p>
+        <div className="bg-gray-900 rounded-lg border border-gray-700 p-4 font-mono">
+          <div className="flex items-center space-x-2 pb-3 border-b border-gray-700 mb-4">
+            <div className="flex space-x-1">
+              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             </div>
+            <span className="text-gray-400 text-sm">Webhook Event Logs</span>
           </div>
 
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {recentWebhooks.map((webhook) => (
-              <div key={webhook.id} className="border border-gray-100 rounded-lg">
+              <div key={webhook.id} className="border border-gray-700 rounded-lg bg-gray-800/50">
                 <button
                   onClick={() => toggleLogExpansion(webhook.id)}
-                  className="w-full p-3 text-left hover:bg-gray-50 transition-colors"
+                  className="w-full p-3 text-left hover:bg-gray-800 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className={`w-2 h-2 rounded-full ${
-                        webhook.processingStatus === 'success' ? 'bg-green-500' :
-                        webhook.processingStatus === 'failed' ? 'bg-red-500' :
-                        'bg-yellow-500'
+                        webhook.processingStatus === 'success' ? 'bg-green-400' :
+                        webhook.processingStatus === 'failed' ? 'bg-red-400' :
+                        'bg-yellow-400'
                       }`} />
                       <div>
-                        <p className="font-medium text-sm text-gray-900">
+                        <p className="font-medium text-sm text-white">
                           {webhook.type || 'Unknown Event'}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-400">
                           {new Date(webhook.createdAt).toLocaleString()}
                         </p>
                       </div>
@@ -446,26 +478,26 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
                 </button>
 
                 {expandedLogs[webhook.id] && (
-                  <div className="px-3 pb-3 border-t border-gray-100">
+                  <div className="px-3 pb-3 border-t border-gray-700">
                     <div className="mt-3 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-600">JSON Data:</span>
+                        <span className="text-xs font-medium text-gray-400">JSON Data:</span>
                         <button
                           onClick={() => toggleJsonData(webhook.id)}
-                          className="text-xs text-blue-600 hover:text-blue-800"
+                          className="text-xs text-blue-400 hover:text-blue-300"
                         >
                           {showJsonData[webhook.id] ? 'Hide' : 'Show'} JSON
                         </button>
                       </div>
                       
                       {showJsonData[webhook.id] && (
-                        <pre className="bg-gray-50 p-3 rounded text-xs overflow-x-auto">
-                          <code>{formatJsonData(webhook.data)}</code>
+                        <pre className="bg-gray-800 p-3 rounded text-xs overflow-x-auto border border-gray-700">
+                          <code className="text-green-300">{formatJsonData(webhook.data)}</code>
                         </pre>
                       )}
 
                       {webhook.retryCount && webhook.retryCount > 0 && (
-                        <p className="text-xs text-yellow-600">
+                        <p className="text-xs text-yellow-400">
                           Retried {webhook.retryCount} times
                         </p>
                       )}

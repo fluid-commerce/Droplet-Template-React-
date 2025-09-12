@@ -475,6 +475,84 @@ export class FluidApiService {
   }
 
   /**
+   * UPDATE METHODS FOR REAL RESOURCE MODIFICATION
+   */
+
+  /**
+   * Update existing product by ID
+   */
+  async updateProduct(installationId: string, productId: string, updateData: any): Promise<any> {
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    const builderApiKey = process.env.FLUID_API_KEY
+    if (!builderApiKey) {
+      throw new Error('Builder API key not configured')
+    }
+    
+    const client = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${builderApiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Droplet-Installation-ID': installationId,
+      },
+      timeout: 30000,
+    })
+
+    try {
+      const response = await client.put(`/company/v1/products/${productId}`, {
+        product: updateData
+      })
+      return response.data
+    } catch (error: any) {
+      logger.error('Failed to update product in Fluid', { 
+        installationId,
+        productId,
+        updateData,
+        error: error.response?.data || error.message 
+      }, error)
+      throw error
+    }
+  }
+
+  /**
+   * Update existing contact by ID  
+   */
+  async updateContact(installationId: string, contactId: string, updateData: any): Promise<any> {
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    const builderApiKey = process.env.FLUID_API_KEY
+    if (!builderApiKey) {
+      throw new Error('Builder API key not configured')
+    }
+    
+    const client = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${builderApiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Droplet-Installation-ID': installationId,
+      },
+      timeout: 30000,
+    })
+
+    try {
+      const response = await client.put(`/company/contacts/${contactId}`, {
+        contact: updateData
+      })
+      return response.data
+    } catch (error: any) {
+      logger.error('Failed to update contact in Fluid', { 
+        installationId,
+        contactId,
+        updateData,
+        error: error.response?.data || error.message 
+      }, error)
+      throw error
+    }
+  }
+
+  /**
    * Health check
    */
   async healthCheck(): Promise<{ status: string; timestamp: string }> {

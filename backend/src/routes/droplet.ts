@@ -1146,13 +1146,86 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
           }
           break
 
-        // All other webhooks - Simulate with realistic data
+        // Product webhooks - Update real products  
         case 'product_updated':
-        case 'product_destroyed':
-        case 'user_updated':
-        case 'user_deactivated':
+          // Get a recent product to update
+          const recentProductsResult = await Database.query(`
+            SELECT activity_logs.details->>'resourceId' as product_id
+            FROM activity_logs 
+            WHERE installation_id = $1 
+              AND activity_type = 'webhook_test'
+              AND (details->>'webhookType' = 'product_created')
+              AND status = 'success'
+            ORDER BY created_at DESC 
+            LIMIT 1
+          `, [tenantInstallationId])
+
+          if (recentProductsResult.rows.length === 0) {
+            throw new Error('No recent products found to update. Create a product first.')
+          }
+
+          const productToUpdate = recentProductsResult.rows[0].product_id
+          const productUpdateData = {
+            title: testData.title || 'Updated Product Name',
+            description: testData.description || 'Product updated via webhook testing',
+            price: testData.price || '39.99',
+            ...testData
+          }
+          
+          const productUpdateResult = await fluidApi.updateProduct(tenantInstallationId, productToUpdate, productUpdateData)
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: productToUpdate,
+            resourceData: productUpdateResult,
+            createdAt: new Date().toISOString()
+          }
+          break
+
+        // Contact/Customer webhooks - Update real contacts
         case 'contact_updated':
         case 'customer_updated':
+        case 'user_updated':
+          // Get a recent contact to update
+          const recentContactsResult = await Database.query(`
+            SELECT activity_logs.details->>'resourceId' as contact_id
+            FROM activity_logs 
+            WHERE installation_id = $1 
+              AND activity_type = 'webhook_test'
+              AND (details->>'webhookType' IN ('contact_created', 'customer_created', 'user_created'))
+              AND status = 'success'
+            ORDER BY created_at DESC 
+            LIMIT 1
+          `, [tenantInstallationId])
+
+          if (recentContactsResult.rows.length === 0) {
+            throw new Error('No recent contacts found to update. Create a contact first.')
+          }
+
+          const contactToUpdate = recentContactsResult.rows[0].contact_id
+          const contactUpdateData = {
+            first_name: testData.first_name || 'Updated',
+            last_name: testData.last_name || 'Contact',
+            email: testData.email || `updated-${Date.now()}@example.com`,
+            phone: testData.phone || '+1-555-0999',
+            ...testData
+          }
+          
+          const contactUpdateResult = await fluidApi.updateContact(tenantInstallationId, contactToUpdate, contactUpdateData)
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: contactToUpdate,
+            resourceData: contactUpdateResult,
+            createdAt: new Date().toISOString()
+          }
+          break
+
+        // All other webhooks - Simulate with realistic data
+        case 'product_destroyed':
+        case 'user_deactivated':
         case 'cart_updated':
         case 'cart_abandoned':
         case 'cart_update_address':
