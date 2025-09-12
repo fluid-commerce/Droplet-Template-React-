@@ -29,7 +29,7 @@ interface WebhookTesterProps {
 
 export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: WebhookTesterProps) {
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({})
-  const [testResult, setTestResult] = useState<WebhookTestResult | null>(null)
+  const [testResults, setTestResults] = useState<{ [key: string]: WebhookTestResult }>({})
   const [recentWebhooks, setRecentWebhooks] = useState<WebhookEvent[]>([])
   const [expandedLogs, setExpandedLogs] = useState<{ [key: string]: boolean }>({})
   const [showJsonData, setShowJsonData] = useState<{ [key: string]: boolean }>({})
@@ -62,17 +62,17 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
         }
       })
 
-      setTestResult(response.data.data.test)
+      setTestResults(prev => ({ ...prev, [webhookType]: response.data.data.test }))
       setRecentWebhooks(response.data.data.recentWebhooks || [])
     } catch (err: any) {
       console.error('Webhook test failed:', err)
-      setTestResult({
+      setTestResults(prev => ({ ...prev, [webhookType]: {
         type: webhookType,
         success: false,
         error: err.response?.data?.message || 'Test failed',
         details: err.response?.data,
         createdAt: new Date().toISOString()
-      })
+      }}))
     } finally {
       setLoadingStates(prev => ({ ...prev, [webhookType]: false }))
     }
@@ -252,188 +252,71 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
                   )}
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
-      ))}
-
-      {/* Test Results Section - Terminal Style */}
-      {testResult && (
-        <div className="bg-gray-900 rounded-lg border border-gray-700 p-4 font-mono">
-          <div className="space-y-4">
-            {/* Terminal Header */}
-            <div className="flex items-center space-x-2 pb-2 border-b border-gray-700">
-              <div className="flex space-x-1">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              </div>
-              <span className="text-gray-400 text-sm">Webhook Test Terminal</span>
-            </div>
-            
-            {/* Test Status - Terminal Style */}
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <span className="text-green-400">$</span>
-                <span className="text-white">webhook-test --type={testResult.type}</span>
-              </div>
               
-              <div className={`p-3 rounded border-l-4 ${
-                testResult.success 
-                  ? 'bg-green-900/20 border-green-500' 
-                  : 'bg-red-900/20 border-red-500'
-              }`}>
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className={`text-sm font-bold ${
-                    testResult.success ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {testResult.success ? '✓ SUCCESS' : '✗ FAILED'}
-                  </span>
-                  <span className="text-gray-400 text-xs">
-                    {new Date(testResult.createdAt).toLocaleTimeString()}
-                  </span>
-                </div>
-                
-                {testResult.success && testResult.resourceId && (
-                  <div className="space-y-1">
-                    <p className="text-green-300 text-sm">
-                      <span className="text-gray-400">Resource ID:</span> {testResult.resourceId}
-                    </p>
-                    <p className="text-green-300 text-sm">
-                      <span className="text-gray-400">Type:</span> {testResult.type}
-                    </p>
-                  </div>
-                )}
-                
-                {testResult.error && (
-                  <div className="space-y-1">
-                    <p className="text-red-300 text-sm">
-                      <span className="text-gray-400">Error:</span> {testResult.error}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Detailed Logs Section */}
-              {testResult.success && testResult.resourceData && (
-                <div className="bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="p-4 border-b border-gray-200">
-                    <h4 className="font-semibold text-gray-900 text-sm flex items-center">
-                      <FontAwesomeIcon icon="file-alt" className="mr-2 text-gray-600" />
-                      Detailed Logs
-                    </h4>
-                  </div>
-                  <div className="p-4 space-y-4">
-                    {/* Resource Summary */}
-                    <div>
-                      <h5 className="font-medium text-gray-800 text-sm mb-2">
-                        {testResult.type.includes('order') ? 'Order' :
-                         testResult.type.includes('product') ? 'Product' :
-                         testResult.type.includes('customer') ? 'Customer' : 'Resource'} Summary
-                      </h5>
-                      <div className="bg-white p-3 rounded border text-xs space-y-1">
-                        {/* Order-specific fields */}
-                        {testResult.type.includes('order') && (
-                          <>
-                            <div><strong>Order Number:</strong> {testResult.resourceData.order_number}</div>
-                            <div><strong>Status:</strong> {testResult.resourceData.friendly_status || testResult.resourceData.status}</div>
-                            <div><strong>Amount:</strong> {testResult.resourceData.display_amount || `$${testResult.resourceData.amount}`}</div>
-                            <div><strong>Customer:</strong> {testResult.resourceData.first_name} {testResult.resourceData.last_name}</div>
-                            <div><strong>Email:</strong> {testResult.resourceData.email}</div>
-                          </>
-                        )}
-                        
-                        {/* Product-specific fields */}
-                        {testResult.type.includes('product') && (
-                          <>
-                            <div><strong>Product Title:</strong> {testResult.resourceData.title}</div>
-                            <div><strong>SKU:</strong> {testResult.resourceData.sku}</div>
-                            <div><strong>Price:</strong> {testResult.resourceData.display_price || `$${testResult.resourceData.price}`}</div>
-                            <div><strong>Status:</strong> {testResult.resourceData.active ? 'Active' : 'Inactive'}</div>
-                            <div><strong>Description:</strong> {testResult.resourceData.description}</div>
-                          </>
-                        )}
-                        
-                        {/* Customer-specific fields */}
-                        {testResult.type.includes('customer') && (
-                          <>
-                            <div><strong>Name:</strong> {testResult.resourceData.first_name} {testResult.resourceData.last_name}</div>
-                            <div><strong>Email:</strong> {testResult.resourceData.email}</div>
-                            <div><strong>Phone:</strong> {testResult.resourceData.phone || 'N/A'}</div>
-                            <div><strong>Status:</strong> {testResult.resourceData.status || 'Active'}</div>
-                          </>
-                        )}
-                        
-                        {/* Common fields */}
-                        <div><strong>ID:</strong> {testResult.resourceId}</div>
-                        <div><strong>Created:</strong> {new Date(testResult.resourceData.created_at || testResult.createdAt).toLocaleString()}</div>
-                      </div>
-                    </div>
-
-                    {/* Order-specific sections */}
-                    {testResult.type.includes('order') && testResult.resourceData.ship_to && (
-                      <div>
-                        <h5 className="font-medium text-gray-800 text-sm mb-2">Shipping Address</h5>
-                        <div className="bg-white p-3 rounded border text-xs">
-                          <div>{testResult.resourceData.ship_to.address1}</div>
-                          {testResult.resourceData.ship_to.address2 && <div>{testResult.resourceData.ship_to.address2}</div>}
-                          <div>{testResult.resourceData.ship_to.city}, {testResult.resourceData.ship_to.state} {testResult.resourceData.ship_to.postal_code}</div>
+              {/* Individual Test Result for this endpoint */}
+              {testResults[endpoint.type] && (
+                <div className="px-4 pb-4">
+                  <div className="bg-gray-900 rounded-lg border border-gray-700 p-3 font-mono">
+                    <div className="space-y-2">
+                      {/* Terminal Header */}
+                      <div className="flex items-center space-x-2 pb-2 border-b border-gray-700">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         </div>
+                        <span className="text-gray-400 text-xs">Test Result</span>
                       </div>
-                    )}
-
-                    {testResult.type.includes('order') && testResult.resourceData.items && testResult.resourceData.items.length > 0 && (
-                      <div>
-                        <h5 className="font-medium text-gray-800 text-sm mb-2">Order Items</h5>
-                        <div className="bg-white rounded border overflow-hidden">
-                          {testResult.resourceData.items.map((item: any, index: number) => (
-                            <div key={index} className="p-3 border-b border-gray-100 last:border-b-0">
-                              <div className="flex items-start space-x-3 text-xs">
-                                <img 
-                                  src={item.product?.image_url} 
-                                  alt={item.product?.title}
-                                  className="w-12 h-12 object-cover rounded border"
-                                />
-                                <div className="flex-1">
-                                  <div className="font-medium">{item.product?.title}</div>
-                                  <div className="text-gray-600">SKU: {item.product?.sku}</div>
-                                  <div className="text-gray-600">Qty: {item.quantity} × {item.display_price}</div>
-                                  <div className="font-medium">{item.display_total}</div>
-                                </div>
-                              </div>
+                      
+                      {/* Test Status */}
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-green-400 text-xs">$</span>
+                          <span className="text-white text-xs">webhook-test --type={endpoint.type}</span>
+                        </div>
+                        
+                        <div className={`p-2 rounded border-l-2 ${
+                          testResults[endpoint.type].success 
+                            ? 'bg-green-900/20 border-green-500' 
+                            : 'bg-red-900/20 border-red-500'
+                        }`}>
+                          <div className="flex items-center space-x-2">
+                            <span className={`text-xs font-bold ${
+                              testResults[endpoint.type].success ? 'text-green-400' : 'text-red-400'
+                            }`}>
+                              {testResults[endpoint.type].success ? '✓ SUCCESS' : '✗ FAILED'}
+                            </span>
+                            <span className="text-gray-400 text-xs">
+                              {new Date(testResults[endpoint.type].createdAt).toLocaleTimeString()}
+                            </span>
+                          </div>
+                          
+                          {testResults[endpoint.type].success && testResults[endpoint.type].resourceId && (
+                            <div className="mt-1">
+                              <p className="text-green-300 text-xs">
+                                <span className="text-gray-400">Resource ID:</span> {testResults[endpoint.type].resourceId}
+                              </p>
                             </div>
-                          ))}
+                          )}
+                          
+                          {testResults[endpoint.type].error && (
+                            <div className="mt-1">
+                              <p className="text-red-300 text-xs">
+                                <span className="text-gray-400">Error:</span> {testResults[endpoint.type].error}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    )}
-
-                    {/* Raw JSON Data (Collapsible) */}
-                    <div>
-                      <button
-                        onClick={() => setShowJsonData(prev => ({ ...prev, 'test-result': !prev['test-result'] }))}
-                        className="flex items-center justify-between w-full p-3 bg-white rounded border hover:bg-gray-50 transition-colors"
-                      >
-                        <h5 className="font-medium text-gray-800 text-sm">Raw Response Data</h5>
-                        <FontAwesomeIcon 
-                          icon={showJsonData['test-result'] ? "chevron-up" : "chevron-down"} 
-                          className="text-gray-400 text-xs" 
-                        />
-                      </button>
-                      {showJsonData['test-result'] && (
-                        <div className="mt-2">
-                          <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto max-h-64 overflow-y-auto">
-                            <code>{formatJsonData(testResult.resourceData)}</code>
-                          </pre>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          ))}
         </div>
-      )}
+      ))}
+
 
       {/* Recent Webhook Events - Terminal Style */}
       {recentWebhooks.length > 0 && (
