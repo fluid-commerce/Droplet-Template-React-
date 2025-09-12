@@ -410,48 +410,6 @@ export function DropletDashboard() {
 
 
 
-            {/* Webhook Testing - Collapsible */}
-            <div className="border border-gray-200 rounded-lg">
-              <button
-                onClick={() => toggleSection('webhooks')}
-                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon="link" className="text-gray-600 text-sm" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold text-gray-900">Webhook Testing</h3>
-                    <p className="text-xs text-gray-500">Test and monitor webhook events</p>
-                  </div>
-                </div>
-                <FontAwesomeIcon 
-                  icon={expandedSections.webhooks ? "chevron-up" : "chevron-down"} 
-                  className="text-gray-400 text-sm" 
-                />
-              </button>
-              
-              {expandedSections.webhooks && (
-                <div className="px-4 pb-4 border-t border-gray-100">
-                  <div className="mt-4">
-
-
-                    {installationId && fluidApiKey ? (
-                      <WebhookTester 
-                        installationId={installationId}
-                        fluidApiKey={fluidApiKey}
-                        brandGuidelines={brandGuidelines}
-                      />
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-gray-500">Webhook testing requires installation ID and API key</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Settings - Collapsible */}
             <div className="border border-gray-200 rounded-lg">
               <button
@@ -539,6 +497,48 @@ export function DropletDashboard() {
                         </div>
                       )}
                     </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Webhook Testing - Collapsible */}
+            <div className="border border-gray-200 rounded-lg">
+              <button
+                onClick={() => toggleSection('webhooks')}
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon="link" className="text-gray-600 text-sm" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-900">Webhook Testing</h3>
+                    <p className="text-xs text-gray-500">Test and monitor webhook events</p>
+                  </div>
+                </div>
+                <FontAwesomeIcon 
+                  icon={expandedSections.webhooks ? "chevron-up" : "chevron-down"} 
+                  className="text-gray-400 text-sm" 
+                />
+              </button>
+              
+              {expandedSections.webhooks && (
+                <div className="px-4 pb-4 border-t border-gray-100">
+                  <div className="mt-4">
+
+
+                    {installationId && fluidApiKey ? (
+                      <WebhookTester 
+                        installationId={installationId}
+                        fluidApiKey={fluidApiKey}
+                        brandGuidelines={brandGuidelines}
+                      />
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">Webhook testing requires installation ID and API key</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
