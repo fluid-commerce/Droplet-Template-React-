@@ -30,8 +30,14 @@ export function DropletDashboard() {
   const [expandedSections, setExpandedSections] = useState({
     status: true,
     activity: false,
-    webhooks: false
+    webhooks: false,
+    settings: false
   })
+
+  // API Key configuration state
+  const [customerApiKey, setCustomerApiKey] = useState('')
+  const [isUpdatingApiKey, setIsUpdatingApiKey] = useState(false)
+  const [hasCustomerApiKey, setHasCustomerApiKey] = useState(false)
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -156,6 +162,37 @@ export function DropletDashboard() {
       ...prev,
       [section]: !prev[section]
     }))
+  }
+
+  const updateCustomerApiKey = async () => {
+    if (!customerApiKey.trim()) {
+      setToast({ message: 'Please enter a valid API key', type: 'error' })
+      return
+    }
+
+    setIsUpdatingApiKey(true)
+    try {
+      const response = await apiClient.post('/api/droplet/update-customer-api-key', {
+        customerApiKey: customerApiKey.trim()
+      }, {
+        headers: {
+          'Authorization': `Bearer ${fluidApiKey}`
+        }
+      })
+
+      if (response.data.success) {
+        setHasCustomerApiKey(true)
+        setCustomerApiKey('')
+        setToast({ message: 'API key updated successfully! Webhook testing will now use your account.', type: 'success' })
+      }
+    } catch (error: any) {
+      setToast({ 
+        message: error.response?.data?.message || 'Failed to update API key', 
+        type: 'error' 
+      })
+    } finally {
+      setIsUpdatingApiKey(false)
+    }
   }
 
   // Auto-dismiss toast after 3 seconds
@@ -403,6 +440,92 @@ export function DropletDashboard() {
                         <p className="text-gray-500">Webhook testing requires installation ID and API key</p>
                       </div>
                     )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Settings - Collapsible */}
+            <div className="border border-gray-200 rounded-lg">
+              <button
+                onClick={() => toggleSection('settings')}
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon="cog" className="text-gray-600 text-sm" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-900">Settings</h3>
+                    <p className="text-xs text-gray-500">Configure your Fluid API key for webhook testing</p>
+                  </div>
+                </div>
+                <FontAwesomeIcon 
+                  icon={expandedSections.settings ? "chevron-up" : "chevron-down"} 
+                  className="text-gray-400 text-sm" 
+                />
+              </button>
+              
+              {expandedSections.settings && (
+                <div className="px-4 pb-4 border-t border-gray-100">
+                  <div className="mt-4 space-y-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <FontAwesomeIcon icon="info-circle" className="text-blue-600 text-sm mt-0.5" />
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-blue-900 mb-1">Why configure your API key?</h4>
+                          <p className="text-xs text-blue-700 leading-relaxed">
+                            To ensure webhook testing creates data in <strong>your account</strong> instead of the droplet builder's account, 
+                            you need to provide your own Fluid API key. This ensures proper multi-tenant data isolation.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Your Fluid API Key
+                        </label>
+                        <div className="flex space-x-2">
+                          <input
+                            type="password"
+                            value={customerApiKey}
+                            onChange={(e) => setCustomerApiKey(e.target.value)}
+                            placeholder="Enter your Fluid API key (dit_...)"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={isUpdatingApiKey}
+                          />
+                          <Button
+                            onClick={updateCustomerApiKey}
+                            disabled={isUpdatingApiKey || !customerApiKey.trim()}
+                            className="px-4 py-2"
+                          >
+                            {isUpdatingApiKey ? (
+                              <FontAwesomeIcon icon="spinner" spin className="mr-2" />
+                            ) : (
+                              <FontAwesomeIcon icon="save" className="mr-2" />
+                            )}
+                            {isUpdatingApiKey ? 'Saving...' : 'Save'}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Your API key will be encrypted and stored securely. It's only used for webhook testing.
+                        </p>
+                      </div>
+
+                      {hasCustomerApiKey && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          <div className="flex items-center space-x-2">
+                            <FontAwesomeIcon icon="check-circle" className="text-green-600 text-sm" />
+                            <span className="text-sm font-medium text-green-800">API key configured</span>
+                          </div>
+                          <p className="text-xs text-green-700 mt-1">
+                            Webhook testing will now create data in your account.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

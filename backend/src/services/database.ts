@@ -71,22 +71,24 @@ export class DatabaseService {
       const query = `
         INSERT INTO droplet_installations (
           installation_id, droplet_id, company_id, authentication_token, 
-          status, configuration, company_name, company_data
+          customer_api_key, status, configuration, company_name, company_data
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING 
           id, installation_id, droplet_id, company_id, authentication_token, 
-          status, configuration, created_at, updated_at, company_name, company_data
+          customer_api_key, status, configuration, created_at, updated_at, company_name, company_data
       `
       
       // Encrypt the authentication token before storing
       const encryptedToken = encrypt(installation.authenticationToken)
+      const encryptedCustomerApiKey = installation.customerApiKey ? encrypt(installation.customerApiKey) : null
       
       const values = [
         installation.id, // Using the ID as installation_id
         installation.dropletId,
         installation.companyId,
         encryptedToken, // Store encrypted token
+        encryptedCustomerApiKey, // Store encrypted customer API key
         installation.status,
         JSON.stringify(installation.configuration),
         installation.configuration.companyName,
@@ -102,7 +104,8 @@ export class DatabaseService {
         companyId: row.company_id,
         dropletId: row.droplet_id,
         status: row.status,
-        hasEncryptedToken: !!encryptedToken
+        hasEncryptedToken: !!encryptedToken,
+        hasCustomerApiKey: !!encryptedCustomerApiKey
       })
 
       return {
@@ -110,6 +113,7 @@ export class DatabaseService {
         dropletId: row.droplet_id,
         companyId: row.company_id,
         authenticationToken: decrypt(row.authentication_token), // Decrypt for return
+        customerApiKey: row.customer_api_key ? decrypt(row.customer_api_key) : null, // Decrypt customer API key if exists
         status: row.status,
         configuration: row.configuration,
         createdAt: row.created_at.toISOString(),

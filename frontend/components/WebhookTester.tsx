@@ -246,13 +246,29 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
       setRecentWebhooks(response.data.data.recentWebhooks || [])
     } catch (err: any) {
       console.error('Webhook test failed:', err)
-      setTestResults(prev => ({ ...prev, [webhookType]: {
-        type: webhookType,
-        success: false,
-        error: err.response?.data?.message || 'Test failed',
-        details: err.response?.data,
-        createdAt: new Date().toISOString()
-      }}))
+      
+      // Handle specific case where customer API key is required
+      if (err.response?.data?.requiresApiKey) {
+        setTestResults(prev => ({ ...prev, [webhookType]: {
+          type: webhookType,
+          success: false,
+          error: 'Customer API key required',
+          details: {
+            message: err.response.data.message,
+            requiresApiKey: true,
+            instructions: 'Please configure your Fluid API key in the Settings section above to test webhooks.'
+          },
+          createdAt: new Date().toISOString()
+        }}))
+      } else {
+        setTestResults(prev => ({ ...prev, [webhookType]: {
+          type: webhookType,
+          success: false,
+          error: err.response?.data?.message || 'Test failed',
+          details: err.response?.data,
+          createdAt: new Date().toISOString()
+        }}))
+      }
     } finally {
       setLoadingStates(prev => ({ ...prev, [webhookType]: false }))
     }
@@ -604,9 +620,21 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
                           
                           {testResults[endpoint.type].error && (
                             <div className="mt-1">
-                              <p className="text-red-300 text-xs">
-                                <span className="text-gray-400">Error:</span> {testResults[endpoint.type].error}
-                              </p>
+                              {testResults[endpoint.type].details?.requiresApiKey ? (
+                                <div className="bg-yellow-900/20 border border-yellow-600/30 rounded p-2">
+                                  <p className="text-yellow-300 text-xs font-medium mb-1">
+                                    <FontAwesomeIcon icon="exclamation-triangle" className="mr-1" />
+                                    Customer API Key Required
+                                  </p>
+                                  <p className="text-yellow-200 text-xs leading-relaxed">
+                                    {testResults[endpoint.type].details?.instructions}
+                                  </p>
+                                </div>
+                              ) : (
+                                <p className="text-red-300 text-xs">
+                                  <span className="text-gray-400">Error:</span> {testResults[endpoint.type].error}
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>

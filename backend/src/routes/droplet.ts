@@ -1096,6 +1096,94 @@ router.post('/cleanup', rateLimits.config, async (req: Request, res: Response) =
 })
 
 /**
+ * POST /api/droplet/update-customer-api-key
+ * Update customer's Fluid API key for webhook testing
+ */
+router.post('/update-customer-api-key', requireTenantAuth, rateLimits.config, async (req: Request, res: Response) => {
+  try {
+    const { customerApiKey } = req.body
+    const tenantInstallationId = req.tenant!.installationId
+
+    if (!customerApiKey) {
+      return res.status(400).json({
+        error: 'Customer API key required',
+        message: 'Please provide a valid Fluid API key'
+      })
+    }
+
+    // Validate the customer API key by testing it
+    const fluidApi = new FluidApiService(customerApiKey)
+    try {
+      const companyInfo = await fluidApi.getCompanyInfo(customerApiKey)
+      logger.info('Customer API key validation successful', {
+        installationId: tenantInstallationId,
+        companyName: companyInfo?.name || companyInfo?.company_name
+      })
+    } catch (apiError: any) {
+      logger.warn('Customer API key validation failed', {
+        installationId: tenantInstallationId,
+        error: apiError.message
+      })
+      return res.status(400).json({
+        error: 'Invalid API key',
+        message: 'The provided API key is not valid or does not have the required permissions'
+      })
+    }
+
+    // Update the installation with the customer's API key
+    const Database = getDatabaseService()
+    const updatedInstallation = await Database.updateInstallation(tenantInstallationId, {
+      customerApiKey: customerApiKey
+    })
+
+    if (!updatedInstallation) {
+      return res.status(404).json({
+        error: 'Installation not found',
+        message: 'No installation found with the provided ID'
+      })
+    }
+
+    // Log the API key update
+    await Database.logActivity({
+      installation_id: tenantInstallationId,
+      activity_type: 'customer_api_key_updated',
+      description: 'Customer API key updated for webhook testing',
+      details: {
+        hasApiKey: true,
+        companyName: updatedInstallation.configuration?.companyName
+      },
+      status: 'success'
+    })
+
+    logger.info('Customer API key updated successfully', {
+      installationId: tenantInstallationId,
+      hasApiKey: true
+    })
+
+    return res.json({
+      success: true,
+      message: 'Customer API key updated successfully',
+      data: {
+        installationId: tenantInstallationId,
+        hasCustomerApiKey: true,
+        updatedAt: new Date().toISOString()
+      }
+    })
+
+  } catch (error: any) {
+    logger.error('Failed to update customer API key', {
+      installationId: req.tenant?.installationId,
+      error: error.message
+    })
+    
+    return res.status(500).json({
+      error: 'Update failed',
+      message: error.message || 'An error occurred while updating the API key'
+    })
+  }
+})
+
+/**
  * POST /api/droplet/test-webhook
  * Test webhook by creating a test order in Fluid
  */
@@ -1110,7 +1198,33 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
       webhookType: webhookType || 'order.created'
     })
 
-    const fluidApi = new FluidApiService(tenantApiKey)
+    // Get installation data to check for customer API key
+    const Database = getDatabaseService()
+    const installation = await Database.getInstallation(tenantInstallationId)
+    
+    if (!installation) {
+      return res.status(404).json({
+        error: 'Installation not found',
+        message: 'No installation found for webhook testing'
+      })
+    }
+
+    // Check if customer has provided their own API key
+    if (!installation.customerApiKey) {
+      return res.status(400).json({
+        error: 'Customer API key required',
+        message: 'Please configure your Fluid API key in the dashboard settings to test webhooks. This ensures webhook data appears in your account.',
+        requiresApiKey: true
+      })
+    }
+
+    // Use customer's API key for webhook testing
+    const fluidApi = new FluidApiService(installation.customerApiKey)
+    
+    logger.info('Using customer API key for webhook testing', {
+      installationId: tenantInstallationId,
+      hasCustomerApiKey: true
+    })
     
     let testResult: any = {}
     let webhookEventId: string | null = null
@@ -1122,9 +1236,9 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
         case 'order_created':
         case 'order_completed':
         case undefined: // Default to order created
-          logger.info('Creating test order in Fluid using builder API key', { installationId: tenantInstallationId })
+          logger.info('Creating test order in customer account', { installationId: tenantInstallationId })
           
-          const orderResult = await fluidApi.createTestOrder(tenantInstallationId, testData)
+          const orderResult = await fluidApi.createTestOrder(installation.customerApiKey, testData)
           
           testResult = {
             type: webhookType || 'order_created',

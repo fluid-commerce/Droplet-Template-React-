@@ -12,6 +12,7 @@ export interface DropletInstallation {
   dropletId: string
   companyId: string
   authenticationToken: string
+  customerApiKey?: string | null // Customer's own Fluid API key for webhook testing
   configuration: DropletConfig
   status: 'pending' | 'active' | 'failed' | 'inactive'
   createdAt: string
