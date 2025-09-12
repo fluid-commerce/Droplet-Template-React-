@@ -371,21 +371,19 @@ export class FluidApiService {
   /**
    * Create a test product for webhook testing
    */
-  async createTestProduct(installationId: string, productData?: any): Promise<any> {
+  async createTestProduct(customerApiKey: string, productData?: any): Promise<any> {
     const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
     
-    const builderApiKey = process.env.FLUID_API_KEY
-    if (!builderApiKey) {
-      throw new Error('Builder API key not configured')
+    if (!customerApiKey) {
+      throw new Error('Customer API key not provided')
     }
     
     const productClient = axios.create({
       baseURL: `${fluidApiUrl}/api`,
       headers: {
-        'Authorization': `Bearer ${builderApiKey}`,
+        'Authorization': `Bearer ${customerApiKey}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Droplet-Installation-ID': installationId,
       },
       timeout: 30000,
     })
@@ -401,9 +399,8 @@ export class FluidApiService {
     }
 
     try {
-      logger.info('Creating product using builder API key', { 
+      logger.info('Creating product using customer API key', { 
         productNumber,
-        installationId,
         endpoint: '/company/v1/products'
       })
       
@@ -415,7 +412,6 @@ export class FluidApiService {
     } catch (error: any) {
       logger.error('Failed to create product in Fluid', { 
         productData: defaultProductData,
-        installationId,
         error: error.response?.data || error.message 
       }, error)
       throw error
@@ -425,21 +421,19 @@ export class FluidApiService {
   /**
    * Create a test customer for webhook testing
    */
-  async createTestCustomer(installationId: string, customerData?: any): Promise<any> {
+  async createTestCustomer(customerApiKey: string, customerData?: any): Promise<any> {
     const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
     
-    const builderApiKey = process.env.FLUID_API_KEY
-    if (!builderApiKey) {
-      throw new Error('Builder API key not configured')
+    if (!customerApiKey) {
+      throw new Error('Customer API key not provided')
     }
     
     const customerClient = axios.create({
       baseURL: `${fluidApiUrl}/api`,
       headers: {
-        'Authorization': `Bearer ${builderApiKey}`,
+        'Authorization': `Bearer ${customerApiKey}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Droplet-Installation-ID': installationId,
       },
       timeout: 30000,
     })
@@ -454,9 +448,8 @@ export class FluidApiService {
     }
 
     try {
-      logger.info('Creating contact using builder API key', { 
+      logger.info('Creating contact using customer API key', { 
         customerNumber,
-        installationId,
         endpoint: '/company/contacts'
       })
       
@@ -468,7 +461,6 @@ export class FluidApiService {
     } catch (error: any) {
       logger.error('Failed to create customer in Fluid', { 
         customerData: defaultCustomerData,
-        installationId,
         error: error.response?.data || error.message 
       }, error)
       throw error
@@ -482,20 +474,19 @@ export class FluidApiService {
   /**
    * Update existing product by ID
    */
-  async updateProduct(installationId: string, productId: string, updateData: any): Promise<any> {
+  async updateProduct(customerApiKey: string, productId: string, updateData: any): Promise<any> {
     const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
-    const builderApiKey = process.env.FLUID_API_KEY
-    if (!builderApiKey) {
-      throw new Error('Builder API key not configured')
+    
+    if (!customerApiKey) {
+      throw new Error('Customer API key not provided')
     }
     
     const client = axios.create({
       baseURL: `${fluidApiUrl}/api`,
       headers: {
-        'Authorization': `Bearer ${builderApiKey}`,
+        'Authorization': `Bearer ${customerApiKey}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Droplet-Installation-ID': installationId,
       },
       timeout: 30000,
     })
@@ -507,7 +498,6 @@ export class FluidApiService {
       return response.data
     } catch (error: any) {
       logger.error('Failed to update product in Fluid', { 
-        installationId,
         productId,
         updateData,
         error: error.response?.data || error.message 
@@ -519,20 +509,19 @@ export class FluidApiService {
   /**
    * Update existing contact by ID  
    */
-  async updateContact(installationId: string, contactId: string, updateData: any): Promise<any> {
+  async updateContact(customerApiKey: string, contactId: string, updateData: any): Promise<any> {
     const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
-    const builderApiKey = process.env.FLUID_API_KEY
-    if (!builderApiKey) {
-      throw new Error('Builder API key not configured')
+    
+    if (!customerApiKey) {
+      throw new Error('Customer API key not provided')
     }
     
     const client = axios.create({
       baseURL: `${fluidApiUrl}/api`,
       headers: {
-        'Authorization': `Bearer ${builderApiKey}`,
+        'Authorization': `Bearer ${customerApiKey}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Droplet-Installation-ID': installationId,
       },
       timeout: 30000,
     })
@@ -544,7 +533,6 @@ export class FluidApiService {
       return response.data
     } catch (error: any) {
       logger.error('Failed to update contact in Fluid', { 
-        installationId,
         contactId,
         updateData,
         error: error.response?.data || error.message 

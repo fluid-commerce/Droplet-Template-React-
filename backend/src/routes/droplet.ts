@@ -1318,7 +1318,7 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
 
         // Product webhooks - Create real products
         case 'product_created':
-          const productResult = await fluidApi.createTestProduct(tenantInstallationId, testData)
+          const productResult = await fluidApi.createTestProduct(installation.customerApiKey, testData)
           
           testResult = {
             type: 'product_created',
@@ -1333,7 +1333,7 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
         case 'contact_created':
         case 'user_created':
         case 'customer_created':
-          const contactResult = await fluidApi.createTestCustomer(tenantInstallationId, testData)
+          const contactResult = await fluidApi.createTestCustomer(installation.customerApiKey, testData)
           
           testResult = {
             type: webhookType,
@@ -1370,7 +1370,7 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
             ...testData
           }
           
-          const productUpdateResult = await fluidApi.updateProduct(tenantInstallationId, productToUpdate, productUpdateData)
+          const productUpdateResult = await fluidApi.updateProduct(installation.customerApiKey, productToUpdate, productUpdateData)
           
           testResult = {
             type: webhookType,
@@ -1410,7 +1410,7 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
             ...testData
           }
           
-          const contactUpdateResult = await fluidApi.updateContact(tenantInstallationId, contactToUpdate, contactUpdateData)
+          const contactUpdateResult = await fluidApi.updateContact(installation.customerApiKey, contactToUpdate, contactUpdateData)
           
           testResult = {
             type: webhookType,

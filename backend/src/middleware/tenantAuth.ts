@@ -38,8 +38,8 @@ export async function requireTenantAuth(req: Request, res: Response, next: NextF
       })
     }
 
-    // Extract installation ID from route params or body
-    const installationId = req.params.installationId || req.body.installationId
+    // Extract installation ID from route params, body, or query
+    const installationId = req.params.installationId || req.body.installationId || req.query.installationId
     if (!installationId || installationId === 'new-installation') {
       // For new installations, we'll handle this differently
       return next()

@@ -104,6 +104,43 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
           { name: 'cancel_date', label: 'Cancellation Date', type: 'datetime-local' },
           { name: 'notified_customer', label: 'Customer Notified', type: 'checkbox' }
         ]
+      case 'order_updated':
+        return [
+          { name: 'order_id', label: 'Order ID', type: 'text', placeholder: '44064226' },
+          { name: 'status', label: 'Order Status', type: 'select', options: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'] },
+          { name: 'tracking_number', label: 'Tracking Number', type: 'text', placeholder: 'UPS123456789' },
+          { name: 'carrier', label: 'Shipping Carrier', type: 'select', options: ['UPS', 'FedEx', 'USPS', 'DHL', 'Other'] },
+          { name: 'shipping_method', label: 'Shipping Method', type: 'text', placeholder: 'Ground' },
+          { name: 'estimated_delivery', label: 'Estimated Delivery', type: 'date' },
+          { name: 'shipped_at', label: 'Shipped Date/Time', type: 'datetime-local' },
+          { name: 'shipping_cost', label: 'Shipping Cost', type: 'number', placeholder: '12.99' },
+          { name: 'package_weight', label: 'Package Weight (lbs)', type: 'number', placeholder: '2.5' },
+          { name: 'update_notes', label: 'Update Notes', type: 'textarea', placeholder: 'Details about the order update...' }
+        ]
+      case 'order_completed':
+        return [
+          { name: 'order_id', label: 'Order ID', type: 'text', placeholder: '44064226' },
+          { name: 'completion_date', label: 'Completion Date', type: 'datetime-local' },
+          { name: 'final_total', label: 'Final Total', type: 'number', placeholder: '199.99' },
+          { name: 'payment_status', label: 'Payment Status', type: 'select', options: ['paid', 'pending', 'failed', 'refunded'] },
+          { name: 'completion_notes', label: 'Completion Notes', type: 'textarea', placeholder: 'Order completion details...' }
+        ]
+      case 'customer_created':
+        return [
+          { name: 'first_name', label: 'First Name', type: 'text', placeholder: 'John' },
+          { name: 'last_name', label: 'Last Name', type: 'text', placeholder: 'Doe' },
+          { name: 'email', label: 'Email', type: 'email', placeholder: 'john@example.com' },
+          { name: 'phone', label: 'Phone', type: 'tel', placeholder: '+1-555-0123' },
+          { name: 'company', label: 'Company', type: 'text', placeholder: 'Acme Corp' },
+          { name: 'title', label: 'Job Title', type: 'text', placeholder: 'Manager' },
+          { name: 'address1', label: 'Address Line 1', type: 'text', placeholder: '123 Main St' },
+          { name: 'city', label: 'City', type: 'text', placeholder: 'New York' },
+          { name: 'state', label: 'State/Province', type: 'text', placeholder: 'NY' },
+          { name: 'postal_code', label: 'ZIP/Postal Code', type: 'text', placeholder: '10001' },
+          { name: 'country', label: 'Country', type: 'text', placeholder: 'United States' },
+          { name: 'status', label: 'Customer Status', type: 'select', options: ['active', 'inactive', 'pending'] },
+          { name: 'tags', label: 'Customer Tags', type: 'text', placeholder: 'VIP, Premium, Loyalty' }
+        ]
       case 'customer_updated':
       case 'contact_updated':
       case 'user_updated':
@@ -124,6 +161,17 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
           { name: 'status', label: 'Customer Status', type: 'select', options: ['active', 'inactive', 'pending', 'suspended'] },
           { name: 'tags', label: 'Customer Tags', type: 'text', placeholder: 'VIP, Premium, Loyalty' },
           { name: 'notes', label: 'Customer Notes', type: 'textarea', placeholder: 'Customer service notes...' }
+        ]
+      case 'contact_created':
+        return [
+          { name: 'first_name', label: 'First Name', type: 'text', placeholder: 'Jane' },
+          { name: 'last_name', label: 'Last Name', type: 'text', placeholder: 'Smith' },
+          { name: 'email', label: 'Email', type: 'email', placeholder: 'jane@example.com' },
+          { name: 'phone', label: 'Phone', type: 'tel', placeholder: '+1-555-0124' },
+          { name: 'company', label: 'Company', type: 'text', placeholder: 'Tech Corp' },
+          { name: 'title', label: 'Job Title', type: 'text', placeholder: 'Developer' },
+          { name: 'contact_type', label: 'Contact Type', type: 'select', options: ['lead', 'customer', 'prospect', 'partner'] },
+          { name: 'source', label: 'Contact Source', type: 'text', placeholder: 'Website, Referral, Trade Show' }
         ]
       case 'product_created':
         return [
@@ -156,6 +204,34 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
           { name: 'featured', label: 'Featured Product', type: 'checkbox' },
           { name: 'tags', label: 'Product Tags', type: 'text', placeholder: 'new, sale, trending' }
         ]
+      case 'product_destroyed':
+        return [
+          { name: 'product_id', label: 'Product ID', type: 'text', placeholder: '50438' },
+          { name: 'title', label: 'Product Title', type: 'text', placeholder: 'Deleted Product Name' },
+          { name: 'deletion_reason', label: 'Deletion Reason', type: 'select', options: ['discontinued', 'out_of_stock', 'quality_issue', 'customer_request', 'other'] },
+          { name: 'deletion_date', label: 'Deletion Date', type: 'datetime-local' },
+          { name: 'replacement_product_id', label: 'Replacement Product ID', type: 'text', placeholder: '50439' },
+          { name: 'deletion_notes', label: 'Deletion Notes', type: 'textarea', placeholder: 'Reason for product deletion...' }
+        ]
+      case 'user_created':
+        return [
+          { name: 'first_name', label: 'First Name', type: 'text', placeholder: 'John' },
+          { name: 'last_name', label: 'Last Name', type: 'text', placeholder: 'Doe' },
+          { name: 'email', label: 'Email', type: 'email', placeholder: 'john@example.com' },
+          { name: 'username', label: 'Username', type: 'text', placeholder: 'johndoe' },
+          { name: 'role', label: 'User Role', type: 'select', options: ['admin', 'user', 'manager', 'viewer'] },
+          { name: 'department', label: 'Department', type: 'text', placeholder: 'Sales' },
+          { name: 'phone', label: 'Phone', type: 'tel', placeholder: '+1-555-0123' },
+          { name: 'active', label: 'Active User', type: 'checkbox' }
+        ]
+      case 'user_deactivated':
+        return [
+          { name: 'user_id', label: 'User ID', type: 'text', placeholder: 'user_123' },
+          { name: 'email', label: 'User Email', type: 'email', placeholder: 'john@example.com' },
+          { name: 'deactivation_reason', label: 'Deactivation Reason', type: 'select', options: ['voluntary', 'policy_violation', 'inactive', 'security', 'other'] },
+          { name: 'deactivation_date', label: 'Deactivation Date', type: 'datetime-local' },
+          { name: 'deactivation_notes', label: 'Deactivation Notes', type: 'textarea', placeholder: 'Reason for user deactivation...' }
+        ]
       case 'cart_updated':
         return [
           { name: 'cart_id', label: 'Cart ID', type: 'text', placeholder: 'cart_123456' },
@@ -176,6 +252,161 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
           { name: 'abandoned_at', label: 'Abandoned Time', type: 'datetime-local' },
           { name: 'recovery_email_sent', label: 'Recovery Email Sent', type: 'checkbox' }
         ]
+      case 'cart_update_address':
+        return [
+          { name: 'cart_id', label: 'Cart ID', type: 'text', placeholder: 'cart_123456' },
+          { name: 'address1', label: 'Address Line 1', type: 'text', placeholder: '123 Main St' },
+          { name: 'address2', label: 'Address Line 2', type: 'text', placeholder: 'Apt 4B' },
+          { name: 'city', label: 'City', type: 'text', placeholder: 'New York' },
+          { name: 'state', label: 'State/Province', type: 'text', placeholder: 'NY' },
+          { name: 'postal_code', label: 'ZIP/Postal Code', type: 'text', placeholder: '10001' },
+          { name: 'country', label: 'Country', type: 'text', placeholder: 'United States' }
+        ]
+      case 'cart_update_cart_email':
+        return [
+          { name: 'cart_id', label: 'Cart ID', type: 'text', placeholder: 'cart_123456' },
+          { name: 'old_email', label: 'Previous Email', type: 'email', placeholder: 'old@example.com' },
+          { name: 'new_email', label: 'New Email', type: 'email', placeholder: 'new@example.com' },
+          { name: 'update_reason', label: 'Update Reason', type: 'select', options: ['customer_request', 'typo_correction', 'email_verification'] }
+        ]
+      case 'cart_add_items':
+        return [
+          { name: 'cart_id', label: 'Cart ID', type: 'text', placeholder: 'cart_123456' },
+          { name: 'product_id', label: 'Product ID', type: 'text', placeholder: '50438' },
+          { name: 'product_name', label: 'Product Name', type: 'text', placeholder: 'Amazing Product' },
+          { name: 'quantity', label: 'Quantity', type: 'number', placeholder: '2' },
+          { name: 'unit_price', label: 'Unit Price', type: 'number', placeholder: '29.99' },
+          { name: 'total_price', label: 'Total Price', type: 'number', placeholder: '59.98' }
+        ]
+      case 'cart_remove_items':
+        return [
+          { name: 'cart_id', label: 'Cart ID', type: 'text', placeholder: 'cart_123456' },
+          { name: 'product_id', label: 'Product ID', type: 'text', placeholder: '50438' },
+          { name: 'product_name', label: 'Product Name', type: 'text', placeholder: 'Amazing Product' },
+          { name: 'quantity_removed', label: 'Quantity Removed', type: 'number', placeholder: '1' },
+          { name: 'removal_reason', label: 'Removal Reason', type: 'select', options: ['customer_request', 'out_of_stock', 'price_change'] }
+        ]
+      case 'subscription_started':
+        return [
+          { name: 'subscription_id', label: 'Subscription ID', type: 'text', placeholder: 'sub_123456' },
+          { name: 'customer_email', label: 'Customer Email', type: 'email', placeholder: 'customer@example.com' },
+          { name: 'plan_name', label: 'Plan Name', type: 'text', placeholder: 'Premium Plan' },
+          { name: 'billing_cycle', label: 'Billing Cycle', type: 'select', options: ['monthly', 'quarterly', 'yearly'] },
+          { name: 'start_date', label: 'Start Date', type: 'date' },
+          { name: 'next_billing_date', label: 'Next Billing Date', type: 'date' },
+          { name: 'amount', label: 'Subscription Amount', type: 'number', placeholder: '29.99' }
+        ]
+      case 'subscription_paused':
+        return [
+          { name: 'subscription_id', label: 'Subscription ID', type: 'text', placeholder: 'sub_123456' },
+          { name: 'customer_email', label: 'Customer Email', type: 'email', placeholder: 'customer@example.com' },
+          { name: 'pause_reason', label: 'Pause Reason', type: 'select', options: ['customer_request', 'payment_failed', 'temporary_hold'] },
+          { name: 'pause_date', label: 'Pause Date', type: 'date' },
+          { name: 'resume_date', label: 'Resume Date', type: 'date' },
+          { name: 'pause_notes', label: 'Pause Notes', type: 'textarea', placeholder: 'Reason for subscription pause...' }
+        ]
+      case 'subscription_cancelled':
+        return [
+          { name: 'subscription_id', label: 'Subscription ID', type: 'text', placeholder: 'sub_123456' },
+          { name: 'customer_email', label: 'Customer Email', type: 'email', placeholder: 'customer@example.com' },
+          { name: 'cancellation_reason', label: 'Cancellation Reason', type: 'select', options: ['customer_request', 'payment_failed', 'policy_violation', 'other'] },
+          { name: 'cancellation_date', label: 'Cancellation Date', type: 'date' },
+          { name: 'refund_issued', label: 'Refund Issued', type: 'checkbox' },
+          { name: 'cancellation_notes', label: 'Cancellation Notes', type: 'textarea', placeholder: 'Reason for subscription cancellation...' }
+        ]
+      case 'event_created':
+        return [
+          { name: 'event_name', label: 'Event Name', type: 'text', placeholder: 'Product Launch' },
+          { name: 'event_description', label: 'Event Description', type: 'textarea', placeholder: 'Description of the event...' },
+          { name: 'event_date', label: 'Event Date', type: 'datetime-local' },
+          { name: 'event_location', label: 'Event Location', type: 'text', placeholder: 'Convention Center' },
+          { name: 'event_type', label: 'Event Type', type: 'select', options: ['webinar', 'conference', 'workshop', 'meeting', 'other'] },
+          { name: 'max_attendees', label: 'Max Attendees', type: 'number', placeholder: '100' }
+        ]
+      case 'event_updated':
+        return [
+          { name: 'event_id', label: 'Event ID', type: 'text', placeholder: 'event_123' },
+          { name: 'event_name', label: 'Event Name', type: 'text', placeholder: 'Updated Event Name' },
+          { name: 'event_description', label: 'Event Description', type: 'textarea', placeholder: 'Updated event description...' },
+          { name: 'event_date', label: 'Event Date', type: 'datetime-local' },
+          { name: 'event_location', label: 'Event Location', type: 'text', placeholder: 'New Convention Center' },
+          { name: 'update_reason', label: 'Update Reason', type: 'select', options: ['date_change', 'location_change', 'content_update', 'other'] }
+        ]
+      case 'event_deleted':
+        return [
+          { name: 'event_id', label: 'Event ID', type: 'text', placeholder: 'event_123' },
+          { name: 'event_name', label: 'Event Name', type: 'text', placeholder: 'Cancelled Event' },
+          { name: 'deletion_reason', label: 'Deletion Reason', type: 'select', options: ['cancelled', 'postponed', 'venue_issue', 'low_attendance', 'other'] },
+          { name: 'deletion_date', label: 'Deletion Date', type: 'datetime-local' },
+          { name: 'attendees_notified', label: 'Attendees Notified', type: 'checkbox' }
+        ]
+      case 'webchat_submitted':
+        return [
+          { name: 'chat_id', label: 'Chat ID', type: 'text', placeholder: 'chat_123456' },
+          { name: 'customer_name', label: 'Customer Name', type: 'text', placeholder: 'John Doe' },
+          { name: 'customer_email', label: 'Customer Email', type: 'email', placeholder: 'john@example.com' },
+          { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Customer inquiry message...' },
+          { name: 'subject', label: 'Subject', type: 'text', placeholder: 'Product Question' },
+          { name: 'priority', label: 'Priority', type: 'select', options: ['low', 'medium', 'high', 'urgent'] }
+        ]
+      case 'popup_submitted':
+        return [
+          { name: 'popup_id', label: 'Popup ID', type: 'text', placeholder: 'popup_123' },
+          { name: 'customer_name', label: 'Customer Name', type: 'text', placeholder: 'Jane Smith' },
+          { name: 'customer_email', label: 'Customer Email', type: 'email', placeholder: 'jane@example.com' },
+          { name: 'popup_type', label: 'Popup Type', type: 'select', options: ['newsletter', 'promotion', 'survey', 'lead_capture'] },
+          { name: 'offer_code', label: 'Offer Code', type: 'text', placeholder: 'SAVE20' },
+          { name: 'source_page', label: 'Source Page', type: 'text', placeholder: '/products' }
+        ]
+      case 'bot_message_created':
+        return [
+          { name: 'message_id', label: 'Message ID', type: 'text', placeholder: 'msg_123456' },
+          { name: 'bot_name', label: 'Bot Name', type: 'text', placeholder: 'Support Bot' },
+          { name: 'message_type', label: 'Message Type', type: 'select', options: ['welcome', 'support', 'promotional', 'follow_up'] },
+          { name: 'message_content', label: 'Message Content', type: 'textarea', placeholder: 'Automated bot message content...' },
+          { name: 'trigger_event', label: 'Trigger Event', type: 'text', placeholder: 'page_visit, time_delay, user_action' }
+        ]
+      case 'droplet_installed':
+        return [
+          { name: 'droplet_id', label: 'Droplet ID', type: 'text', placeholder: 'drp_123456' },
+          { name: 'droplet_name', label: 'Droplet Name', type: 'text', placeholder: 'My Integration' },
+          { name: 'installation_date', label: 'Installation Date', type: 'datetime-local' },
+          { name: 'version', label: 'Droplet Version', type: 'text', placeholder: '1.0.0' },
+          { name: 'configuration', label: 'Configuration', type: 'textarea', placeholder: 'Droplet configuration details...' }
+        ]
+      case 'droplet_uninstalled':
+        return [
+          { name: 'droplet_id', label: 'Droplet ID', type: 'text', placeholder: 'drp_123456' },
+          { name: 'droplet_name', label: 'Droplet Name', type: 'text', placeholder: 'My Integration' },
+          { name: 'uninstallation_date', label: 'Uninstallation Date', type: 'datetime-local' },
+          { name: 'uninstall_reason', label: 'Uninstall Reason', type: 'select', options: ['user_request', 'payment_failed', 'policy_violation', 'other'] },
+          { name: 'data_retention', label: 'Data Retention Period', type: 'text', placeholder: '30 days' }
+        ]
+      case 'enrollment_completed':
+        return [
+          { name: 'enrollment_id', label: 'Enrollment ID', type: 'text', placeholder: 'enroll_123' },
+          { name: 'user_email', label: 'User Email', type: 'email', placeholder: 'user@example.com' },
+          { name: 'enrollment_type', label: 'Enrollment Type', type: 'select', options: ['course', 'program', 'certification', 'training'] },
+          { name: 'completion_date', label: 'Completion Date', type: 'datetime-local' },
+          { name: 'score', label: 'Score/Grade', type: 'text', placeholder: '95%' },
+          { name: 'certificate_issued', label: 'Certificate Issued', type: 'checkbox' }
+        ]
+      case 'mfa_missing_email':
+        return [
+          { name: 'user_id', label: 'User ID', type: 'text', placeholder: 'user_123' },
+          { name: 'user_email', label: 'User Email', type: 'email', placeholder: 'user@example.com' },
+          { name: 'mfa_type', label: 'MFA Type', type: 'select', options: ['sms', 'email', 'authenticator', 'backup_codes'] },
+          { name: 'attempt_count', label: 'Attempt Count', type: 'number', placeholder: '3' },
+          { name: 'last_attempt', label: 'Last Attempt', type: 'datetime-local' }
+        ]
+      case 'mfa_verified':
+        return [
+          { name: 'user_id', label: 'User ID', type: 'text', placeholder: 'user_123' },
+          { name: 'user_email', label: 'User Email', type: 'email', placeholder: 'user@example.com' },
+          { name: 'mfa_type', label: 'MFA Type', type: 'select', options: ['sms', 'email', 'authenticator', 'backup_codes'] },
+          { name: 'verification_date', label: 'Verification Date', type: 'datetime-local' },
+          { name: 'device_info', label: 'Device Info', type: 'text', placeholder: 'iPhone 14, Chrome Browser' }
+        ]
       default:
         return []
     }
@@ -192,7 +423,7 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
       else if (webhookType.includes('customer') || webhookType.includes('contact')) endpoint = '/api/droplet/contacts?limit=10'
       
       if (endpoint) {
-        const response = await apiClient.get(endpoint, {
+        const response = await apiClient.get(`${endpoint}&installationId=${installationId}`, {
           headers: { 'Authorization': `Bearer ${fluidApiKey}` }
         })
         setAvailableResources(response.data.data.orders || response.data.data.products || response.data.data.contacts || [])
