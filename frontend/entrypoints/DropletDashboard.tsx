@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/Button'
@@ -28,8 +29,6 @@ export function DropletDashboard() {
   const [expandedSections, setExpandedSections] = useState({
     status: true,
     activity: false,
-    actions: false,
-    configuration: false,
     webhooks: false
   })
 
@@ -272,6 +271,22 @@ export function DropletDashboard() {
                   </p>
                 </div>
               </div>
+              
+              {/* Sync Data Button */}
+              <div className="flex items-center">
+                <button
+                  onClick={handleSyncData}
+                  disabled={isSyncing}
+                  className="w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Sync Data"
+                >
+                  {isSyncing ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <FontAwesomeIcon icon="sync" className="text-white text-lg" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -334,139 +349,7 @@ export function DropletDashboard() {
               )}
             </div>
 
-            {/* Quick Actions - Collapsible */}
-            <div className="border border-gray-200 rounded-lg">
-              <button
-                onClick={() => toggleSection('actions')}
-                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon="bolt" className="text-gray-600 text-sm" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold text-gray-900">Quick Actions</h3>
-                    <p className="text-xs text-gray-500">Manage your integration</p>
-                  </div>
-                </div>
-                <FontAwesomeIcon 
-                  icon={expandedSections.actions ? "chevron-up" : "chevron-down"} 
-                  className="text-gray-400 text-sm" 
-                />
-              </button>
-              
-              {expandedSections.actions && (
-                <div className="px-4 pb-4 border-t border-gray-100">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                <Button 
-                  onClick={handleSyncData} 
-                  variant="outline"
-                  loading={isSyncing} 
-                  disabled={isSyncing}
-                  className="h-auto p-3 flex flex-col items-start space-y-1"
-                >
-                      <div className="flex items-center space-x-2">
-                        <FontAwesomeIcon icon="sync" className="text-sm" />
-                        <span className="font-medium text-sm">Sync Data</span>
-                      </div>
-                      <span className="text-xs text-gray-500 text-left">Update integration data</span>
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="h-auto p-3 flex flex-col items-start space-y-1"
-                      onClick={() => window.open('https://fluid.app', '_blank')}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <FontAwesomeIcon icon="external-link-alt" className="text-sm" />
-                        <span className="font-medium text-sm">Visit Fluid</span>
-                      </div>
-                      <span className="text-xs text-gray-500 text-left">Open Fluid platform</span>
-                    </Button>
 
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Configuration - Collapsible */}
-            <div className="border border-gray-200 rounded-lg">
-              <button
-                onClick={() => toggleSection('configuration')}
-                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon="cog" className="text-gray-600 text-sm" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold text-gray-900">Configuration</h3>
-                    <p className="text-xs text-gray-500">API sync and webhook settings</p>
-                  </div>
-                </div>
-                <FontAwesomeIcon 
-                  icon={expandedSections.configuration ? "chevron-up" : "chevron-down"} 
-                  className="text-gray-400 text-sm" 
-                />
-              </button>
-              
-              {expandedSections.configuration && (
-                <div className="px-4 pb-4 border-t border-gray-100">
-                  <div className="grid grid-cols-3 gap-3 mt-4">
-                    <button 
-                      onClick={() => {
-                        // TODO: Implement API configuration
-                        console.log('API configuration clicked')
-                      }}
-                      className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 hover:from-green-100 hover:to-emerald-100 transition-colors"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                          <FontAwesomeIcon icon="check-circle" className="text-green-600 text-sm" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-600">API</p>
-                          <p className="text-sm font-semibold text-green-700">Connected</p>
-                        </div>
-                      </div>
-                    </button>
-
-                    <button 
-                      onClick={() => {
-                        // TODO: Implement sync configuration
-                        console.log('Sync configuration clicked')
-                      }}
-                      className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-3 hover:from-blue-100 hover:to-cyan-100 transition-colors"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <FontAwesomeIcon icon="database" className="text-blue-600 text-sm" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-600">Sync</p>
-                          <p className="text-sm font-semibold text-blue-700">Active</p>
-                        </div>
-                      </div>
-                    </button>
-
-                    <button 
-                      onClick={() => toggleSection('webhooks')}
-                      className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-lg p-3 hover:from-purple-100 hover:to-violet-100 transition-colors"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                          <FontAwesomeIcon icon="project-diagram" className="text-purple-600 text-sm" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-600">Webhooks</p>
-                          <p className="text-sm font-semibold text-purple-700">Live</p>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Webhook Testing - Collapsible */}
             <div className="border border-gray-200 rounded-lg">

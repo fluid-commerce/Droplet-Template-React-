@@ -34,13 +34,100 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
   const [expandedLogs, setExpandedLogs] = useState<{ [key: string]: boolean }>({})
   const [showJsonData, setShowJsonData] = useState<{ [key: string]: boolean }>({})
   const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({})
+  
+  // Modal state for Swagger-style dynamic forms
+  const [showModal, setShowModal] = useState(false)
+  const [currentWebhookType, setCurrentWebhookType] = useState('')
+  const [formData, setFormData] = useState<{ [key: string]: any }>({})
+  const [availableResources, setAvailableResources] = useState<any[]>([])
 
   const formatColor = (color: string | null | undefined) => {
     if (!color) return undefined
     return color.startsWith('#') ? color : `#${color}`
   }
 
-  const handleTestWebhook = async (webhookType: string = 'order.created') => {
+  // Check if webhook needs modal (UPDATE/DELETE operations)
+  const needsModal = (webhookType: string) => {
+    return webhookType.includes('updated') || 
+           webhookType.includes('refunded') || 
+           webhookType.includes('canceled') ||
+           webhookType.includes('shipped') ||
+           webhookType.includes('destroyed')
+  }
+
+  // Get form fields for each webhook type
+  const getFormFields = (webhookType: string) => {
+    switch (webhookType) {
+      case 'order_refunded':
+        return [
+          { name: 'refund_amount', label: 'Refund Amount', type: 'number', placeholder: '199.99' },
+          { name: 'refund_reason', label: 'Refund Reason', type: 'text', placeholder: 'Customer request' },
+          { name: 'partial_refund', label: 'Partial Refund', type: 'checkbox' }
+        ]
+      case 'order_shipped':
+        return [
+          { name: 'tracking_number', label: 'Tracking Number', type: 'text', placeholder: 'UPS123456789' },
+          { name: 'carrier', label: 'Shipping Carrier', type: 'text', placeholder: 'UPS' },
+          { name: 'estimated_delivery', label: 'Estimated Delivery', type: 'date' }
+        ]
+      case 'customer_updated':
+      case 'contact_updated':
+        return [
+          { name: 'first_name', label: 'First Name', type: 'text', placeholder: 'John' },
+          { name: 'last_name', label: 'Last Name', type: 'text', placeholder: 'Doe' },
+          { name: 'email', label: 'Email', type: 'email', placeholder: 'john@example.com' },
+          { name: 'phone', label: 'Phone', type: 'tel', placeholder: '+1-555-0123' }
+        ]
+      case 'product_updated':
+        return [
+          { name: 'title', label: 'Product Title', type: 'text', placeholder: 'Updated Product Name' },
+          { name: 'price', label: 'Price', type: 'number', placeholder: '29.99' },
+          { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Product description...' }
+        ]
+      default:
+        return []
+    }
+  }
+
+  // Fetch available resources for selection
+  const fetchResources = async (webhookType: string) => {
+    if (!installationId || !fluidApiKey) return
+    
+    try {
+      let endpoint = ''
+      if (webhookType.includes('order')) endpoint = '/api/droplet/orders?limit=10'
+      else if (webhookType.includes('product')) endpoint = '/api/droplet/products?limit=10'  
+      else if (webhookType.includes('customer') || webhookType.includes('contact')) endpoint = '/api/droplet/contacts?limit=10'
+      
+      if (endpoint) {
+        const response = await apiClient.get(endpoint, {
+          headers: { 'Authorization': `Bearer ${fluidApiKey}` }
+        })
+        setAvailableResources(response.data.data.orders || response.data.data.products || response.data.data.contacts || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch resources:', error)
+      setAvailableResources([])
+    }
+  }
+
+  // Open modal for webhook testing
+  const openModal = async (webhookType: string) => {
+    setCurrentWebhookType(webhookType)
+    setFormData({})
+    setShowModal(true)
+    await fetchResources(webhookType)
+  }
+
+  // Handle form submission
+  const handleModalSubmit = async () => {
+    await executeWebhookTest(currentWebhookType, formData)
+    setShowModal(false)
+    setFormData({})
+  }
+
+  // Execute the webhook test with form data
+  const executeWebhookTest = async (webhookType: string, testData: any = {}) => {
     if (!installationId || !fluidApiKey) {
       alert('Missing installation ID or API key')
       return
@@ -54,7 +141,8 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
         testData: {
           customer_name: 'Jane Doe from Dashboard',
           total: 179.90,
-          currency: 'USD'
+          currency: 'USD',
+          ...testData
         }
       }, {
         headers: {
@@ -76,6 +164,17 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
     } finally {
       setLoadingStates(prev => ({ ...prev, [webhookType]: false }))
     }
+  }
+
+  const handleTestWebhook = async (webhookType: string = 'order.created') => {
+    // If needs modal, open it instead of direct test
+    if (needsModal(webhookType)) {
+      await openModal(webhookType)
+      return
+    }
+
+    // Direct test for simple operations
+    await executeWebhookTest(webhookType)
   }
 
   const toggleLogExpansion = (logId: string) => {
@@ -204,6 +303,105 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
 
   return (
     <div className="space-y-4">
+      {/* Swagger-style Dynamic Form Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900 text-lg">
+                {currentWebhookType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} Parameters
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FontAwesomeIcon icon="times" />
+              </button>
+            </div>
+
+            {/* Resource Selection */}
+            {availableResources.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Resource to Update:
+                </label>
+                <select
+                  value={formData.resourceId || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, resourceId: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="">Select a resource...</option>
+                  {availableResources.map((resource: any) => (
+                    <option key={resource.id} value={resource.id}>
+                      {resource.order_number || resource.title || `${resource.first_name} ${resource.last_name}` || `ID: ${resource.id}`} 
+                      {resource.display_amount && ` - ${resource.display_amount}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Dynamic Form Fields */}
+            <div className="space-y-4">
+              {getFormFields(currentWebhookType).map((field) => (
+                <div key={field.name}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {field.label}
+                  </label>
+                  {field.type === 'textarea' ? (
+                    <textarea
+                      value={formData[field.name] || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      rows={3}
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  ) : field.type === 'checkbox' ? (
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={formData[field.name] || false}
+                        onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.checked }))}
+                        className="mr-2"
+                      />
+                      {field.label}
+                    </label>
+                  ) : (
+                    <input
+                      type={field.type}
+                      value={formData[field.name] || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleModalSubmit}
+                disabled={loadingStates[currentWebhookType]}
+                className="px-4 py-2 text-sm font-medium text-white rounded-md disabled:opacity-50"
+                style={{
+                  backgroundColor: formatColor(brandGuidelines?.color) || '#16a34a'
+                }}
+              >
+                {loadingStates[currentWebhookType] ? 'Testing...' : 'Execute Webhook'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Comprehensive API-style Webhook Testing Section */}
       {webhookEndpoints.map((category) => (
         <div key={category.category} className="bg-white rounded-lg border border-gray-200">
