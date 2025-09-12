@@ -459,6 +459,82 @@ router.post('/test-connection', rateLimits.testConnection, async (req: Request, 
   }
 })
 
+// Helper function to get recent activity from database
+async function getRecentActivity(installationId: string) {
+  try {
+    const result = await Database.query(`
+      SELECT 
+        activity_type,
+        details,
+        status,
+        created_at as timestamp
+      FROM activity_logs 
+      WHERE installation_id = $1 
+      ORDER BY created_at DESC 
+      LIMIT 10
+    `, [installationId])
+
+    return result.rows.map((row: any) => ({
+      description: formatActivityDescription(row.activity_type, row.details),
+      timestamp: row.timestamp,
+      details: formatActivityDetails(row.activity_type, row.details, row.status)
+    }))
+  } catch (error) {
+    console.error('Error fetching recent activity:', error)
+    return []
+  }
+}
+
+// Helper function to format activity descriptions
+function formatActivityDescription(eventType: string, eventData: any) {
+  switch (eventType) {
+    case 'configuration':
+    case 'configuration_completed':
+      return 'Droplet configuration completed'
+    case 'sync':
+    case 'sync_completed':
+      return 'Data synchronization completed'
+    case 'webhook_test':
+      return 'Webhook test completed'
+    case 'webhook_received':
+      return 'Webhook event received'
+    case 'webhook_processed':
+      return 'Webhook event processed'
+    case 'installation_created':
+      return 'Droplet installation created'
+    case 'api_connection_test':
+      return 'API connection tested'
+    default:
+      return eventType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  }
+}
+
+// Helper function to format activity details
+function formatActivityDetails(eventType: string, eventData: any, status: string) {
+  const data = typeof eventData === 'string' ? JSON.parse(eventData) : eventData
+  
+  switch (eventType) {
+    case 'configuration':
+    case 'configuration_completed':
+      return `Successfully connected to ${data?.companyName || 'your service'}`
+    case 'sync':
+    case 'sync_completed':
+      return status === 'success' ? 'Data synchronized successfully' : 'Sync failed'
+    case 'webhook_test':
+      return status === 'success' ? `Test webhook ${data?.webhookType || 'event'} completed` : 'Webhook test failed'
+    case 'webhook_received':
+      return `Received ${data?.webhookType || 'webhook'} event`
+    case 'webhook_processed':
+      return status === 'success' ? 'Webhook processed successfully' : 'Webhook processing failed'
+    case 'installation_created':
+      return 'New droplet installation created'
+    case 'api_connection_test':
+      return status === 'success' ? 'API connection verified' : 'API connection failed'
+    default:
+      return status === 'success' ? 'Operation completed successfully' : 'Operation failed'
+  }
+}
+
 /**
  * GET /api/droplet/dashboard/:installationId
  * Get dashboard data for an installation
@@ -599,23 +675,7 @@ router.get('/dashboard/:installationId', optionalTenantAuth, rateLimits.tenant, 
     const dashboardData = {
       companyName: companyName,
       brandGuidelines: brandGuidelines,
-      recentActivity: [
-        {
-          description: 'Last sync completed',
-          timestamp: new Date().toISOString(),
-          details: 'Data synchronized successfully'
-        },
-        {
-          description: 'Droplet installation completed',
-          timestamp: new Date(Date.now() - 300000).toISOString(),
-          details: `Successfully connected to ${companyName}`
-        },
-        {
-          description: 'Fluid API connection established',
-          timestamp: new Date(Date.now() - 600000).toISOString(),
-          details: 'Authentication verified with Fluid platform'
-        }
-      ]
+      recentActivity: await getRecentActivity(tenantInstallationId)
     }
 
     return res.json({

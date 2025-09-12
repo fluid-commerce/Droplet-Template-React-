@@ -55,34 +55,126 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
            webhookType.includes('destroyed')
   }
 
-  // Get form fields for each webhook type
+  // Get comprehensive form fields for each webhook type (like curl commands)
   const getFormFields = (webhookType: string) => {
     switch (webhookType) {
+      case 'order_created':
+        return [
+          { name: 'customer_name', label: 'Customer Name', type: 'text', placeholder: 'John Doe' },
+          { name: 'email', label: 'Customer Email', type: 'email', placeholder: 'john@example.com' },
+          { name: 'phone', label: 'Phone', type: 'tel', placeholder: '+1-555-0123' },
+          { name: 'total', label: 'Order Total', type: 'number', placeholder: '199.99' },
+          { name: 'currency', label: 'Currency', type: 'text', placeholder: 'USD' },
+          { name: 'address1', label: 'Shipping Address', type: 'text', placeholder: '123 Main St' },
+          { name: 'city', label: 'City', type: 'text', placeholder: 'New York' },
+          { name: 'state', label: 'State', type: 'text', placeholder: 'NY' },
+          { name: 'postal_code', label: 'ZIP Code', type: 'text', placeholder: '10001' },
+          { name: 'notes', label: 'Order Notes', type: 'textarea', placeholder: 'Special instructions...' }
+        ]
       case 'order_refunded':
         return [
+          { name: 'order_id', label: 'Order ID', type: 'text', placeholder: '44064226' },
           { name: 'refund_amount', label: 'Refund Amount', type: 'number', placeholder: '199.99' },
           { name: 'refund_reason', label: 'Refund Reason', type: 'text', placeholder: 'Customer request' },
-          { name: 'partial_refund', label: 'Partial Refund', type: 'checkbox' }
+          { name: 'refund_type', label: 'Refund Type', type: 'select', options: ['full', 'partial', 'store_credit'] },
+          { name: 'refund_method', label: 'Refund Method', type: 'select', options: ['original_payment', 'store_credit', 'check'] },
+          { name: 'partial_refund', label: 'Partial Refund', type: 'checkbox' },
+          { name: 'refund_shipping', label: 'Refund Shipping', type: 'checkbox' },
+          { name: 'refund_tax', label: 'Refund Tax', type: 'checkbox' },
+          { name: 'internal_notes', label: 'Internal Notes', type: 'textarea', placeholder: 'Internal processing notes...' }
         ]
       case 'order_shipped':
         return [
+          { name: 'order_id', label: 'Order ID', type: 'text', placeholder: '44064226' },
           { name: 'tracking_number', label: 'Tracking Number', type: 'text', placeholder: 'UPS123456789' },
-          { name: 'carrier', label: 'Shipping Carrier', type: 'text', placeholder: 'UPS' },
-          { name: 'estimated_delivery', label: 'Estimated Delivery', type: 'date' }
+          { name: 'carrier', label: 'Shipping Carrier', type: 'select', options: ['UPS', 'FedEx', 'USPS', 'DHL', 'Other'] },
+          { name: 'shipping_method', label: 'Shipping Method', type: 'text', placeholder: 'Ground' },
+          { name: 'estimated_delivery', label: 'Estimated Delivery', type: 'date' },
+          { name: 'shipped_at', label: 'Shipped Date/Time', type: 'datetime-local' },
+          { name: 'shipping_cost', label: 'Shipping Cost', type: 'number', placeholder: '12.99' },
+          { name: 'package_weight', label: 'Package Weight (lbs)', type: 'number', placeholder: '2.5' },
+          { name: 'shipping_notes', label: 'Shipping Notes', type: 'textarea', placeholder: 'Package handling notes...' }
+        ]
+      case 'order_canceled':
+        return [
+          { name: 'order_id', label: 'Order ID', type: 'text', placeholder: '44064226' },
+          { name: 'cancellation_reason', label: 'Cancellation Reason', type: 'select', options: ['customer_request', 'out_of_stock', 'payment_failed', 'fraudulent', 'other'] },
+          { name: 'cancel_reason_details', label: 'Reason Details', type: 'textarea', placeholder: 'Additional details...' },
+          { name: 'refund_issued', label: 'Refund Issued', type: 'checkbox' },
+          { name: 'cancel_date', label: 'Cancellation Date', type: 'datetime-local' },
+          { name: 'notified_customer', label: 'Customer Notified', type: 'checkbox' }
         ]
       case 'customer_updated':
       case 'contact_updated':
+      case 'user_updated':
         return [
+          { name: 'customer_id', label: 'Customer ID', type: 'text', placeholder: '11854186' },
           { name: 'first_name', label: 'First Name', type: 'text', placeholder: 'John' },
           { name: 'last_name', label: 'Last Name', type: 'text', placeholder: 'Doe' },
           { name: 'email', label: 'Email', type: 'email', placeholder: 'john@example.com' },
-          { name: 'phone', label: 'Phone', type: 'tel', placeholder: '+1-555-0123' }
+          { name: 'phone', label: 'Phone', type: 'tel', placeholder: '+1-555-0123' },
+          { name: 'company', label: 'Company', type: 'text', placeholder: 'Acme Corp' },
+          { name: 'title', label: 'Job Title', type: 'text', placeholder: 'Manager' },
+          { name: 'address1', label: 'Address Line 1', type: 'text', placeholder: '123 Main St' },
+          { name: 'address2', label: 'Address Line 2', type: 'text', placeholder: 'Apt 4B' },
+          { name: 'city', label: 'City', type: 'text', placeholder: 'New York' },
+          { name: 'state', label: 'State/Province', type: 'text', placeholder: 'NY' },
+          { name: 'postal_code', label: 'ZIP/Postal Code', type: 'text', placeholder: '10001' },
+          { name: 'country', label: 'Country', type: 'text', placeholder: 'United States' },
+          { name: 'status', label: 'Customer Status', type: 'select', options: ['active', 'inactive', 'pending', 'suspended'] },
+          { name: 'tags', label: 'Customer Tags', type: 'text', placeholder: 'VIP, Premium, Loyalty' },
+          { name: 'notes', label: 'Customer Notes', type: 'textarea', placeholder: 'Customer service notes...' }
+        ]
+      case 'product_created':
+        return [
+          { name: 'title', label: 'Product Title', type: 'text', placeholder: 'Amazing Product' },
+          { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Product description...' },
+          { name: 'price', label: 'Price', type: 'number', placeholder: '29.99' },
+          { name: 'sku', label: 'SKU', type: 'text', placeholder: 'PROD-001' },
+          { name: 'category', label: 'Category', type: 'text', placeholder: 'Electronics' },
+          { name: 'brand', label: 'Brand', type: 'text', placeholder: 'BrandName' },
+          { name: 'weight', label: 'Weight (lbs)', type: 'number', placeholder: '2.5' },
+          { name: 'dimensions', label: 'Dimensions (LxWxH)', type: 'text', placeholder: '10x8x6 inches' },
+          { name: 'image_url', label: 'Image URL', type: 'url', placeholder: 'https://example.com/image.jpg' },
+          { name: 'in_stock', label: 'In Stock', type: 'checkbox' },
+          { name: 'inventory_quantity', label: 'Inventory Quantity', type: 'number', placeholder: '100' },
+          { name: 'active', label: 'Active Product', type: 'checkbox' }
         ]
       case 'product_updated':
         return [
+          { name: 'product_id', label: 'Product ID', type: 'text', placeholder: '50438' },
           { name: 'title', label: 'Product Title', type: 'text', placeholder: 'Updated Product Name' },
-          { name: 'price', label: 'Price', type: 'number', placeholder: '29.99' },
-          { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Product description...' }
+          { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Updated product description...' },
+          { name: 'price', label: 'Price', type: 'number', placeholder: '39.99' },
+          { name: 'sale_price', label: 'Sale Price', type: 'number', placeholder: '29.99' },
+          { name: 'sku', label: 'SKU', type: 'text', placeholder: 'PROD-001-V2' },
+          { name: 'category', label: 'Category', type: 'text', placeholder: 'Electronics' },
+          { name: 'brand', label: 'Brand', type: 'text', placeholder: 'BrandName' },
+          { name: 'weight', label: 'Weight (lbs)', type: 'number', placeholder: '2.5' },
+          { name: 'inventory_quantity', label: 'Inventory Quantity', type: 'number', placeholder: '75' },
+          { name: 'active', label: 'Active Product', type: 'checkbox' },
+          { name: 'featured', label: 'Featured Product', type: 'checkbox' },
+          { name: 'tags', label: 'Product Tags', type: 'text', placeholder: 'new, sale, trending' }
+        ]
+      case 'cart_updated':
+        return [
+          { name: 'cart_id', label: 'Cart ID', type: 'text', placeholder: 'cart_123456' },
+          { name: 'customer_email', label: 'Customer Email', type: 'email', placeholder: 'customer@example.com' },
+          { name: 'total_amount', label: 'Cart Total', type: 'number', placeholder: '159.99' },
+          { name: 'items_count', label: 'Items Count', type: 'number', placeholder: '3' },
+          { name: 'currency', label: 'Currency', type: 'text', placeholder: 'USD' },
+          { name: 'discount_code', label: 'Discount Code', type: 'text', placeholder: 'SAVE10' },
+          { name: 'discount_amount', label: 'Discount Amount', type: 'number', placeholder: '15.99' }
+        ]
+      case 'cart_abandoned':
+        return [
+          { name: 'cart_id', label: 'Cart ID', type: 'text', placeholder: 'cart_123456' },
+          { name: 'customer_email', label: 'Customer Email', type: 'email', placeholder: 'customer@example.com' },
+          { name: 'customer_name', label: 'Customer Name', type: 'text', placeholder: 'John Doe' },
+          { name: 'total_amount', label: 'Cart Total', type: 'number', placeholder: '199.99' },
+          { name: 'items_count', label: 'Items Count', type: 'number', placeholder: '4' },
+          { name: 'abandoned_at', label: 'Abandoned Time', type: 'datetime-local' },
+          { name: 'recovery_email_sent', label: 'Recovery Email Sent', type: 'checkbox' }
         ]
       default:
         return []
@@ -356,6 +448,19 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
                       rows={3}
                       className="w-full p-2 border border-gray-300 rounded-md text-sm"
                     />
+                  ) : field.type === 'select' ? (
+                    <select
+                      value={formData[field.name] || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="">Select {field.label.toLowerCase()}...</option>
+                      {(field as any).options?.map((option: string) => (
+                        <option key={option} value={option}>
+                          {option.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </option>
+                      ))}
+                    </select>
                   ) : field.type === 'checkbox' ? (
                     <label className="flex items-center">
                       <input
@@ -506,6 +611,98 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
                           )}
                         </div>
                       </div>
+                      
+                      {/* Detailed Resource Data */}
+                      {testResults[endpoint.type].success && testResults[endpoint.type].resourceData && (
+                        <div className="mt-3 space-y-2">
+                          <div className="text-gray-400 text-xs">Resource Details:</div>
+                          <div className="bg-gray-800 rounded border border-gray-700 p-2 text-xs">
+                            {/* Order-specific fields */}
+                            {testResults[endpoint.type].type.includes('order') && (
+                              <div className="space-y-1 text-green-300">
+                                {testResults[endpoint.type].resourceData.order_number && (
+                                  <div><span className="text-gray-400">Order #:</span> {testResults[endpoint.type].resourceData.order_number}</div>
+                                )}
+                                {testResults[endpoint.type].resourceData.friendly_status && (
+                                  <div><span className="text-gray-400">Status:</span> {testResults[endpoint.type].resourceData.friendly_status}</div>
+                                )}
+                                {testResults[endpoint.type].resourceData.display_amount && (
+                                  <div><span className="text-gray-400">Amount:</span> {testResults[endpoint.type].resourceData.display_amount}</div>
+                                )}
+                                {testResults[endpoint.type].resourceData.first_name && (
+                                  <div><span className="text-gray-400">Customer:</span> {testResults[endpoint.type].resourceData.first_name} {testResults[endpoint.type].resourceData.last_name}</div>
+                                )}
+                                {testResults[endpoint.type].resourceData.email && (
+                                  <div><span className="text-gray-400">Email:</span> {testResults[endpoint.type].resourceData.email}</div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Product-specific fields */}
+                            {testResults[endpoint.type].type.includes('product') && (
+                              <div className="space-y-1 text-green-300">
+                                {testResults[endpoint.type].resourceData.title && (
+                                  <div><span className="text-gray-400">Title:</span> {testResults[endpoint.type].resourceData.title}</div>
+                                )}
+                                {testResults[endpoint.type].resourceData.sku && (
+                                  <div><span className="text-gray-400">SKU:</span> {testResults[endpoint.type].resourceData.sku}</div>
+                                )}
+                                {testResults[endpoint.type].resourceData.display_price && (
+                                  <div><span className="text-gray-400">Price:</span> {testResults[endpoint.type].resourceData.display_price}</div>
+                                )}
+                                {testResults[endpoint.type].resourceData.active !== undefined && (
+                                  <div><span className="text-gray-400">Active:</span> {testResults[endpoint.type].resourceData.active ? 'Yes' : 'No'}</div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Customer-specific fields */}
+                            {testResults[endpoint.type].type.includes('customer') && (
+                              <div className="space-y-1 text-green-300">
+                                {testResults[endpoint.type].resourceData.first_name && (
+                                  <div><span className="text-gray-400">Name:</span> {testResults[endpoint.type].resourceData.first_name} {testResults[endpoint.type].resourceData.last_name}</div>
+                                )}
+                                {testResults[endpoint.type].resourceData.email && (
+                                  <div><span className="text-gray-400">Email:</span> {testResults[endpoint.type].resourceData.email}</div>
+                                )}
+                                {testResults[endpoint.type].resourceData.phone && (
+                                  <div><span className="text-gray-400">Phone:</span> {testResults[endpoint.type].resourceData.phone}</div>
+                                )}
+                                {testResults[endpoint.type].resourceData.status && (
+                                  <div><span className="text-gray-400">Status:</span> {testResults[endpoint.type].resourceData.status}</div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Common fields */}
+                            <div className="mt-2 pt-2 border-t border-gray-700 text-green-300">
+                              <div><span className="text-gray-400">ID:</span> {testResults[endpoint.type].resourceId}</div>
+                              <div><span className="text-gray-400">Created:</span> {new Date(testResults[endpoint.type].resourceData.created_at || testResults[endpoint.type].createdAt).toLocaleString()}</div>
+                            </div>
+                          </div>
+                          
+                          {/* Raw JSON Data (Collapsible) */}
+                          <div>
+                            <button
+                              onClick={() => setShowJsonData(prev => ({ ...prev, [endpoint.type]: !prev[endpoint.type] }))}
+                              className="flex items-center justify-between w-full p-2 bg-gray-800 rounded border border-gray-700 hover:bg-gray-700 transition-colors text-xs"
+                            >
+                              <span className="text-gray-400">Raw JSON Response</span>
+                              <FontAwesomeIcon 
+                                icon={showJsonData[endpoint.type] ? "chevron-up" : "chevron-down"} 
+                                className="text-gray-400 text-xs" 
+                              />
+                            </button>
+                            {showJsonData[endpoint.type] && (
+                              <div className="mt-2">
+                                <pre className="bg-gray-800 text-green-300 p-3 rounded text-xs overflow-x-auto max-h-48 overflow-y-auto border border-gray-700">
+                                  <code>{formatJsonData(testResults[endpoint.type].resourceData)}</code>
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

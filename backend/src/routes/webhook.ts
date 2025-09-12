@@ -159,6 +159,19 @@ async function handleDropletInstalled(event: WebhookEvent) {
     // Try to create or update the installation
     try {
       await Database.createInstallation(installationData)
+      
+      // Log installation activity
+      await Database.logActivity({
+        installation_id: installationId,
+        activity_type: 'installation_created',
+        description: 'Droplet installation created via webhook',
+        details: {
+          companyName: companyName,
+          companyId: companyId,
+          source: 'webhook'
+        },
+        status: 'success'
+      })
     } catch (error: any) {
       // If it already exists, update it
       if (error.code === '23505') { // unique constraint violation
@@ -166,6 +179,19 @@ async function handleDropletInstalled(event: WebhookEvent) {
           configuration: installationData.configuration,
           authenticationToken: authToken,
           status: 'active'
+        })
+        
+        // Log update activity
+        await Database.logActivity({
+          installation_id: installationId,
+          activity_type: 'installation_updated',
+          description: 'Droplet installation updated via webhook',
+          details: {
+            companyName: companyName,
+            companyId: companyId,
+            source: 'webhook'
+          },
+          status: 'success'
         })
       } else {
         throw error
