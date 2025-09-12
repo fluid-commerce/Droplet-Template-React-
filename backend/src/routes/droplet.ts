@@ -1573,8 +1573,6 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
         case 'droplet_installed':
         case 'droplet_uninstalled':
         case 'enrollment_completed':
-        case 'mfa_missing_email':
-        case 'mfa_verified':
           // These are system events, create activities to track them
           const systemActivityResult = await fluidApi.createActivity(installation.customerApiKey, {
             title: `${webhookType.replace('_', ' ')} Event`,
@@ -1588,6 +1586,21 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
             success: true,
             resourceId: systemActivityResult?.id || systemActivityResult?.activity?.id,
             resourceData: systemActivityResult,
+            createdAt: new Date().toISOString()
+          }
+          break
+
+        case 'mfa_missing_email':
+        case 'mfa_verified':
+          // MFA events are system-level and don't require affiliate data
+          // Use simulation for these since they're authentication events
+          const mfaSimulatedData = generateSimulatedWebhookData(webhookType, testData)
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: mfaSimulatedData.id,
+            resourceData: mfaSimulatedData,
             createdAt: new Date().toISOString()
           }
           break
