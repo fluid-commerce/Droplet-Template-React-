@@ -1273,10 +1273,34 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
         case 'order_shipped':
         case 'order_canceled':
         case 'order_refunded':
-          // For order update tests, always create a new order first to ensure it exists in customer's account
-          logger.info('Creating new order for update test', { installationId: tenantInstallationId })
-          const newOrderResult = await fluidApi.createTestOrder(installation.customerApiKey, testData)
-          const orderToUpdate = newOrderResult?.id || newOrderResult?.order?.id
+          let orderToUpdate = null
+          
+          // Check if user provided an order number in the form
+          if (testData.order_id || testData.order_number) {
+            const orderIdentifier = testData.order_id || testData.order_number
+            logger.info('Using provided order identifier for update', { 
+              installationId: tenantInstallationId, 
+              orderIdentifier 
+            })
+            orderToUpdate = orderIdentifier
+          } else {
+            // If no order specified, try to find existing orders in customer's account
+            logger.info('No order specified, fetching existing orders from customer account', { installationId: tenantInstallationId })
+            const existingOrders = await fluidApi.getOrders(installation.customerApiKey, 1)
+            
+            if (existingOrders && existingOrders.length > 0) {
+              orderToUpdate = existingOrders[0].id
+              logger.info('Found existing order to update', { 
+                installationId: tenantInstallationId, 
+                orderId: orderToUpdate 
+              })
+            } else {
+              // No existing orders, create a new one
+              logger.info('No existing orders found, creating new order for update test', { installationId: tenantInstallationId })
+              const newOrderResult = await fluidApi.createTestOrder(installation.customerApiKey, testData)
+              orderToUpdate = newOrderResult?.id || newOrderResult?.order?.id
+            }
+          }
           
           // Set appropriate status based on webhook type
           let orderStatus = 'processing'
@@ -1620,7 +1644,7 @@ router.get('/orders', requireTenantAuth, rateLimits.tenant, async (req: Request,
 
     try {
       // Fetch orders from Fluid API
-      const orders = await fluidApi.getOrders(parseInt(limit as string))
+      const orders = await fluidApi.getOrders(undefined, parseInt(limit as string))
       
       logger.info('Orders fetched successfully', {
         installationId: tenantInstallationId,

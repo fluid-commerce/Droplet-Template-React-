@@ -544,16 +544,26 @@ export class FluidApiService {
   /**
    * Get orders from Fluid API
    */
-  async getOrders(limit: number = 10): Promise<any[]> {
+  async getOrders(customerApiKey?: string, limit: number = 10): Promise<any[]> {
     const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
 
     try {
       logger.info('Fetching orders from Fluid API', {
         limit,
-        endpoint: '/company/orders.json'
+        endpoint: '/company/orders.json',
+        usingCustomerKey: !!customerApiKey
       })
 
-      const response = await this.client.get('/company/orders.json', {
+      // Use customer API key if provided, otherwise use default client
+      const client = customerApiKey ? axios.create({
+        baseURL: fluidApiUrl,
+        headers: {
+          'Authorization': `Bearer ${customerApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      }) : this.client
+
+      const response = await client.get('/company/orders.json', {
         params: {
           limit: limit
         }
