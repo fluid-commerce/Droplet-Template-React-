@@ -717,6 +717,9 @@ export class FluidApiService {
       title: 'Test Activity',
       description: 'Test activity created via webhook',
       activity_type: 'webhook_test',
+      affiliate: {
+        email: 'partner@businessmail.com'
+      },
       ...activityData
     }
 
