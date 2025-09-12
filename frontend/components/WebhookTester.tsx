@@ -15,8 +15,8 @@ interface WebhookEvent {
 interface WebhookTestResult {
   type: string
   success: boolean
-  orderId?: string
-  orderData?: any
+  resourceId?: string
+  resourceData?: any
   error?: string
   details?: any
   createdAt: string
@@ -94,30 +94,143 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
     }
   }
 
+  // Complete Fluid webhook events - ALL 47 webhook types
+  const webhookEndpoints = [
+    {
+      category: 'Orders',
+      endpoints: [
+        { name: 'Order Created', type: 'order_created', method: 'POST', description: 'New order created' },
+        { name: 'Order Completed', type: 'order_completed', method: 'POST', description: 'Order completion webhook' },
+        { name: 'Order Updated', type: 'order_updated', method: 'PUT', description: 'Order status/details updated' },
+        { name: 'Order Shipped', type: 'order_shipped', method: 'PUT', description: 'Order marked as shipped' },
+        { name: 'Order Canceled', type: 'order_canceled', method: 'PUT', description: 'Order cancellation' },
+        { name: 'Order Refunded', type: 'order_refunded', method: 'POST', description: 'Order refund processed' },
+      ]
+    },
+    {
+      category: 'Products',
+      endpoints: [
+        { name: 'Product Created', type: 'product_created', method: 'POST', description: 'New product created' },
+        { name: 'Product Updated', type: 'product_updated', method: 'PUT', description: 'Product information updated' },
+        { name: 'Product Destroyed', type: 'product_destroyed', method: 'DELETE', description: 'Product deleted/destroyed' },
+      ]
+    },
+    {
+      category: 'Users',
+      endpoints: [
+        { name: 'User Created', type: 'user_created', method: 'POST', description: 'New user account created' },
+        { name: 'User Updated', type: 'user_updated', method: 'PUT', description: 'User profile updated' },
+        { name: 'User Deactivated', type: 'user_deactivated', method: 'DELETE', description: 'User account deactivated' },
+      ]
+    },
+    {
+      category: 'Contacts',
+      endpoints: [
+        { name: 'Contact Created', type: 'contact_created', method: 'POST', description: 'New contact created' },
+        { name: 'Contact Updated', type: 'contact_updated', method: 'PUT', description: 'Contact profile updated' },
+      ]
+    },
+    {
+      category: 'Customers',
+      endpoints: [
+        { name: 'Customer Created', type: 'customer_created', method: 'POST', description: 'New customer created' },
+        { name: 'Customer Updated', type: 'customer_updated', method: 'PUT', description: 'Customer profile updated' },
+      ]
+    },
+    {
+      category: 'Cart & Shopping',
+      endpoints: [
+        { name: 'Cart Updated', type: 'cart_updated', method: 'PUT', description: 'Shopping cart contents updated' },
+        { name: 'Cart Abandoned', type: 'cart_abandoned', method: 'POST', description: 'Shopping cart abandoned' },
+        { name: 'Cart Update Address', type: 'cart_update_address', method: 'PUT', description: 'Cart shipping address updated' },
+        { name: 'Cart Update Email', type: 'cart_update_cart_email', method: 'PUT', description: 'Cart email address updated' },
+        { name: 'Cart Add Items', type: 'cart_add_items', method: 'POST', description: 'Items added to cart' },
+        { name: 'Cart Remove Items', type: 'cart_remove_items', method: 'DELETE', description: 'Items removed from cart' },
+      ]
+    },
+    {
+      category: 'Subscriptions',
+      endpoints: [
+        { name: 'Subscription Started', type: 'subscription_started', method: 'POST', description: 'New subscription activated' },
+        { name: 'Subscription Paused', type: 'subscription_paused', method: 'PUT', description: 'Subscription temporarily paused' },
+        { name: 'Subscription Cancelled', type: 'subscription_cancelled', method: 'DELETE', description: 'Subscription permanently cancelled' },
+      ]
+    },
+    {
+      category: 'Events',
+      endpoints: [
+        { name: 'Event Created', type: 'event_created', method: 'POST', description: 'New event created' },
+        { name: 'Event Updated', type: 'event_updated', method: 'PUT', description: 'Event details updated' },
+        { name: 'Event Deleted', type: 'event_deleted', method: 'DELETE', description: 'Event removed' },
+      ]
+    },
+    {
+      category: 'Marketing & Engagement',
+      endpoints: [
+        { name: 'Webchat Submitted', type: 'webchat_submitted', method: 'POST', description: 'Webchat form submitted' },
+        { name: 'Popup Submitted', type: 'popup_submitted', method: 'POST', description: 'Marketing popup form submitted' },
+        { name: 'Bot Message Created', type: 'bot_message_created', method: 'POST', description: 'Automated bot message created' },
+      ]
+    },
+    {
+      category: 'System & Integration',
+      endpoints: [
+        { name: 'Droplet Installed', type: 'droplet_installed', method: 'POST', description: 'Droplet successfully installed' },
+        { name: 'Droplet Uninstalled', type: 'droplet_uninstalled', method: 'DELETE', description: 'Droplet removed/uninstalled' },
+        { name: 'Enrollment Completed', type: 'enrollment_completed', method: 'POST', description: 'User enrollment process completed' },
+      ]
+    },
+    {
+      category: 'Authentication & Security',
+      endpoints: [
+        { name: 'MFA Missing Email', type: 'mfa_missing_email', method: 'POST', description: 'Multi-factor auth missing email' },
+        { name: 'MFA Verified', type: 'mfa_verified', method: 'POST', description: 'Multi-factor authentication verified' },
+      ]
+    }
+  ]
+
   return (
     <div className="space-y-4">
-      {/* API-style Webhook Testing Section */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="border-b border-gray-100">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center space-x-3">
-              <span className="font-semibold text-gray-900">Create Order</span>
-              <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">POST</span>
-            </div>
-            <Button
-              onClick={() => handleTestWebhook('order.created')}
-              loading={isLoading}
-              disabled={isLoading}
-              size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              Test
-            </Button>
+      {/* Comprehensive API-style Webhook Testing Section */}
+      {webhookEndpoints.map((category) => (
+        <div key={category.category} className="bg-white rounded-lg border border-gray-200">
+          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <h3 className="font-semibold text-gray-900 text-sm">{category.category}</h3>
           </div>
+          
+          {category.endpoints.map((endpoint) => (
+            <div key={endpoint.type} className="border-b border-gray-100 last:border-b-0">
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center space-x-3">
+                  <span className="font-semibold text-gray-900">{endpoint.name}</span>
+                  <span className={`px-2 py-1 text-xs font-medium rounded ${
+                    endpoint.method === 'POST' ? 'bg-blue-100 text-blue-700' :
+                    endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-700' :
+                    endpoint.method === 'DELETE' ? 'bg-red-100 text-red-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                    {endpoint.method}
+                  </span>
+                  <span className="text-xs text-gray-500">{endpoint.description}</span>
+                </div>
+                <Button
+                  onClick={() => handleTestWebhook(endpoint.type)}
+                  loading={isLoading}
+                  disabled={isLoading}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Test
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
+      ))}
 
-        <div className="p-4">
-          {testResult && (
+      {/* Test Results Section */}
+      {testResult && (
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="space-y-4">
               {/* Test Status */}
               <div className={`p-4 rounded-lg border ${
@@ -139,9 +252,11 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
                   </span>
                 </div>
                 
-                {testResult.success && testResult.orderId && (
+                {testResult.success && testResult.resourceId && (
                   <p className="text-xs text-green-700 mb-2">
-                    Order ID: {testResult.orderId}
+                    {testResult.type.includes('order') ? 'Order' :
+                     testResult.type.includes('product') ? 'Product' :
+                     testResult.type.includes('customer') ? 'Customer' : 'Resource'} ID: {testResult.resourceId}
                   </p>
                 )}
                 
@@ -157,7 +272,7 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
               </div>
 
               {/* Detailed Logs Section */}
-              {testResult.success && testResult.orderData && (
+              {testResult.success && testResult.resourceData && (
                 <div className="bg-gray-50 rounded-lg border border-gray-200">
                   <div className="p-4 border-b border-gray-200">
                     <h4 className="font-semibold text-gray-900 text-sm flex items-center">
@@ -166,37 +281,69 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
                     </h4>
                   </div>
                   <div className="p-4 space-y-4">
-                    {/* Order Summary */}
+                    {/* Resource Summary */}
                     <div>
-                      <h5 className="font-medium text-gray-800 text-sm mb-2">Order Summary</h5>
+                      <h5 className="font-medium text-gray-800 text-sm mb-2">
+                        {testResult.type.includes('order') ? 'Order' :
+                         testResult.type.includes('product') ? 'Product' :
+                         testResult.type.includes('customer') ? 'Customer' : 'Resource'} Summary
+                      </h5>
                       <div className="bg-white p-3 rounded border text-xs space-y-1">
-                        <div><strong>Order Number:</strong> {testResult.orderData.order_number}</div>
-                        <div><strong>Status:</strong> {testResult.orderData.friendly_status}</div>
-                        <div><strong>Amount:</strong> {testResult.orderData.display_amount}</div>
-                        <div><strong>Customer:</strong> {testResult.orderData.first_name} {testResult.orderData.last_name}</div>
-                        <div><strong>Email:</strong> {testResult.orderData.email}</div>
-                        <div><strong>Created:</strong> {new Date(testResult.orderData.created_at).toLocaleString()}</div>
+                        {/* Order-specific fields */}
+                        {testResult.type.includes('order') && (
+                          <>
+                            <div><strong>Order Number:</strong> {testResult.resourceData.order_number}</div>
+                            <div><strong>Status:</strong> {testResult.resourceData.friendly_status || testResult.resourceData.status}</div>
+                            <div><strong>Amount:</strong> {testResult.resourceData.display_amount || `$${testResult.resourceData.amount}`}</div>
+                            <div><strong>Customer:</strong> {testResult.resourceData.first_name} {testResult.resourceData.last_name}</div>
+                            <div><strong>Email:</strong> {testResult.resourceData.email}</div>
+                          </>
+                        )}
+                        
+                        {/* Product-specific fields */}
+                        {testResult.type.includes('product') && (
+                          <>
+                            <div><strong>Product Title:</strong> {testResult.resourceData.title}</div>
+                            <div><strong>SKU:</strong> {testResult.resourceData.sku}</div>
+                            <div><strong>Price:</strong> {testResult.resourceData.display_price || `$${testResult.resourceData.price}`}</div>
+                            <div><strong>Status:</strong> {testResult.resourceData.active ? 'Active' : 'Inactive'}</div>
+                            <div><strong>Description:</strong> {testResult.resourceData.description}</div>
+                          </>
+                        )}
+                        
+                        {/* Customer-specific fields */}
+                        {testResult.type.includes('customer') && (
+                          <>
+                            <div><strong>Name:</strong> {testResult.resourceData.first_name} {testResult.resourceData.last_name}</div>
+                            <div><strong>Email:</strong> {testResult.resourceData.email}</div>
+                            <div><strong>Phone:</strong> {testResult.resourceData.phone || 'N/A'}</div>
+                            <div><strong>Status:</strong> {testResult.resourceData.status || 'Active'}</div>
+                          </>
+                        )}
+                        
+                        {/* Common fields */}
+                        <div><strong>ID:</strong> {testResult.resourceId}</div>
+                        <div><strong>Created:</strong> {new Date(testResult.resourceData.created_at || testResult.createdAt).toLocaleString()}</div>
                       </div>
                     </div>
 
-                    {/* Shipping Address */}
-                    {testResult.orderData.ship_to && (
+                    {/* Order-specific sections */}
+                    {testResult.type.includes('order') && testResult.resourceData.ship_to && (
                       <div>
                         <h5 className="font-medium text-gray-800 text-sm mb-2">Shipping Address</h5>
                         <div className="bg-white p-3 rounded border text-xs">
-                          <div>{testResult.orderData.ship_to.address1}</div>
-                          {testResult.orderData.ship_to.address2 && <div>{testResult.orderData.ship_to.address2}</div>}
-                          <div>{testResult.orderData.ship_to.city}, {testResult.orderData.ship_to.state} {testResult.orderData.ship_to.postal_code}</div>
+                          <div>{testResult.resourceData.ship_to.address1}</div>
+                          {testResult.resourceData.ship_to.address2 && <div>{testResult.resourceData.ship_to.address2}</div>}
+                          <div>{testResult.resourceData.ship_to.city}, {testResult.resourceData.ship_to.state} {testResult.resourceData.ship_to.postal_code}</div>
                         </div>
                       </div>
                     )}
 
-                    {/* Order Items */}
-                    {testResult.orderData.items && testResult.orderData.items.length > 0 && (
+                    {testResult.type.includes('order') && testResult.resourceData.items && testResult.resourceData.items.length > 0 && (
                       <div>
                         <h5 className="font-medium text-gray-800 text-sm mb-2">Order Items</h5>
                         <div className="bg-white rounded border overflow-hidden">
-                          {testResult.orderData.items.map((item: any, index: number) => (
+                          {testResult.resourceData.items.map((item: any, index: number) => (
                             <div key={index} className="p-3 border-b border-gray-100 last:border-b-0">
                               <div className="flex items-start space-x-3 text-xs">
                                 <img 
@@ -232,7 +379,7 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
                       {showJsonData['test-result'] && (
                         <div className="mt-2">
                           <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto max-h-64 overflow-y-auto">
-                            <code>{formatJsonData(testResult.orderData)}</code>
+                            <code>{formatJsonData(testResult.resourceData)}</code>
                           </pre>
                         </div>
                       )}
@@ -241,9 +388,8 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
                 </div>
               )}
             </div>
-          )}
         </div>
-      </div>
+      )}
 
       {/* Recent Webhook Events */}
       {recentWebhooks.length > 0 && (
