@@ -1273,28 +1273,10 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
         case 'order_shipped':
         case 'order_canceled':
         case 'order_refunded':
-          // Get a recent order to update, or create one if none exist
-          const recentOrdersResult = await Database.query(`
-            SELECT activity_logs.details->>'resourceId' as order_id
-            FROM activity_logs 
-            WHERE installation_id = $1 
-              AND activity_type = 'webhook_test'
-              AND (details->>'webhookType' IN ('order_created', 'order_completed', 'order.created'))
-              AND status = 'success'
-            ORDER BY created_at DESC 
-            LIMIT 1
-          `, [tenantInstallationId])
-
-          let orderToUpdate: string
-          
-          if (recentOrdersResult.rows.length === 0) {
-            // No recent orders found, create a new one first
-            logger.info('No recent orders found, creating new order for update test', { installationId: tenantInstallationId })
-            const newOrderResult = await fluidApi.createTestOrder(installation.customerApiKey, testData)
-            orderToUpdate = newOrderResult?.id || newOrderResult?.order?.id
-          } else {
-            orderToUpdate = recentOrdersResult.rows[0].order_id
-          }
+          // For order update tests, always create a new order first to ensure it exists in customer's account
+          logger.info('Creating new order for update test', { installationId: tenantInstallationId })
+          const newOrderResult = await fluidApi.createTestOrder(installation.customerApiKey, testData)
+          const orderToUpdate = newOrderResult?.id || newOrderResult?.order?.id
           
           // Set appropriate status based on webhook type
           let orderStatus = 'processing'
