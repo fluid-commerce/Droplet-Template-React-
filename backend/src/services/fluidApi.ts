@@ -741,6 +741,94 @@ export class FluidApiService {
   }
 
   /**
+   * Send MFA passcode via email
+   */
+  async sendMfaPasscode(customerApiKey: string, email: string, fluidShop: string): Promise<any> {
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    
+    if (!customerApiKey) {
+      throw new Error('Customer API key not provided')
+    }
+    
+    const customerClient = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${customerApiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 30000,
+    })
+
+    try {
+      logger.info('Sending MFA passcode via email', { 
+        email,
+        fluidShop,
+        endpoint: '/api/authentication/send_mfa'
+      })
+      
+      const response = await customerClient.post('/api/authentication/send_mfa', null, {
+        params: {
+          email,
+          fluid_shop: fluidShop
+        }
+      })
+      
+      return response.data
+    } catch (error: any) {
+      logger.error('Failed to send MFA passcode', { 
+        email,
+        fluidShop,
+        error: error.response?.data || error.message 
+      }, error)
+      throw error
+    }
+  }
+
+  /**
+   * Confirm MFA passcode
+   */
+  async confirmMfaPasscode(customerApiKey: string, uuid: string, verificationCode: string): Promise<any> {
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    
+    if (!customerApiKey) {
+      throw new Error('Customer API key not provided')
+    }
+    
+    const customerClient = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${customerApiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 30000,
+    })
+
+    try {
+      logger.info('Confirming MFA passcode', { 
+        uuid,
+        endpoint: '/api/authentication/confirm_mfa'
+      })
+      
+      const response = await customerClient.post('/api/authentication/confirm_mfa', {
+        uuid,
+        multi_factor_authentication: {
+          verification_code: verificationCode
+        }
+      })
+      
+      return response.data
+    } catch (error: any) {
+      logger.error('Failed to confirm MFA passcode', { 
+        uuid,
+        error: error.response?.data || error.message 
+      }, error)
+      throw error
+    }
+  }
+
+  /**
    * Get orders from Fluid API
    */
   async getOrders(customerApiKey?: string, limit: number = 10): Promise<any[]> {

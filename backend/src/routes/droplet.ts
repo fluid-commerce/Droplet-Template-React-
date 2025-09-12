@@ -1591,16 +1591,35 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
           break
 
         case 'mfa_missing_email':
-        case 'mfa_verified':
-          // MFA events are system-level and don't require affiliate data
-          // Use simulation for these since they're authentication events
-          const mfaSimulatedData = generateSimulatedWebhookData(webhookType, testData)
+          // Send MFA passcode via email
+          const mfaSendResult = await fluidApi.sendMfaPasscode(
+            installation.customerApiKey,
+            testData.email || 'test@example.com',
+            testData.fluid_shop || 'company.fluid.app'
+          )
           
           testResult = {
             type: webhookType,
             success: true,
-            resourceId: mfaSimulatedData.id,
-            resourceData: mfaSimulatedData,
+            resourceId: mfaSendResult?.multi_factor_authentication?.uuid,
+            resourceData: mfaSendResult,
+            createdAt: new Date().toISOString()
+          }
+          break
+
+        case 'mfa_verified':
+          // Confirm MFA passcode
+          const mfaConfirmResult = await fluidApi.confirmMfaPasscode(
+            installation.customerApiKey,
+            testData.uuid || 'test-uuid',
+            testData.verification_code || '123456'
+          )
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: mfaConfirmResult?.multi_factor_authentication?.uuid,
+            resourceData: mfaConfirmResult,
             createdAt: new Date().toISOString()
           }
           break
