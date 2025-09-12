@@ -498,6 +498,7 @@ export function DropletDashboard() {
                       <WebhookTester 
                         installationId={installationId}
                         fluidApiKey={fluidApiKey}
+                        brandGuidelines={brandGuidelines}
                       />
                     ) : (
                       <div className="text-center py-8">

@@ -25,14 +25,20 @@ interface WebhookTestResult {
 interface WebhookTesterProps {
   installationId: string | null
   fluidApiKey: string | null
+  brandGuidelines?: any
 }
 
-export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProps) {
-  const [isLoading, setIsLoading] = useState(false)
+export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: WebhookTesterProps) {
+  const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({})
   const [testResult, setTestResult] = useState<WebhookTestResult | null>(null)
   const [recentWebhooks, setRecentWebhooks] = useState<WebhookEvent[]>([])
   const [expandedLogs, setExpandedLogs] = useState<{ [key: string]: boolean }>({})
   const [showJsonData, setShowJsonData] = useState<{ [key: string]: boolean }>({})
+
+  const formatColor = (color: string | null | undefined) => {
+    if (!color) return undefined
+    return color.startsWith('#') ? color : `#${color}`
+  }
 
   const handleTestWebhook = async (webhookType: string = 'order.created') => {
     if (!installationId || !fluidApiKey) {
@@ -40,7 +46,7 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
       return
     }
 
-    setIsLoading(true)
+    setLoadingStates(prev => ({ ...prev, [webhookType]: true }))
     try {
       const response = await apiClient.post('/api/droplet/test-webhook', {
         webhookType,
@@ -68,7 +74,7 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
         createdAt: new Date().toISOString()
       })
     } finally {
-      setIsLoading(false)
+      setLoadingStates(prev => ({ ...prev, [webhookType]: false }))
     }
   }
 
@@ -213,15 +219,24 @@ export function WebhookTester({ installationId, fluidApiKey }: WebhookTesterProp
                   </span>
                   <span className="text-xs text-gray-500">{endpoint.description}</span>
                 </div>
-                <Button
+                <button
                   onClick={() => handleTestWebhook(endpoint.type)}
-                  loading={isLoading}
-                  disabled={isLoading}
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  disabled={loadingStates[endpoint.type] || false}
+                  className="px-3 py-1.5 text-sm font-medium rounded-md text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: formatColor(brandGuidelines?.color) || '#16a34a',
+                    color: 'white'
+                  }}
                 >
-                  Test
-                </Button>
+                  {loadingStates[endpoint.type] ? (
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Testing...
+                    </div>
+                  ) : (
+                    'Test'
+                  )}
+                </button>
               </div>
             </div>
           ))}
