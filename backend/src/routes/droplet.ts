@@ -1273,7 +1273,7 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
         case 'order_shipped':
         case 'order_canceled':
         case 'order_refunded':
-          // Get a recent order to update
+          // Get a recent order to update, or create one if none exist
           const recentOrdersResult = await Database.query(`
             SELECT activity_logs.details->>'resourceId' as order_id
             FROM activity_logs 
@@ -1285,11 +1285,16 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
             LIMIT 1
           `, [tenantInstallationId])
 
+          let orderToUpdate: string
+          
           if (recentOrdersResult.rows.length === 0) {
-            throw new Error('No recent orders found to update. Create an order first.')
+            // No recent orders found, create a new one first
+            logger.info('No recent orders found, creating new order for update test', { installationId: tenantInstallationId })
+            const newOrderResult = await fluidApi.createTestOrder(installation.customerApiKey, testData)
+            orderToUpdate = newOrderResult?.id || newOrderResult?.order?.id
+          } else {
+            orderToUpdate = recentOrdersResult.rows[0].order_id
           }
-
-          const orderToUpdate = recentOrdersResult.rows[0].order_id
           
           // Set appropriate status based on webhook type
           let orderStatus = 'processing'
@@ -1297,7 +1302,7 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
           else if (webhookType === 'order_canceled') orderStatus = 'cancelled'
           else if (webhookType === 'order_refunded') orderStatus = 'refunded'
           
-          const updateResult = await fluidApi.updateTestOrder(tenantInstallationId, orderToUpdate, { 
+          const updateResult = await fluidApi.updateTestOrder(installation.customerApiKey, orderToUpdate, { 
             ...testData, 
             status: orderStatus 
           })
@@ -1599,6 +1604,76 @@ router.get('/webhook-logs/:installationId', requireTenantAuth, rateLimits.tenant
     return res.status(error.statusCode || 500).json({
       error: 'Failed to fetch logs',
       message: error.message || 'An error occurred while fetching webhook logs'
+    })
+  }
+})
+
+/**
+ * Get orders for the installation
+ */
+router.get('/orders', requireTenantAuth, rateLimits.tenant, async (req: Request, res: Response) => {
+  try {
+    const { limit = 10 } = req.query
+    const tenantInstallationId = req.tenant!.installationId
+    const tenantApiKey = req.tenant!.authenticationToken
+
+    logger.info('Fetching orders for tenant', {
+      installationId: tenantInstallationId,
+      limit: parseInt(limit as string)
+    })
+
+    const Database = getDatabaseService()
+    const installation = await Database.getInstallation(tenantInstallationId)
+
+    if (!installation) {
+      return res.status(404).json({
+        error: 'Installation not found',
+        message: 'No installation found for this tenant'
+      })
+    }
+
+    // Use customer API key if available, otherwise use builder key
+    const apiKey = installation.customerApiKey || tenantApiKey
+    const fluidApi = new FluidApiService(apiKey)
+
+    try {
+      // Fetch orders from Fluid API
+      const orders = await fluidApi.getOrders(parseInt(limit as string))
+      
+      logger.info('Orders fetched successfully', {
+        installationId: tenantInstallationId,
+        orderCount: orders.length
+      })
+
+      return res.json({
+        success: true,
+        data: {
+          orders: orders,
+          total: orders.length,
+          installationId: tenantInstallationId
+        }
+      })
+    } catch (apiError: any) {
+      logger.error('Failed to fetch orders from Fluid API', {
+        installationId: tenantInstallationId,
+        error: apiError.message
+      })
+
+      return res.status(400).json({
+        error: 'Failed to fetch orders',
+        message: apiError.message || 'Unable to retrieve orders from Fluid API'
+      })
+    }
+
+  } catch (error: any) {
+    logger.error('Failed to fetch orders', {
+      installationId: req.tenant?.installationId,
+      error: error.message
+    })
+
+    return res.status(500).json({
+      error: 'Internal server error',
+      message: error.message || 'An error occurred while fetching orders'
     })
   }
 })

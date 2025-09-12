@@ -314,21 +314,19 @@ export class FluidApiService {
   /**
    * Update an existing order for webhook testing
    */
-  async updateTestOrder(installationId: string, orderId: string, updateData?: any): Promise<any> {
+  async updateTestOrder(customerApiKey: string, orderId: string, updateData?: any): Promise<any> {
     const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
     
-    const builderApiKey = process.env.FLUID_API_KEY
-    if (!builderApiKey) {
-      throw new Error('Builder API key not configured')
+    if (!customerApiKey) {
+      throw new Error('Customer API key not provided')
     }
     
     const orderClient = axios.create({
       baseURL: `${fluidApiUrl}/api`,
       headers: {
-        'Authorization': `Bearer ${builderApiKey}`,
+        'Authorization': `Bearer ${customerApiKey}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Droplet-Installation-ID': installationId,
       },
       timeout: 30000,
     })
@@ -340,9 +338,8 @@ export class FluidApiService {
     }
 
     try {
-      logger.info('Updating order using builder API key', { 
+      logger.info('Updating order using customer API key', { 
         orderId,
-        installationId,
         endpoint: `/company/orders/${orderId}.json`
       })
       
@@ -350,13 +347,23 @@ export class FluidApiService {
         order: defaultUpdateData 
       })
       
+      logger.info('Test order updated successfully in customer account', {
+        orderId,
+        response: response.data
+      })
+      
       return response.data
     } catch (error: any) {
-      logger.error('Failed to update order in Fluid', { 
+      logger.error('Failed to update order in customer account', { 
         orderId,
-        installationId,
-        error: error.response?.data || error.message 
+        error: error.response?.data || error.message,
+        statusCode: error.response?.status
       }, error)
+
+      if (error.response?.status === 401) {
+        throw new Error('Customer API key authorization failed. Please check if your API key has order update permissions.')
+      }
+
       throw error
     }
   }
@@ -542,6 +549,45 @@ export class FluidApiService {
         updateData,
         error: error.response?.data || error.message 
       }, error)
+      throw error
+    }
+  }
+
+  /**
+   * Get orders from Fluid API
+   */
+  async getOrders(limit: number = 10): Promise<any[]> {
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+
+    try {
+      logger.info('Fetching orders from Fluid API', {
+        limit,
+        endpoint: '/company/orders.json'
+      })
+
+      const response = await this.client.get('/company/orders.json', {
+        params: {
+          limit: limit
+        }
+      })
+
+      logger.info('Orders fetched successfully', {
+        orderCount: response.data?.orders?.length || 0
+      })
+
+      return response.data?.orders || []
+    } catch (error: any) {
+      logger.error('Failed to fetch orders from Fluid API', {
+        limit,
+        endpoint: '/company/orders.json',
+        error: error.response?.data || error.message,
+        statusCode: error.response?.status
+      }, error)
+
+      if (error.response?.status === 401) {
+        throw new Error('API key authorization failed. Please check if your API key has order read permissions.')
+      }
+
       throw error
     }
   }
