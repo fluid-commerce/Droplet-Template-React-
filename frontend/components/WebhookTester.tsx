@@ -52,6 +52,7 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
            webhookType.includes('refunded') || 
            webhookType.includes('canceled') ||
            webhookType.includes('shipped') ||
+           webhookType.includes('completed') ||
            webhookType.includes('destroyed')
   }
 
