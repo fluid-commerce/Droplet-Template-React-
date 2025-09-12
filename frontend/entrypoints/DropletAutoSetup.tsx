@@ -7,10 +7,10 @@ import { apiClient } from '@/lib/api'
 export function DropletAutoSetup() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const installationId = searchParams.get('installation_id')
+  const legacyInstallationId = searchParams.get('installation_id')
   const companyId = searchParams.get('company_id')
   const authToken = searchParams.get('authToken') || searchParams.get('auth_token') || searchParams.get('fluid_api_key')
-  const dri = searchParams.get('dri')
+  const installationId = searchParams.get('dri') // dri = droplet installation id
   
   const [error, setError] = useState<string | null>(null)
 
@@ -20,7 +20,7 @@ export function DropletAutoSetup() {
         // Checking installation status
         
         // Clear any old session data for new installations
-        if (installationId === 'new-installation' || !installationId) {
+        if (legacyInstallationId === 'new-installation' || (!legacyInstallationId && !installationId)) {
           // Clear all droplet session data to ensure fresh start
           Object.keys(localStorage).forEach(key => {
             if (key.startsWith('droplet_session_')) {
@@ -83,13 +83,13 @@ export function DropletAutoSetup() {
         }
 
         // Use DRI as installation ID if no installation_id is provided
-        const effectiveInstallationId = installationId || dri || 'new-installation'
+        const effectiveInstallationId = installationId || legacyInstallationId || 'new-installation'
         
         // Development mode: Allow testing without Fluid parameters
         const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         
         // Only run auto-setup if we have the necessary parameters for a new installation
-        if (!authToken && !dri) {
+        if (!authToken && !installationId) {
           if (isDevelopment) {
             // In development, redirect to dashboard with mock data
             const mockSessionData = {
@@ -241,7 +241,7 @@ export function DropletAutoSetup() {
           }
 
           // Special case: If we have DRI but no auth token, try to get installation info
-          if (dri && !authToken && (!data.companyName || data.companyName === 'Your Company')) {
+          if (installationId && !authToken && (!data.companyName || data.companyName === 'Your Company')) {
             setError('Installation requires authentication. Please ensure you are properly logged into Fluid and try installing again.')
             return
           }

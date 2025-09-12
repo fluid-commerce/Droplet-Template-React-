@@ -12,12 +12,14 @@ interface DashboardData {
   companyName: string
   recentActivity: any[]
   brandGuidelines?: any
+  authenticationToken: string
 }
 
 export function DropletDashboard() {
   const [searchParams] = useSearchParams()
-  const installationId = searchParams.get('installation_id')
-  const fluidApiKey = searchParams.get('fluid_api_key')
+  const installationId = searchParams.get('dri') // dri = droplet installation id
+  
+  const [authToken, setAuthToken] = useState<string>('')
   
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -42,13 +44,7 @@ export function DropletDashboard() {
   useEffect(() => {
     const loadDashboardData = async () => {
       if (!installationId) {
-        setError('Missing installation ID')
-        setIsLoading(false)
-        return
-      }
-
-      if (!fluidApiKey) {
-        setError('Missing Fluid API key')
+        setError('Missing droplet installation ID')
         setIsLoading(false)
         return
       }
@@ -58,6 +54,7 @@ export function DropletDashboard() {
       if (isDevelopment && installationId === 'dev-installation-123') {
         setDashboardData({
           companyName: 'Development Company',
+          authenticationToken: 'dev-auth-token-123',
           recentActivity: [
             {
               id: '1',
@@ -75,14 +72,16 @@ export function DropletDashboard() {
             }
           ]
         })
+        setAuthToken('dev-auth-token-123')
         setIsLoading(false)
         return
       }
 
       try {
-        const response = await apiClient.get(`/api/droplet/dashboard/${installationId}?fluidApiKey=${fluidApiKey}`)
+        const response = await apiClient.get(`/api/droplet/dashboard/${installationId}`)
         const data = response.data.data
         setDashboardData(data)
+        setAuthToken(data.authenticationToken)
         
         // Extract brand guidelines from dashboard data
         if (data.brandGuidelines) {
@@ -124,16 +123,16 @@ export function DropletDashboard() {
   }, [installationId])
 
   const handleSyncData = async () => {
-    if (!installationId || !fluidApiKey) return
+    if (!installationId || !authToken) return
     
     setIsSyncing(true)
     try {
       await apiClient.post('/api/droplet/sync', { 
         installationId, 
-        fluidApiKey 
+        authToken 
       })
       // Reload dashboard data
-      const response = await apiClient.get(`/api/droplet/dashboard/${installationId}?fluidApiKey=${fluidApiKey}`)
+      const response = await apiClient.get(`/api/droplet/dashboard/${installationId}`)
       setDashboardData(response.data.data)
       
       // Show success toast
@@ -528,10 +527,10 @@ export function DropletDashboard() {
                   <div className="mt-4">
 
 
-                    {installationId && fluidApiKey ? (
+                    {installationId && authToken ? (
                       <WebhookTester 
                         installationId={installationId}
-                        fluidApiKey={fluidApiKey}
+                        fluidApiKey={authToken}
                         brandGuidelines={brandGuidelines}
                       />
                     ) : (

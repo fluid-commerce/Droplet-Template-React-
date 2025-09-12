@@ -676,7 +676,8 @@ router.get('/dashboard/:installationId', optionalTenantAuth, rateLimits.tenant, 
       companyName: companyName,
       brandGuidelines: brandGuidelines,
       recentActivity: await getRecentActivity(tenantInstallationId),
-      hasCustomerApiKey: !!installation.customer_api_key
+      hasCustomerApiKey: !!installation.customer_api_key,
+      authenticationToken: apiKey
     }
 
     return res.json({
