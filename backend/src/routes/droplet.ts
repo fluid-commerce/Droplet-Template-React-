@@ -1337,15 +1337,26 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
 
         // Contact/User webhooks - Create real contacts/users
         case 'contact_created':
-        case 'user_created':
         case 'customer_created':
           const contactResult = await fluidApi.createTestCustomer(installation.customerApiKey, testData)
           
           testResult = {
             type: webhookType,
             success: true,
-            resourceId: contactResult?.id || contactResult?.contact?.id || contactResult?.user?.id,
+            resourceId: contactResult?.id || contactResult?.contact?.id,
             resourceData: contactResult,
+            createdAt: new Date().toISOString()
+          }
+          break
+
+        case 'user_created':
+          const userResult = await fluidApi.createUser(installation.customerApiKey, testData)
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: userResult?.id || userResult?.user?.id,
+            resourceData: userResult,
             createdAt: new Date().toISOString()
           }
           break
@@ -1440,24 +1451,90 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
         case 'subscription_paused':
         case 'subscription_cancelled':
         case 'event_created':
+          const eventResult = await fluidApi.createEvent(installation.customerApiKey, testData)
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: eventResult?.id || eventResult?.event?.id,
+            resourceData: eventResult,
+            createdAt: new Date().toISOString()
+          }
+          break
+
         case 'event_updated':
         case 'event_deleted':
+          // For event updates/deletes, we need to find an existing event first
+          // For now, create a new event and then simulate the update/delete
+          const eventForUpdate = await fluidApi.createEvent(installation.customerApiKey, testData)
+          const simulatedEventData = generateSimulatedWebhookData(webhookType, { 
+            ...testData, 
+            event_id: eventForUpdate?.id || eventForUpdate?.event?.id 
+          })
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: simulatedEventData.id,
+            resourceData: simulatedEventData,
+            createdAt: new Date().toISOString()
+          }
+          break
+
         case 'webchat_submitted':
         case 'popup_submitted':
+          // Create a conversation for webchat/popup submissions
+          const conversationResult = await fluidApi.createConversation(installation.customerApiKey, {
+            title: `${webhookType.replace('_', ' ')} Submission`,
+            description: `Test ${webhookType} submission via webhook`,
+            ...testData
+          })
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: conversationResult?.id || conversationResult?.conversation?.id,
+            resourceData: conversationResult,
+            createdAt: new Date().toISOString()
+          }
+          break
+
         case 'bot_message_created':
+          // Create an activity for bot message
+          const activityResult = await fluidApi.createActivity(installation.customerApiKey, {
+            title: 'Bot Message Created',
+            description: 'Test bot message created via webhook',
+            activity_type: 'bot_message',
+            ...testData
+          })
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: activityResult?.id || activityResult?.activity?.id,
+            resourceData: activityResult,
+            createdAt: new Date().toISOString()
+          }
+          break
+
         case 'droplet_installed':
         case 'droplet_uninstalled':
         case 'enrollment_completed':
         case 'mfa_missing_email':
         case 'mfa_verified':
-          // Simulate webhook events with realistic data structures
-          const simulatedData = generateSimulatedWebhookData(webhookType, testData)
+          // These are system events, create activities to track them
+          const systemActivityResult = await fluidApi.createActivity(installation.customerApiKey, {
+            title: `${webhookType.replace('_', ' ')} Event`,
+            description: `System event: ${webhookType}`,
+            activity_type: webhookType,
+            ...testData
+          })
           
           testResult = {
             type: webhookType,
             success: true,
-            resourceId: simulatedData.id,
-            resourceData: simulatedData,
+            resourceId: systemActivityResult?.id || systemActivityResult?.activity?.id,
+            resourceData: systemActivityResult,
             createdAt: new Date().toISOString()
           }
           break

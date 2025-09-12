@@ -542,6 +542,205 @@ export class FluidApiService {
   }
 
   /**
+   * Create a real event in Fluid
+   */
+  async createEvent(customerApiKey: string, eventData?: any): Promise<any> {
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    
+    if (!customerApiKey) {
+      throw new Error('Customer API key not provided')
+    }
+    
+    const customerClient = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${customerApiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 30000,
+    })
+
+    const defaultEventData = {
+      title: 'Test Event',
+      description: 'Test event created via webhook',
+      start_date: new Date().toISOString().split('T')[0],
+      end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      start_time: '09:00:00',
+      end_time: '17:00:00',
+      time_zone: 'UTC',
+      url: 'https://example.com',
+      active: true,
+      venue: 'Test Venue',
+      available_countries: ['us'],
+      ...eventData
+    }
+
+    try {
+      logger.info('Creating event using customer API key', { 
+        title: defaultEventData.title,
+        endpoint: '/company/events'
+      })
+      
+      const response = await customerClient.post('/company/events', { 
+        event: defaultEventData 
+      })
+      
+      return response.data
+    } catch (error: any) {
+      logger.error('Failed to create event in Fluid', { 
+        eventData: defaultEventData,
+        error: error.response?.data || error.message 
+      }, error)
+      throw error
+    }
+  }
+
+  /**
+   * Create a real user in Fluid
+   */
+  async createUser(customerApiKey: string, userData?: any): Promise<any> {
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    
+    if (!customerApiKey) {
+      throw new Error('Customer API key not provided')
+    }
+    
+    const customerClient = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${customerApiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 30000,
+    })
+
+    const defaultUserData = {
+      first_name: 'Test',
+      last_name: 'User',
+      email: `test-user-${Date.now()}@example.com`,
+      phone: '555-0123',
+      role: 'rep', // or 'admin', 'customer'
+      status: 'active',
+      ...userData
+    }
+
+    try {
+      logger.info('Creating user using customer API key', { 
+        email: defaultUserData.email,
+        role: defaultUserData.role,
+        endpoint: '/company/users'
+      })
+      
+      const response = await customerClient.post('/company/users', { 
+        user: defaultUserData 
+      })
+      
+      return response.data
+    } catch (error: any) {
+      logger.error('Failed to create user in Fluid', { 
+        userData: defaultUserData,
+        error: error.response?.data || error.message 
+      }, error)
+      throw error
+    }
+  }
+
+  /**
+   * Create a real conversation in Fluid
+   */
+  async createConversation(customerApiKey: string, conversationData?: any): Promise<any> {
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    
+    if (!customerApiKey) {
+      throw new Error('Customer API key not provided')
+    }
+    
+    const customerClient = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${customerApiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 30000,
+    })
+
+    const defaultConversationData = {
+      title: 'Test Conversation',
+      description: 'Test conversation created via webhook',
+      ...conversationData
+    }
+
+    try {
+      logger.info('Creating conversation using customer API key', { 
+        title: defaultConversationData.title,
+        endpoint: '/company/messaging/conversations.json'
+      })
+      
+      const response = await customerClient.post('/company/messaging/conversations.json', { 
+        conversation: defaultConversationData 
+      })
+      
+      return response.data
+    } catch (error: any) {
+      logger.error('Failed to create conversation in Fluid', { 
+        conversationData: defaultConversationData,
+        error: error.response?.data || error.message 
+      }, error)
+      throw error
+    }
+  }
+
+  /**
+   * Create a real activity in Fluid
+   */
+  async createActivity(customerApiKey: string, activityData?: any): Promise<any> {
+    const fluidApiUrl = process.env.FLUID_API_URL || 'https://api.fluid.app'
+    
+    if (!customerApiKey) {
+      throw new Error('Customer API key not provided')
+    }
+    
+    const customerClient = axios.create({
+      baseURL: `${fluidApiUrl}/api`,
+      headers: {
+        'Authorization': `Bearer ${customerApiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 30000,
+    })
+
+    const defaultActivityData = {
+      title: 'Test Activity',
+      description: 'Test activity created via webhook',
+      activity_type: 'webhook_test',
+      ...activityData
+    }
+
+    try {
+      logger.info('Creating activity using customer API key', { 
+        title: defaultActivityData.title,
+        endpoint: '/company/activities'
+      })
+      
+      const response = await customerClient.post('/company/activities', { 
+        activity: defaultActivityData 
+      })
+      
+      return response.data
+    } catch (error: any) {
+      logger.error('Failed to create activity in Fluid', { 
+        activityData: defaultActivityData,
+        error: error.response?.data || error.message 
+      }, error)
+      throw error
+    }
+  }
+
+  /**
    * Get orders from Fluid API
    */
   async getOrders(customerApiKey?: string, limit: number = 10): Promise<any[]> {
