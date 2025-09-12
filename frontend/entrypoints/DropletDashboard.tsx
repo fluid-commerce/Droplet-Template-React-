@@ -91,6 +91,12 @@ export function DropletDashboard() {
         } else {
           console.log('No brand guidelines found in dashboard data')
         }
+        
+        // Set customer API key status from dashboard data
+        if (data.hasCustomerApiKey) {
+          setHasCustomerApiKey(true)
+          setCustomerApiKey('••••••••••••••••••••••••••••••••') // Show placeholder for saved key
+        }
       } catch (err: any) {
         console.error('Failed to load dashboard data:', err)
         
@@ -165,7 +171,7 @@ export function DropletDashboard() {
   }
 
   const updateCustomerApiKey = async () => {
-    if (!customerApiKey.trim()) {
+    if (!customerApiKey.trim() || customerApiKey === '••••••••••••••••••••••••••••••••') {
       setToast({ message: 'Please enter a valid API key', type: 'error' })
       return
     }
@@ -183,7 +189,7 @@ export function DropletDashboard() {
 
       if (response.data.success) {
         setHasCustomerApiKey(true)
-        setCustomerApiKey('')
+        setCustomerApiKey('••••••••••••••••••••••••••••••••') // Show placeholder for saved key
         setToast({ message: 'API key updated successfully! Webhook testing will now use your account.', type: 'success' })
       }
     } catch (error: any) {
@@ -492,14 +498,20 @@ export function DropletDashboard() {
                           <input
                             type="password"
                             value={customerApiKey}
-                            onChange={(e) => setCustomerApiKey(e.target.value)}
-                            placeholder="Enter your Fluid API key (dit_...)"
+                            onChange={(e) => {
+                              // If user starts typing, clear the placeholder
+                              if (hasCustomerApiKey && e.target.value !== '••••••••••••••••••••••••••••••••') {
+                                setHasCustomerApiKey(false)
+                              }
+                              setCustomerApiKey(e.target.value)
+                            }}
+                            placeholder={hasCustomerApiKey ? "API key saved - click to change" : "Enter your Fluid API key (dit_...)"}
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             disabled={isUpdatingApiKey}
                           />
                           <Button
                             onClick={updateCustomerApiKey}
-                            disabled={isUpdatingApiKey || !customerApiKey.trim()}
+                            disabled={isUpdatingApiKey || !customerApiKey.trim() || customerApiKey === '••••••••••••••••••••••••••••••••'}
                             className="px-4 py-2"
                           >
                             {isUpdatingApiKey ? (

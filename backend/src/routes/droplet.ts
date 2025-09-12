@@ -596,7 +596,7 @@ router.get('/dashboard/:installationId', optionalTenantAuth, rateLimits.tenant, 
 
     // Get stored company data for this specific tenant only
     const installationResult = await Database.query(`
-      SELECT company_name, company_data, configuration, installation_id, status, created_at, updated_at
+      SELECT company_name, company_data, configuration, installation_id, status, created_at, updated_at, customer_api_key
       FROM droplet_installations 
       WHERE installation_id = $1
     `, [tenantInstallationId])
@@ -675,7 +675,8 @@ router.get('/dashboard/:installationId', optionalTenantAuth, rateLimits.tenant, 
     const dashboardData = {
       companyName: companyName,
       brandGuidelines: brandGuidelines,
-      recentActivity: await getRecentActivity(tenantInstallationId)
+      recentActivity: await getRecentActivity(tenantInstallationId),
+      hasCustomerApiKey: !!installation.customer_api_key
     }
 
     return res.json({
