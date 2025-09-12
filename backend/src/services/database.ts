@@ -127,7 +127,7 @@ export class DatabaseService {
       const query = `
         SELECT 
           id, installation_id, droplet_id, company_id, authentication_token, 
-          status, configuration, created_at, updated_at
+          customer_api_key, status, configuration, created_at, updated_at
         FROM droplet_installations 
         WHERE installation_id = $1
       `
@@ -153,6 +153,7 @@ export class DatabaseService {
         dropletId: row.droplet_id,
         companyId: row.company_id,
         authenticationToken: decrypt(row.authentication_token), // Decrypt token
+        customerApiKey: row.customer_api_key ? decrypt(row.customer_api_key) : null, // Decrypt customer API key if exists
         status: row.status,
         configuration: row.configuration,
         createdAt: row.created_at.toISOString(),
@@ -185,6 +186,11 @@ export class DatabaseService {
         values.push(encrypt(updates.authenticationToken)) // Encrypt before storing
       }
 
+      if (updates.customerApiKey !== undefined) {
+        setParts.push(`customer_api_key = $${valueIndex++}`)
+        values.push(updates.customerApiKey ? encrypt(updates.customerApiKey) : null) // Encrypt before storing
+      }
+
       setParts.push(`updated_at = NOW()`)
       values.push(installationId)
 
@@ -194,7 +200,7 @@ export class DatabaseService {
         WHERE installation_id = $${valueIndex}
         RETURNING 
           id, installation_id, droplet_id, company_id, authentication_token, 
-          status, configuration, created_at, updated_at
+          customer_api_key, status, configuration, created_at, updated_at
       `
 
       const result = await client.query(query, values)
@@ -218,6 +224,7 @@ export class DatabaseService {
         dropletId: row.droplet_id,
         companyId: row.company_id,
         authenticationToken: decrypt(row.authentication_token), // Decrypt for return
+        customerApiKey: row.customer_api_key ? decrypt(row.customer_api_key) : null, // Decrypt customer API key if exists
         status: row.status,
         configuration: row.configuration,
         createdAt: row.created_at.toISOString(),

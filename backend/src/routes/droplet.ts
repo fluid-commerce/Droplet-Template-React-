@@ -1209,6 +1209,13 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
     const Database = getDatabaseService()
     const installation = await Database.getInstallation(tenantInstallationId)
     
+    logger.info('Webhook test - installation data retrieved', {
+      installationId: tenantInstallationId,
+      hasInstallation: !!installation,
+      hasCustomerApiKey: !!installation?.customerApiKey,
+      customerApiKeyLength: installation?.customerApiKey?.length || 0
+    })
+    
     if (!installation) {
       return res.status(404).json({
         error: 'Installation not found',
@@ -1218,6 +1225,10 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
 
     // Check if customer has provided their own API key
     if (!installation.customerApiKey) {
+      logger.warn('Webhook test failed - no customer API key found', {
+        installationId: tenantInstallationId,
+        installationStatus: installation.status
+      })
       return res.status(400).json({
         error: 'Customer API key required',
         message: 'Please configure your Fluid API key in the dashboard settings to test webhooks. This ensures webhook data appears in your account.',
