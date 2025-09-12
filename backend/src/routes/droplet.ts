@@ -1101,8 +1101,15 @@ router.post('/cleanup', rateLimits.config, async (req: Request, res: Response) =
  */
 router.post('/update-customer-api-key', requireTenantAuth, rateLimits.config, async (req: Request, res: Response) => {
   try {
-    const { customerApiKey } = req.body
-    const tenantInstallationId = req.tenant!.installationId
+    const { customerApiKey, installationId } = req.body
+    const tenantInstallationId = req.tenant?.installationId || installationId
+
+    if (!tenantInstallationId) {
+      return res.status(400).json({
+        error: 'Installation ID required',
+        message: 'Installation ID must be provided in request body'
+      })
+    }
 
     if (!customerApiKey) {
       return res.status(400).json({
@@ -1172,7 +1179,7 @@ router.post('/update-customer-api-key', requireTenantAuth, rateLimits.config, as
 
   } catch (error: any) {
     logger.error('Failed to update customer API key', {
-      installationId: req.tenant?.installationId,
+      installationId: req.tenant?.installationId || req.body?.installationId,
       error: error.message
     })
     

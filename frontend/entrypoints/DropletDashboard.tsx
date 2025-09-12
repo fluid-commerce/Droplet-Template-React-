@@ -173,7 +173,8 @@ export function DropletDashboard() {
     setIsUpdatingApiKey(true)
     try {
       const response = await apiClient.post('/api/droplet/update-customer-api-key', {
-        customerApiKey: customerApiKey.trim()
+        customerApiKey: customerApiKey.trim(),
+        installationId: installationId
       }, {
         headers: {
           'Authorization': `Bearer ${fluidApiKey}`
