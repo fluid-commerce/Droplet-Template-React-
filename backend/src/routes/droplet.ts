@@ -1441,15 +1441,68 @@ router.post('/test-webhook', requireTenantAuth, rateLimits.config, async (req: R
         // All other webhooks - Simulate with realistic data
         case 'product_destroyed':
         case 'user_deactivated':
+          // These are destructive operations, create activities to track them
+          const destructiveActivityResult = await fluidApi.createActivity(installation.customerApiKey, {
+            title: `${webhookType.replace('_', ' ')} Event`,
+            description: `Resource ${webhookType.replace('_', ' ')} via webhook`,
+            activity_type: webhookType,
+            ...testData
+          })
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: destructiveActivityResult?.id || destructiveActivityResult?.activity?.id,
+            resourceData: destructiveActivityResult,
+            createdAt: new Date().toISOString()
+          }
+          break
+
         case 'cart_updated':
         case 'cart_abandoned':
         case 'cart_update_address':
         case 'cart_update_cart_email':
         case 'cart_add_items':
         case 'cart_remove_items':
+          // Cart operations - create activities to track them
+          const cartActivityResult = await fluidApi.createActivity(installation.customerApiKey, {
+            title: `Cart ${webhookType.replace('cart_', '').replace('_', ' ')}`,
+            description: `Cart operation: ${webhookType}`,
+            activity_type: 'cart_operation',
+            cart_action: webhookType,
+            ...testData
+          })
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: cartActivityResult?.id || cartActivityResult?.activity?.id,
+            resourceData: cartActivityResult,
+            createdAt: new Date().toISOString()
+          }
+          break
+
         case 'subscription_started':
         case 'subscription_paused':
         case 'subscription_cancelled':
+          // Subscription operations - create activities to track them
+          const subscriptionActivityResult = await fluidApi.createActivity(installation.customerApiKey, {
+            title: `Subscription ${webhookType.replace('subscription_', '').replace('_', ' ')}`,
+            description: `Subscription operation: ${webhookType}`,
+            activity_type: 'subscription_operation',
+            subscription_action: webhookType,
+            ...testData
+          })
+          
+          testResult = {
+            type: webhookType,
+            success: true,
+            resourceId: subscriptionActivityResult?.id || subscriptionActivityResult?.activity?.id,
+            resourceData: subscriptionActivityResult,
+            createdAt: new Date().toISOString()
+          }
+          break
+
         case 'event_created':
           const eventResult = await fluidApi.createEvent(installation.customerApiKey, testData)
           
