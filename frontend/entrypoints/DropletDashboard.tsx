@@ -24,6 +24,7 @@ export function DropletDashboard() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [brandGuidelines, setBrandGuidelines] = useState<BrandGuidelines | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -122,6 +123,9 @@ export function DropletDashboard() {
       // Reload dashboard data
       const response = await apiClient.get(`/api/droplet/dashboard/${installationId}?fluidApiKey=${fluidApiKey}`)
       setDashboardData(response.data.data)
+      
+      // Show success toast
+      setToast({ message: 'Sync Complete', type: 'success' })
     } catch (err: any) {
       console.error('Failed to sync data:', err)
       
@@ -140,6 +144,7 @@ export function DropletDashboard() {
       }
       
       setError(err.response?.data?.message || 'Failed to sync data')
+      setToast({ message: 'Sync Failed', type: 'error' })
     } finally {
       setIsSyncing(false)
     }
@@ -152,6 +157,16 @@ export function DropletDashboard() {
       [section]: !prev[section]
     }))
   }
+
+  // Auto-dismiss toast after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
 
   const formatColor = (color: string | null | undefined) => {
     if (!color) return undefined
@@ -395,6 +410,29 @@ export function DropletDashboard() {
           </div>
         </Card>
       </div>
+      
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className={`px-6 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${
+            toast.type === 'success' 
+              ? 'bg-green-500 text-white' 
+              : 'bg-red-500 text-white'
+          }`}>
+            <FontAwesomeIcon 
+              icon={toast.type === 'success' ? 'check-circle' : 'exclamation-circle'} 
+              className="text-lg" 
+            />
+            <span className="font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 text-white/80 hover:text-white"
+            >
+              <FontAwesomeIcon icon="times" className="text-sm" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
