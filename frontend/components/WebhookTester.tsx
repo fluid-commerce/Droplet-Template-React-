@@ -415,7 +415,7 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
 
   // Fetch available resources for selection
   const fetchResources = async (webhookType: string) => {
-    if (!installationId || !fluidApiKey) return
+    if (!installationId) return
     
     try {
       let endpoint = ''
@@ -425,7 +425,7 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
       
       if (endpoint) {
         const response = await apiClient.get(`${endpoint}&installationId=${installationId}`, {
-          headers: { 'Authorization': `Bearer ${fluidApiKey}` }
+          // No authorization header needed - backend handles auth via installationId
         })
         setAvailableResources(response.data.data.orders || response.data.data.products || response.data.data.contacts || [])
       }
@@ -452,8 +452,8 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
 
   // Execute the webhook test with form data
   const executeWebhookTest = async (webhookType: string, testData: any = {}) => {
-    if (!installationId || !fluidApiKey) {
-      alert('Missing installation ID or API key')
+    if (!installationId) {
+      alert('Missing installation ID')
       return
     }
 
@@ -467,10 +467,6 @@ export function WebhookTester({ installationId, fluidApiKey, brandGuidelines }: 
           total: 179.90,
           currency: 'USD',
           ...testData
-        }
-      }, {
-        headers: {
-          'Authorization': `Bearer ${fluidApiKey}`
         }
       })
 

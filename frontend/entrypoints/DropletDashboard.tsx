@@ -12,14 +12,11 @@ interface DashboardData {
   companyName: string
   recentActivity: any[]
   brandGuidelines?: any
-  authenticationToken: string
 }
 
 export function DropletDashboard() {
   const [searchParams] = useSearchParams()
   const installationId = searchParams.get('dri') // dri = droplet installation id
-  
-  const [authToken, setAuthToken] = useState<string>('')
   
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -54,7 +51,6 @@ export function DropletDashboard() {
       if (isDevelopment && installationId === 'dev-installation-123') {
         setDashboardData({
           companyName: 'Development Company',
-          authenticationToken: 'dev-auth-token-123',
           recentActivity: [
             {
               id: '1',
@@ -72,7 +68,6 @@ export function DropletDashboard() {
             }
           ]
         })
-        setAuthToken('dev-auth-token-123')
         setIsLoading(false)
         return
       }
@@ -81,7 +76,6 @@ export function DropletDashboard() {
         const response = await apiClient.get(`/api/droplet/dashboard/${installationId}`)
         const data = response.data.data
         setDashboardData(data)
-        setAuthToken(data.authenticationToken)
         
         // Extract brand guidelines from dashboard data
         if (data.brandGuidelines) {
@@ -123,17 +117,17 @@ export function DropletDashboard() {
   }, [installationId])
 
   const handleSyncData = async () => {
-    if (!installationId || !authToken) return
+    if (!installationId) return
     
     setIsSyncing(true)
     try {
       await apiClient.post('/api/droplet/sync', { 
-        installationId, 
-        authToken 
+        installationId
       })
       // Reload dashboard data
       const response = await apiClient.get(`/api/droplet/dashboard/${installationId}`)
-      setDashboardData(response.data.data)
+      const data = response.data.data
+      setDashboardData(data)
       
       // Show success toast
       setToast({ message: 'Sync Complete', type: 'success' })
@@ -527,15 +521,15 @@ export function DropletDashboard() {
                   <div className="mt-4">
 
 
-                    {installationId && authToken ? (
+                    {installationId ? (
                       <WebhookTester 
                         installationId={installationId}
-                        fluidApiKey={authToken}
+                        fluidApiKey={null}
                         brandGuidelines={brandGuidelines}
                       />
                     ) : (
                       <div className="text-center py-8">
-                        <p className="text-gray-500">Webhook testing requires installation ID and API key</p>
+                        <p className="text-gray-500">Webhook testing requires installation ID</p>
                       </div>
                     )}
                   </div>
