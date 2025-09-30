@@ -175,7 +175,7 @@ export async function webhookRoutes(fastify: FastifyInstance) {
             });
 
             if (installationResponse.ok) {
-              const installationData = await installationResponse.json();
+              const installationData: any = await installationResponse.json();
               fastify.log.info(`✅ Got installation data from Fluid API`);
 
               // Extract the authentication token from the response

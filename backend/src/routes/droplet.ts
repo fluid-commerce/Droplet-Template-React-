@@ -124,7 +124,7 @@ export async function dropletRoutes(fastify: FastifyInstance) {
           throw new Error(`Fluid API error: ${response.status} - ${errorText}`);
         }
 
-        const brandData = await response.json();
+        const brandData: any = await response.json();
         // info logs removed
 
         const result = {

@@ -102,7 +102,7 @@ export class ProductService {
         throw new Error(`Failed to fetch products from Fluid: ${response.status} ${response.statusText}`)
       }
 
-      const raw = await response.json()
+      const raw: any = await response.json()
 
       // According to updated Fluid API docs, response format is:
       // { products: [...], meta: { request_id, timestamp, pagination } }
@@ -150,7 +150,7 @@ export class ProductService {
           })
           if (!response.ok) continue
 
-          const data = await response.json()
+          const data: any = await response.json()
           // Normalize shapes: { images: [...] } or { status: 'success', data: { images: [...] } }
           const images = data?.images || data?.data?.images || []
           if (Array.isArray(images) && images.length > 0) {
