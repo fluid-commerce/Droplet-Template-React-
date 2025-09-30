@@ -37,6 +37,8 @@ services:
       # Server Configuration
       - key: NODE_ENV
         value: production
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"  # Install devDependencies (TypeScript, @types/node) during build
       - key: PORT
         value: 10000
       
