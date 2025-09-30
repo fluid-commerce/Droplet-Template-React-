@@ -95,4 +95,8 @@ databases:
   - name: droplet-template-db
     databaseName: droplet_db
     user: droplet_user
-    plan: starter  # Paid tier; upgrade as needed (standard/pro)
+    plan: Basic-256mb
+    # Exact resources per request
+    ram: 256 MB
+    cpu: 0.1
+    storage: 1 GB
