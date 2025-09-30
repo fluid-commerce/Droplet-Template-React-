@@ -95,4 +95,4 @@ databases:
   - name: droplet-template-db
     databaseName: droplet_db
     user: droplet_user
-    plan: free  # Change to 'starter' or 'standard' for production
+    plan: starter  # Paid tier; upgrade as needed (standard/pro)
