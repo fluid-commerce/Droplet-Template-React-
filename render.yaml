@@ -4,18 +4,18 @@
 services:
   # Frontend service (React app)
   - type: web
-    name: droplet-frontend
+    name: droplet-template-frontend
     env: static
     buildCommand: npm install && npm run build:frontend
     staticPublishPath: ./frontend/dist
     envVars:
       # Backend API Configuration
       - key: VITE_API_BASE_URL
-        value: https://droplet-backend-go5d.onrender.com
+        sync: false  # Set to your backend service URL in Render dashboard
       
       # Fluid Platform Configuration
       - key: VITE_FLUID_API_URL
-        value: https://droplet-backend-go5d.onrender.com
+        value: https://api.fluid.app
       - key: VITE_FLUID_ENVIRONMENT
         value: production
       
@@ -27,7 +27,7 @@ services:
 
   # Backend service (Node.js API)
   - type: web
-    name: droplet-backend
+    name: droplet-template-backend
     env: node
     buildCommand: cd backend && npm install && npm run build && npm run db:push
     startCommand: cd backend && node dist/index.js
@@ -53,6 +53,8 @@ services:
         value: https://api.fluid.app
       - key: FLUID_WEBHOOK_SECRET
         sync: false  # Set this in Render dashboard
+      - key: WEBHOOK_BASE_URL
+        sync: false  # Set to your backend service URL in Render dashboard
       
       # External Service API Credentials (for connecting to external services)
       # Add your own external service API keys here as needed
@@ -79,12 +81,16 @@ services:
       # Optional: External Service URLs
       - key: EXTERNAL_SERVICE_BASE_URL
         sync: false  # Set your external service API URL in Render dashboard
-      - key: WEBHOOK_BASE_URL
-        sync: false  # Set to your backend service URL in Render dashboard
+
+      # Email (from backend env.example)
+      - key: RESEND_API_KEY
+        sync: false  # Set in Render dashboard
+      - key: RESEND_FROM_EMAIL
+        sync: false  # Set in Render dashboard
 
 databases:
   # PostgreSQL database for storing configurations and data
-  - name: droplet-db
+  - name: droplet-template-db
     databaseName: droplet_db
     user: droplet_user
     plan: free  # Change to 'starter' or 'standard' for production
