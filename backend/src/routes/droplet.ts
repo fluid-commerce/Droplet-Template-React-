@@ -1,9 +1,9 @@
-import { FastifyInstance } from 'fastify'
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { prisma } from '../db'
 
 export async function dropletRoutes(fastify: FastifyInstance) {
   // Get installation details including authentication token (for Fluid integration)
-  fastify.get('/api/droplet/installation/:installationId', async (request, reply) => {
+  fastify.get('/api/droplet/installation/:installationId', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { installationId } = request.params as { installationId: string };
 
@@ -54,7 +54,7 @@ export async function dropletRoutes(fastify: FastifyInstance) {
   });
 
   // Get brand guidelines for an installation
-  fastify.get('/api/droplet/brand-guidelines/:installationId', async (request, reply) => {
+  fastify.get('/api/droplet/brand-guidelines/:installationId', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { installationId } = request.params as { installationId: string };
       const { fluid_api_key } = request.query as { fluid_api_key: string };
@@ -164,7 +164,7 @@ export async function dropletRoutes(fastify: FastifyInstance) {
   });
 
   // Get company authentication token for API operations
-  fastify.get('/api/droplet/auth-token/:installationId', async (request, reply) => {
+  fastify.get('/api/droplet/auth-token/:installationId', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { installationId } = request.params as { installationId: string };
       const { fluid_api_key } = request.query as { fluid_api_key: string };
@@ -229,7 +229,7 @@ export async function dropletRoutes(fastify: FastifyInstance) {
   });
 
   // Get company dashboard data
-  fastify.get('/api/droplet/dashboard/:installationId', async (request, reply) => {
+  fastify.get('/api/droplet/dashboard/:installationId', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { installationId } = request.params as { installationId: string };
       const { fluid_api_key } = request.query as { fluid_api_key: string };

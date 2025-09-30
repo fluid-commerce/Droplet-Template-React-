@@ -1,10 +1,10 @@
-import { FastifyInstance } from 'fastify'
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { prisma } from '../db'
 import { randomUUID } from 'crypto'
 
 export async function webhookRoutes(fastify: FastifyInstance) {
   // Webhook endpoint for Fluid platform events
-  fastify.post('/api/webhook/fluid', async (request, reply) => {
+  fastify.post('/api/webhook/fluid', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as any;
 
