@@ -79,12 +79,15 @@ export class WebhookRegistrationService {
     for (const webhookConfig of webhooksToRegister) {
       try {
         // Check if this webhook already exists with the same URL
-        const alreadyExists = existingWebhooks.some(existing =>
-          existing.webhook.resource === webhookConfig.resource &&
-          existing.webhook.event === webhookConfig.event &&
-          existing.webhook.url === webhookEndpointUrl &&
-          existing.webhook.active
-        )
+        const alreadyExists = existingWebhooks.some(existing => {
+          const webhook = existing?.webhook
+          if (!webhook) return false
+
+          return webhook.resource === webhookConfig.resource &&
+                 webhook.event === webhookConfig.event &&
+                 webhook.url === webhookEndpointUrl &&
+                 webhook.active
+        })
 
         if (alreadyExists) {
           skippedCount++
@@ -190,10 +193,24 @@ export class WebhookRegistrationService {
         throw new Error(`Fluid API error: ${response.status} - ${errorText}`)
       }
 
-      const result = await response.json() as { webhooks?: WebhookResponse[] }
+      const result = await response.json() as { webhooks?: any[] }
       logger?.info(`📋 Found ${result.webhooks?.length || 0} existing webhooks`)
 
-      return result.webhooks || []
+      // Handle both possible response formats from Fluid API
+      const webhooks = result.webhooks || []
+
+      // Normalize the response format - webhooks might come as { webhook: {...} } or just {...}
+      const normalized = webhooks.map(w => {
+        if (w.webhook) {
+          // Already in correct format
+          return w as WebhookResponse
+        } else {
+          // Wrap in webhook property
+          return { webhook: w } as WebhookResponse
+        }
+      })
+
+      return normalized
     } catch (error) {
       clearTimeout(timeoutId)
       logger?.error(`❌ Failed to list webhooks: ${error}`)

@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../db'
+import { WebhookRegistrationService } from '../services/webhookRegistration'
 
 interface FluidProduct {
   id: number
@@ -22,6 +23,75 @@ interface FluidCheckoutResponse {
 }
 
 export async function testWebhookRoutes(fastify: FastifyInstance) {
+  // List registered webhooks for an installation
+  fastify.get('/api/test-webhook/:installationId/list', async (request, reply) => {
+    try {
+      const { installationId } = request.params as { installationId: string }
+
+      // Get installation details
+      const installationResult = await prisma.$queryRaw`
+        SELECT i.*, c.name as "companyName", c."logoUrl" as "companyLogoUrl", c."fluidShop"
+        FROM installations i
+        JOIN companies c ON i."companyId" = c.id
+        WHERE i."fluidId" = ${installationId} AND i."isActive" = true
+        LIMIT 1
+      `
+      const installation = Array.isArray(installationResult) && installationResult.length > 0
+        ? installationResult[0]
+        : null
+
+      if (!installation) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Installation not found or inactive'
+        })
+      }
+
+      if (!(installation as any).authenticationToken) {
+        return reply.status(400).send({
+          success: false,
+          message: 'No authentication token available for this installation'
+        })
+      }
+
+      const DIT_TOKEN = (installation as any).authenticationToken
+
+      fastify.log.info(`Listing webhooks for installation: ${installationId}`)
+
+      try {
+        const webhooks = await WebhookRegistrationService.listWebhooks(DIT_TOKEN, fastify.log)
+
+        return reply.send({
+          success: true,
+          message: `Found ${webhooks.length} registered webhooks`,
+          data: {
+            webhookCount: webhooks.length,
+            webhooks: webhooks.map(w => ({
+              id: w.webhook.id,
+              resource: w.webhook.resource,
+              event: w.webhook.event,
+              url: w.webhook.url,
+              active: w.webhook.active,
+              created_at: w.webhook.created_at
+            }))
+          }
+        })
+      } catch (error: any) {
+        fastify.log.error(`Error listing webhooks: ${error.message}`)
+        return reply.status(500).send({
+          success: false,
+          message: `Failed to list webhooks: ${error.message}`
+        })
+      }
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to list webhooks'
+      })
+    }
+  })
+
   // Test webhook by creating a product in Fluid
   fastify.post('/api/test-webhook/:installationId/product', async (request, reply) => {
     try {
