@@ -143,9 +143,11 @@ export function OrdersTab({ installationId, brandGuidelines, onSyncMessage }: Or
 
       if (data.success) {
         setWebhookResponse(data.data)
-        onSyncMessage('Test order created! Check the response below and your webhook logs.')
-        // Refresh orders after a short delay to give webhook time to process
-        setTimeout(() => fetchOrders(), 2000)
+        onSyncMessage('Test order created! Webhook should arrive in 5-30 seconds. Orders will auto-refresh.')
+        // Refresh orders multiple times to catch the webhook
+        setTimeout(() => fetchOrders(), 5000)   // 5 seconds
+        setTimeout(() => fetchOrders(), 10000)  // 10 seconds
+        setTimeout(() => fetchOrders(), 20000)  // 20 seconds
       } else {
         setError('Failed to create test order')
       }
@@ -216,6 +218,16 @@ export function OrdersTab({ installationId, brandGuidelines, onSyncMessage }: Or
         </div>
         <div className="flex gap-2">
           <button
+            onClick={fetchOrders}
+            disabled={isLoading}
+            className="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh order list"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+          <button
             onClick={syncOrders}
             disabled={isSyncingOrders}
             className="inline-flex items-center px-4 py-2 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -235,7 +247,7 @@ export function OrdersTab({ installationId, brandGuidelines, onSyncMessage }: Or
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                Sync Orders
+                Sync from Fluid
               </>
             )}
           </button>
@@ -293,9 +305,15 @@ export function OrdersTab({ installationId, brandGuidelines, onSyncMessage }: Or
             </button>
           </div>
           <div className="p-4">
-            <p className="text-sm text-gray-700 mb-3">
-              Your webhook endpoint should have received an order event. Check your backend logs for the incoming webhook data.
-            </p>
+            <div className="flex items-start space-x-2 mb-3">
+              <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-sm text-gray-700">
+                <p className="font-medium mb-1">Order created in Fluid!</p>
+                <p>The webhook should arrive in 5-30 seconds and the order will appear automatically. If not, click the refresh button above or check your backend logs for webhook delivery.</p>
+              </div>
+            </div>
             <details className="group">
               <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center">
                 <svg className="w-4 h-4 mr-1 group-open:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

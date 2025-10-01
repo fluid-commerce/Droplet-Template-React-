@@ -341,13 +341,15 @@ export async function testWebhookRoutes(fastify: FastifyInstance) {
 
         return reply.send({
           success: true,
-          message: 'Test order created successfully! Check your webhook endpoint for the incoming webhook.',
+          message: 'Test order created successfully! The webhook should arrive shortly.',
           data: {
             shop: SHOP,
             variantId,
             cartToken,
             checkoutResponse: checkoutData,
-            webhookNote: 'Your webhook endpoint should receive an order.created event shortly. Check your backend logs!'
+            orderId: checkoutData.order?.id || checkoutData.checkout?.id || 'unknown',
+            webhookNote: 'Webhook delivery may take 5-30 seconds. Check your backend logs for: 🛒 === ORDER WEBHOOK DETECTED ===',
+            troubleshooting: 'If the order does not appear after 30 seconds, check that webhooks are configured in your Fluid droplet settings.'
           }
         })
       } catch (error: any) {
