@@ -8,27 +8,13 @@ export async function dropletRoutes(fastify: FastifyInstance) {
       const { installationId } = request.params as { installationId: string };
 
 
-      let installation = await prisma.installation.findUnique({
+      const installation = await prisma.installation.findUnique({
         where: { fluidId: installationId },
         include: { company: true }
       });
 
-      // Fallback: if not found, get the most recent active installation
       if (!installation) {
-        fastify.log.warn(`Installation not found: ${installationId}, trying fallback...`);
-        installation = await prisma.installation.findFirst({
-          where: { isActive: true },
-          include: { company: true },
-          orderBy: { updatedAt: 'desc' }
-        });
-
-        if (installation) {
-          // fallback found; info logs removed
-        }
-      }
-
-      if (!installation) {
-        fastify.log.warn(`No active installations found for: ${installationId}`);
+        fastify.log.warn(`Installation not found: ${installationId}`);
         return reply.status(404).send({ error: 'Installation not found' });
       }
 
@@ -72,27 +58,13 @@ export async function dropletRoutes(fastify: FastifyInstance) {
       }
 
       // Find the installation
-      let installation = await prisma.installation.findUnique({
+      const installation = await prisma.installation.findUnique({
         where: { fluidId: installationId },
         include: { company: true }
       });
 
-      // Fallback: if not found, get the most recent active installation
       if (!installation) {
-        fastify.log.warn(`Installation not found for brand guidelines: ${installationId}, trying fallback...`);
-        installation = await prisma.installation.findFirst({
-          where: { isActive: true },
-          include: { company: true },
-          orderBy: { updatedAt: 'desc' }
-        });
-
-        if (installation) {
-          fastify.log.info(`✅ Found fallback installation for brand guidelines: ${installation.fluidId}`);
-        }
-      }
-
-      if (!installation) {
-        fastify.log.warn(`No active installations found for brand guidelines: ${installationId}`);
+        fastify.log.warn(`Installation not found for brand guidelines: ${installationId}`);
         return reply.status(404).send({ error: 'Installation not found' });
       }
 
@@ -243,8 +215,8 @@ export async function dropletRoutes(fastify: FastifyInstance) {
         }
       }
 
-      // First try to find the exact installation ID
-      let installation = await prisma.$queryRaw`
+      // Find the exact installation ID - NO FALLBACKS (security)
+      const installation = await prisma.$queryRaw`
         SELECT
           i.id,
           i."fluidId",
@@ -257,39 +229,11 @@ export async function dropletRoutes(fastify: FastifyInstance) {
           c."fluidShop"
         FROM installations i
         JOIN companies c ON i."companyId" = c.id
-        WHERE i."fluidId" = ${installationId} AND i."isActive" = true
+        WHERE i."fluidId" = ${installationId}
       ` as any[];
 
-      // If not found, try to find the most recent active installation for any company
-      // This handles cases where the frontend has an old installation ID
       if (!installation || installation.length === 0) {
-        fastify.log.warn(`Installation not found: ${installationId}, trying fallback search...`);
-
-        installation = await prisma.$queryRaw`
-          SELECT
-            i.id,
-            i."fluidId",
-            i."isActive",
-            i."authenticationToken",
-            i."webhookVerificationToken",
-            i."companyDropletUuid",
-            c.name as "companyName",
-            c."logoUrl",
-            c."fluidShop"
-          FROM installations i
-          JOIN companies c ON i."companyId" = c.id
-          WHERE i."isActive" = true
-          ORDER BY i."updatedAt" DESC
-          LIMIT 1
-        ` as any[];
-
-        if (installation && installation.length > 0) {
-          // fallback found; info logs removed
-        }
-      }
-
-      if (!installation || installation.length === 0) {
-        fastify.log.warn(`No active installations found for: ${installationId}`);
+        fastify.log.warn(`Installation not found: ${installationId}`);
         return reply.status(404).send({ error: 'Installation not found' });
       }
 
