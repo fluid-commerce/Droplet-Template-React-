@@ -653,7 +653,6 @@ export function DropletDashboard() {
                       {/* Products Section */}
                       <ProductsSection
                         installationId={dashboardData?.installationId || ''}
-                        fluidShop={dashboardData?.fluidShop}
                         brandGuidelines={dashboardData?.brandGuidelines}
                       />
                     </div>

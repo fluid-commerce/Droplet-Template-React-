@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface Rep {
   id: string
@@ -23,10 +23,9 @@ interface Rep {
 
 interface RepsTabProps {
   installationId: string
-  fluidShop: string
 }
 
-export function RepsTab({ installationId, fluidShop }: RepsTabProps) {
+export function RepsTab({ installationId }: RepsTabProps) {
   const [reps, setReps] = useState<Rep[]>([])
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)

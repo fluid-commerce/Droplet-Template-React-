@@ -5,7 +5,6 @@ import { RepsTab } from './RepsTab'
 
 interface ProductsSectionProps {
   installationId: string
-  fluidShop?: string
   brandGuidelines?: {
     name: string
     logo_url?: string
@@ -14,7 +13,7 @@ interface ProductsSectionProps {
   }
 }
 
-export function ProductsSection({ installationId, fluidShop, brandGuidelines }: ProductsSectionProps) {
+export function ProductsSection({ installationId, brandGuidelines }: ProductsSectionProps) {
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'reps'>('products')
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
 
@@ -130,7 +129,6 @@ export function ProductsSection({ installationId, fluidShop, brandGuidelines }: 
       ) : (
         <RepsTab
           installationId={installationId}
-          fluidShop={fluidShop || ''}
         />
       )}
     </div>
