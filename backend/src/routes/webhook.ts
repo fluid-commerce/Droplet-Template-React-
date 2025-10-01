@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { prisma } from '../db'
 import { randomUUID } from 'crypto'
+import { WebhookRegistrationService } from '../services/webhookRegistration'
 
 export async function webhookRoutes(fastify: FastifyInstance) {
   // Webhook endpoint for Fluid platform events
@@ -14,6 +15,77 @@ export async function webhookRoutes(fastify: FastifyInstance) {
       fastify.log.info(`📋 Headers: ${JSON.stringify(request.headers, null, 2)}`);
       fastify.log.info(`🎯 Event type: ${body.event}`);
       fastify.log.info(`📝 Resource: ${body.resource}`);
+
+      // Handle product webhooks - automatically save to database
+      const isProductWebhook = body.resource === 'product' || body.event === 'product.created' || body.event === 'product.updated';
+
+      if (isProductWebhook && body.product) {
+        fastify.log.info('📦 === PRODUCT WEBHOOK DETECTED ===');
+        fastify.log.info(`📋 Product event: ${body.event}`);
+        fastify.log.info(`📋 Product ID: ${body.product.id}`);
+        fastify.log.info(`📋 Product title: ${body.product.title}`);
+
+        try {
+          const fluidShop = request.headers['x-fluid-shop'] as string;
+
+          if (fluidShop) {
+            fastify.log.info(`🏪 Found fluid shop header: ${fluidShop}`);
+
+            // Find installation by fluid shop
+            const installationResult = await prisma.$queryRaw`
+              SELECT i.id as "installationId", i."fluidId", c.name as "companyName"
+              FROM installations i
+              JOIN companies c ON i."companyId" = c.id
+              WHERE c."fluidShop" = ${fluidShop} AND i."isActive" = true
+              LIMIT 1
+            ` as any[];
+
+            if (installationResult && installationResult.length > 0) {
+              const installation = installationResult[0];
+
+              // Strip HTML from description
+              const cleanDescription = body.product.description
+                ? body.product.description.replace(/<[^>]*>/g, '')
+                : null;
+
+              // Insert or update product in database
+              await prisma.$executeRaw`
+                INSERT INTO products (
+                  id, "installationId", "fluidProductId", title, sku, description,
+                  "imageUrl", status, price, "inStock", public, "createdAt", "updatedAt"
+                ) VALUES (
+                  gen_random_uuid(), ${installation.installationId}, ${body.product.id.toString()},
+                  ${body.product.title}, ${body.product.sku || null}, ${cleanDescription},
+                  ${body.product.image_url || body.product.imageUrl || null},
+                  ${body.product.status || null},
+                  ${body.product.price || null},
+                  ${body.product.in_stock ?? true},
+                  ${body.product.public ?? true}, NOW(), NOW()
+                )
+                ON CONFLICT ("installationId", "fluidProductId")
+                DO UPDATE SET
+                  title = EXCLUDED.title,
+                  sku = EXCLUDED.sku,
+                  description = EXCLUDED.description,
+                  "imageUrl" = EXCLUDED."imageUrl",
+                  status = EXCLUDED.status,
+                  price = EXCLUDED.price,
+                  "inStock" = EXCLUDED."inStock",
+                  public = EXCLUDED.public,
+                  "updatedAt" = NOW()
+              `;
+
+              fastify.log.info(`✅ Product ${body.product.id} automatically saved to database for ${installation.companyName}`);
+            } else {
+              fastify.log.warn(`⚠️ No installation found for fluid shop: ${fluidShop}`);
+            }
+          } else {
+            fastify.log.warn(`⚠️ No x-fluid-shop header found in webhook`);
+          }
+        } catch (dbError) {
+          fastify.log.error(`❌ Failed to save product webhook to database: ${dbError}`);
+        }
+      }
 
       // Handle order webhooks - automatically save to database
       const isOrderWebhook = body.resource === 'order' ||
@@ -107,9 +179,16 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         fastify.log.info(`🔒 Webhook authentication detected - consider adding verification for production`);
       }
 
-      // Handle installation events
+      // Handle installation events with immediate success response, then async processing
       if (body.event === 'installed') {
         const { company } = body;
+
+        // IMMEDIATE SUCCESS RESPONSE TO FLUID - Fix timing issue
+        reply.send({ success: true, message: 'Droplet installation started' });
+
+        // Process installation asynchronously to avoid Fluid timeout
+        setImmediate(async () => {
+          try {
 
         // Log ALL company fields available
         fastify.log.info('🏢 === COMPANY DATA ANALYSIS ===');
@@ -220,7 +299,7 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         fastify.log.info(`🎯 Company Droplet UUID: ${companyDropletUuid || 'None'}`);
 
         // Create or update installation using raw SQL to handle all new columns
-        await prisma.$queryRaw`
+        const installationResult = await prisma.$queryRaw`
           INSERT INTO installations (
             id, "companyId", "fluidId", "authenticationToken",
             "webhookVerificationToken", "companyDropletUuid", "isActive", "createdAt", "updatedAt"
@@ -239,8 +318,44 @@ export async function webhookRoutes(fastify: FastifyInstance) {
           RETURNING id, "fluidId", "isActive", "authenticationToken", "webhookVerificationToken", "companyDropletUuid"
         ` as any[];
 
-        // info logs removed
+            const installationData = installationResult[0];
+            fastify.log.info('✅ === INSTALLATION CREATED/UPDATED ===');
+            fastify.log.info(`🆔 Installation ID (fluidId): ${installationData.fluidId}`);
+            fastify.log.info(`🏢 Company: ${companyData.name} (${companyData.fluidShop})`);
+            fastify.log.info(`🔑 Has Auth Token: ${!!installationData.authenticationToken}`);
+            fastify.log.info(`✅ Active: ${installationData.isActive}`);
 
+            // Register webhooks asynchronously in the background
+            const baseUrl = process.env.WEBHOOK_BASE_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3001'
+            const webhookUrl = WebhookRegistrationService.generateWebhookUrl(baseUrl)
+
+            fastify.log.info(`🔗 Scheduling webhook registration for installation: ${company.droplet_installation_uuid}`)
+            fastify.log.info(`📍 Webhook endpoint: ${webhookUrl}`)
+            fastify.log.info(`📍 Base URL used: ${baseUrl}`)
+
+            // Fire and forget - register webhooks in background
+            WebhookRegistrationService.registerDropletWebhooks(
+              companyApiToken,
+              webhookUrl,
+              fastify.log
+            ).then((registrationResult) => {
+              fastify.log.info(`✅ Background webhook registration completed: ${registrationResult.success} success, ${registrationResult.failed} failed`)
+
+              if (registrationResult.errors.length > 0) {
+                fastify.log.warn(`⚠️ Webhook registration errors: ${registrationResult.errors.join(', ')}`)
+              }
+            }).catch((webhookError) => {
+              fastify.log.error(`❌ Failed to register webhooks in background: ${webhookError}`)
+              // Installation already succeeded, webhooks can be registered manually if needed
+            })
+
+            fastify.log.info('✅ Droplet installation completed successfully')
+          } catch (error) {
+            fastify.log.error(error as any, '❌ Async installation processing failed')
+          }
+        });
+
+        return; // Exit early to prevent double response
       }
 
       // Handle uninstallation events
