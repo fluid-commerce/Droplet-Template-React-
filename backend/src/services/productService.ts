@@ -268,13 +268,16 @@ export class ProductService {
    * Get products from our database for an installation
    */
   static async getProductsForInstallation(installationId: string) {
+    console.log(`🔍 Querying products for installationId: ${installationId}`)
+
     const products = await prisma.$queryRaw`
-      SELECT * FROM products 
+      SELECT * FROM products
       WHERE "installationId" = ${installationId}
       ORDER BY "updatedAt" DESC
     `
-    
-    
+
+    console.log(`📦 Found ${Array.isArray(products) ? products.length : 0} products`)
+
     return products
   }
 

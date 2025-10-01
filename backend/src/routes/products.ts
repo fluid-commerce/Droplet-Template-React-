@@ -31,7 +31,9 @@ export async function productRoutes(fastify: FastifyInstance) {
         })
       }
 
-      const products = await ProductService.getProductsForInstallation(installation.id)
+      fastify.log.info(`🔍 GET /api/products - Looking up products for installation.id: ${(installation as any).id}`)
+
+      const products = await ProductService.getProductsForInstallation((installation as any).id)
 
       return reply.send({
         success: true,

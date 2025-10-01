@@ -43,6 +43,8 @@ export async function webhookRoutes(fastify: FastifyInstance) {
             if (installationResult && installationResult.length > 0) {
               const installation = installationResult[0];
 
+              fastify.log.info(`💾 Saving product to installationId: ${installation.installationId}`);
+
               // Extract description - Fluid sends it as an object with a 'body' field, or use 'stripped' field
               let cleanDescription = null;
               if (body.product.stripped) {
