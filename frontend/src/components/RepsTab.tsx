@@ -111,8 +111,7 @@ export function RepsTab({ installationId }: RepsTabProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Reps</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500">
             {reps.length} {reps.length === 1 ? 'rep' : 'reps'}
           </p>
         </div>
