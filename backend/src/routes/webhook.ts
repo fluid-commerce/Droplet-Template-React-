@@ -111,11 +111,34 @@ export async function webhookRoutes(fastify: FastifyInstance) {
       if (body.event === 'installed') {
         const { company } = body;
 
-        fastify.log.info('🏢 === INSTALLATION EVENT ===');
-        fastify.log.info(`🏢 Company: ${company.name}`);
-        fastify.log.info(`🆔 Installation ID: ${company.droplet_installation_uuid}`);
+        // Log ALL company fields available
+        fastify.log.info('🏢 === COMPANY DATA ANALYSIS ===');
+        fastify.log.info(`🔑 All company keys: ${Object.keys(company || {}).join(', ')}`);
+        fastify.log.info(`📊 Company data: ${JSON.stringify(company, null, 2)}`);
 
-        // Create or update company quickly
+        // Check for all possible token fields
+        const tokenFields = [
+          'authentication_token',
+          'webhook_verification_token',
+          'company_droplet_uuid',
+          'droplet_installation_uuid',
+          'access_token',
+          'api_token',
+          'droplet_token'
+        ];
+
+        tokenFields.forEach(field => {
+          if (company && company[field]) {
+            fastify.log.info(`🎟️ Found ${field}: ${company[field].substring(0, 15)}...`);
+          }
+        });
+
+        if (company.authentication_token?.startsWith('dit_')) {
+          fastify.log.info('✅ Received dit_ token from Fluid webhook - this is the correct token type for droplet installations');
+        }
+
+
+        // Create or update company using raw SQL to handle the new fluid_shop column
         const companyRecord = await prisma.$queryRaw`
           INSERT INTO companies (id, "fluidId", name, "logoUrl", "fluidShop", "createdAt", "updatedAt")
           VALUES (${randomUUID()}, ${company.fluid_company_id.toString()}, ${company.name}, null, ${company.fluid_shop}, NOW(), NOW())
@@ -129,12 +152,74 @@ export async function webhookRoutes(fastify: FastifyInstance) {
 
         const companyData = companyRecord[0];
 
-        // Use the token from webhook (dit_ token) - no need to fetch separately
-        const companyApiToken = company.authentication_token;
+        // Get the company API token (cdrtkn_) by calling the droplet installation endpoint
+        // According to Fluid docs: we need to call /api/droplet_installations/{uuid} to get cdrtkn_ token
+        let companyApiToken = company.authentication_token; // fallback to dit_ token
+
+        try {
+          // Extract subdomain from fluid_shop (e.g., "myco" from "myco.fluid.app")
+          const subdomain = company.fluid_shop ? company.fluid_shop.replace('.fluid.app', '') : null;
+
+          if (subdomain && company.droplet_installation_uuid) {
+            // Use the correct API pattern from Fluid documentation
+            const installationEndpoint = `https://${subdomain}.fluid.app/api/droplet_installations/${company.droplet_installation_uuid}`;
+
+            fastify.log.info(`🔍 Fetching cdrtkn_ token from: ${installationEndpoint}`);
+
+            const installationResponse = await fetch(installationEndpoint, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${company.authentication_token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (installationResponse.ok) {
+              const installationData: any = await installationResponse.json();
+              fastify.log.info(`✅ Got installation data from Fluid API`);
+
+              // Extract the authentication token from the response
+              // The response structure is: { droplet_installation: { authentication_token: "..." } }
+              const authToken = installationData.droplet_installation?.authentication_token || installationData.authentication_token;
+
+              if (authToken) {
+                companyApiToken = authToken;
+                if (authToken.startsWith('dit_')) {
+                  fastify.log.info(`✅ Successfully obtained dit_ token: ${authToken.substring(0, 15)}...`);
+                  fastify.log.info(`📝 dit_ tokens are the correct format for droplet installations`);
+                } else if (authToken.startsWith('cdrtkn_')) {
+                  fastify.log.info(`✅ Got cdrtkn_ token from Fluid API: ${authToken.substring(0, 15)}...`);
+                } else {
+                  fastify.log.warn(`⚠️ Unknown token format: ${authToken.substring(0, 10)}...`);
+                }
+              } else {
+                fastify.log.warn(`⚠️ No authentication token found in installation response`);
+                fastify.log.warn(`Raw installation response: ${JSON.stringify(installationData, null, 2)}`);
+              }
+            } else {
+              const errorText = await installationResponse.text();
+              fastify.log.error(`❌ Failed to fetch installation: ${installationResponse.status} - ${errorText}`);
+            }
+          } else {
+            fastify.log.warn(`⚠️ Missing subdomain or installation UUID - cannot fetch cdrtkn_ token`);
+          }
+        } catch (error) {
+          fastify.log.error(`Error fetching company API token: ${error}`);
+        }
+
+        // Capture additional tokens if available
         const webhookVerificationToken = company.webhook_verification_token || null;
         const companyDropletUuid = company.company_droplet_uuid || null;
 
-        // Create or update installation quickly
+        // Log what we're capturing
+        fastify.log.info('💾 === STORING INSTALLATION DATA ===');
+        fastify.log.info(`🏢 Company ID: ${companyData.id}`);
+        fastify.log.info(`🆔 Installation ID: ${company.droplet_installation_uuid}`);
+        fastify.log.info(`🎟️ Auth Token: ${companyApiToken ? companyApiToken.substring(0, 15) + '...' : 'None'}`);
+        fastify.log.info(`🔐 Webhook Token: ${webhookVerificationToken ? webhookVerificationToken.substring(0, 15) + '...' : 'None'}`);
+        fastify.log.info(`🎯 Company Droplet UUID: ${companyDropletUuid || 'None'}`);
+
+        // Create or update installation using raw SQL to handle all new columns
         await prisma.$queryRaw`
           INSERT INTO installations (
             id, "companyId", "fluidId", "authenticationToken",
@@ -151,10 +236,10 @@ export async function webhookRoutes(fastify: FastifyInstance) {
             "webhookVerificationToken" = ${webhookVerificationToken},
             "companyDropletUuid" = ${companyDropletUuid},
             "updatedAt" = NOW()
-          RETURNING id, "fluidId", "isActive"
+          RETURNING id, "fluidId", "isActive", "authenticationToken", "webhookVerificationToken", "companyDropletUuid"
         ` as any[];
 
-        fastify.log.info(`✅ Installation saved for ${company.name}`);
+        // info logs removed
 
       }
 
