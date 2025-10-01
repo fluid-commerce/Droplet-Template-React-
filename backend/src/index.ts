@@ -4,6 +4,7 @@ import { dropletRoutes } from './routes/droplet';
 import { webhookRoutes } from './routes/webhook';
 import { productRoutes } from './routes/products';
 import { orderRoutes } from './routes/orders';
+import { testWebhookRoutes } from './routes/testWebhook';
 
 // Create Fastify instance with all configuration
 const fastify = createFastifyInstance();
@@ -14,6 +15,7 @@ fastify.register(dropletRoutes);
 fastify.register(webhookRoutes);
 fastify.register(productRoutes);
 fastify.register(orderRoutes);
+fastify.register(testWebhookRoutes);
 
 // Start the server
 const start = async () => {

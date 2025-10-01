@@ -54,6 +54,8 @@ export function OrdersTab({ installationId, brandGuidelines, onSyncMessage }: Or
   const [products, setProducts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSyncingOrders, setIsSyncingOrders] = useState(false)
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false)
+  const [webhookResponse, setWebhookResponse] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
@@ -125,6 +127,36 @@ export function OrdersTab({ installationId, brandGuidelines, onSyncMessage }: Or
       setError(err.response?.data?.message || 'Failed to sync orders from Fluid')
     } finally {
       setIsSyncingOrders(false)
+    }
+  }
+
+  // Test webhook by creating a test order in Fluid
+  const testWebhook = async () => {
+    try {
+      setIsTestingWebhook(true)
+      setError(null)
+      setWebhookResponse(null)
+      onSyncMessage(null)
+
+      const response = await apiClient.post(`/api/test-webhook/${installationId}`)
+      const data = response.data
+
+      if (data.success) {
+        setWebhookResponse(data.data)
+        onSyncMessage('Test order created! Check the response below and your webhook logs.')
+        // Refresh orders after a short delay to give webhook time to process
+        setTimeout(() => fetchOrders(), 2000)
+      } else {
+        setError('Failed to create test order')
+      }
+    } catch (err: any) {
+      console.error('Error testing webhook:', err)
+      setError(err.response?.data?.message || 'Failed to create test webhook order')
+      if (err.response?.data?.debug) {
+        setWebhookResponse(err.response.data.debug)
+      }
+    } finally {
+      setIsTestingWebhook(false)
     }
   }
 
@@ -207,6 +239,25 @@ export function OrdersTab({ installationId, brandGuidelines, onSyncMessage }: Or
               </>
             )}
           </button>
+          <button
+            onClick={testWebhook}
+            disabled={isTestingWebhook}
+            className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isTestingWebhook ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Creating Order...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Test Webhook
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -218,6 +269,46 @@ export function OrdersTab({ installationId, brandGuidelines, onSyncMessage }: Or
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span className="text-red-800 text-sm">{error}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Webhook Response Display */}
+      {webhookResponse && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+          <div className="bg-green-600 text-white px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-medium">Test Order Created Successfully</span>
+            </div>
+            <button
+              onClick={() => setWebhookResponse(null)}
+              className="text-white hover:text-gray-200 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="p-4">
+            <p className="text-sm text-gray-700 mb-3">
+              Your webhook endpoint should have received an order event. Check your backend logs for the incoming webhook data.
+            </p>
+            <details className="group">
+              <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center">
+                <svg className="w-4 h-4 mr-1 group-open:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                View Full Response JSON
+              </summary>
+              <div className="mt-3 bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                <pre className="text-green-400 text-xs font-mono">
+                  {JSON.stringify(webhookResponse, null, 2)}
+                </pre>
+              </div>
+            </details>
           </div>
         </div>
       )}
