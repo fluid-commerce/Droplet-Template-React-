@@ -43,10 +43,19 @@ export async function webhookRoutes(fastify: FastifyInstance) {
             if (installationResult && installationResult.length > 0) {
               const installation = installationResult[0];
 
-              // Strip HTML from description
-              const cleanDescription = body.product.description
-                ? body.product.description.replace(/<[^>]*>/g, '')
-                : null;
+              // Extract description - Fluid sends it as an object with a 'body' field, or use 'stripped' field
+              let cleanDescription = null;
+              if (body.product.stripped) {
+                // Use the pre-stripped description if available
+                cleanDescription = body.product.stripped;
+              } else if (body.product.description) {
+                // Handle both object format and string format
+                if (typeof body.product.description === 'object' && body.product.description.body) {
+                  cleanDescription = body.product.description.body;
+                } else if (typeof body.product.description === 'string') {
+                  cleanDescription = body.product.description.replace(/<[^>]*>/g, '');
+                }
+              }
 
               // Insert or update product in database
               await prisma.$executeRaw`
