@@ -88,7 +88,7 @@ export async function testWebhookRoutes(fastify: FastifyInstance) {
           throw new Error(`Failed to fetch products: ${productsResponse.status}`)
         }
 
-        const productsData: FluidProductsResponse = await productsResponse.json()
+        const productsData = await productsResponse.json() as FluidProductsResponse
         responseLog.productsFound = productsData.products?.length || 0
 
         // Try to find a variant from existing products
@@ -145,7 +145,7 @@ export async function testWebhookRoutes(fastify: FastifyInstance) {
           })
 
           if (newProductsResponse.ok) {
-            const newProductsData: FluidProductsResponse = await newProductsResponse.json()
+            const newProductsData = await newProductsResponse.json() as FluidProductsResponse
             for (const product of newProductsData.products || []) {
               if (product.variants && product.variants.length > 0) {
                 variantId = product.variants[0].id
@@ -335,7 +335,7 @@ export async function testWebhookRoutes(fastify: FastifyInstance) {
           throw new Error(`Failed to checkout: ${checkoutResponse.status} - ${errorText}`)
         }
 
-        const checkoutData: FluidCheckoutResponse = await checkoutResponse.json()
+        const checkoutData = await checkoutResponse.json() as FluidCheckoutResponse
         responseLog.checkoutResponse = checkoutData
         fastify.log.info('✅ Order created successfully!')
 
