@@ -610,8 +610,8 @@ export async function testWebhookRoutes(fastify: FastifyInstance) {
           rep: {
             first_name: 'Test',
             last_name: `Rep${timestamp}`,
-            email: `test.rep.${timestamp}@example.com`,
-            phone: '+1234567890',
+            email: `test.rep.${timestamp}@gmail.com`,
+            phone: '+15551234567',
             active: true,
             username: `test_rep_${timestamp}`,
             country_code: 'US',
