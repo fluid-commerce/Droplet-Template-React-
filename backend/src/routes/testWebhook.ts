@@ -22,8 +22,8 @@ interface FluidCheckoutResponse {
 }
 
 export async function testWebhookRoutes(fastify: FastifyInstance) {
-  // Test webhook by creating an order in Fluid
-  fastify.post('/api/test-webhook/:installationId', async (request, reply) => {
+  // Test webhook by creating a product in Fluid
+  fastify.post('/api/test-webhook/:installationId/product', async (request, reply) => {
     try {
       const { installationId } = request.params as { installationId: string }
 
@@ -62,7 +62,126 @@ export async function testWebhookRoutes(fastify: FastifyInstance) {
         })
       }
 
-      const SHOP_SUBDOMAIN = fluidShop.replace('.fluid.app', '')
+      const SHOP = fluidShop
+      const DIT_TOKEN = (installation as any).authenticationToken
+
+      fastify.log.info(`Creating test product for ${SHOP} using token ${DIT_TOKEN.substring(0, 15)}...`)
+
+      try {
+        // Create a test product
+        const timestamp = Date.now()
+        const productPayload = {
+          product: {
+            title: `Test Product ${timestamp}`,
+            sku: `TEST-${timestamp}`,
+            description: 'This is a test product created by the webhook tester',
+            status: 'active',
+            publish_to_retail_store: true,
+            publish_to_rep_store: true,
+            publish_to_share_tab: true,
+            variants_attributes: [
+              {
+                title: 'Default',
+                is_master: true,
+                track_quantity: false,
+                variant_countries_attributes: [
+                  {
+                    active: true,
+                    country_id: 214, // United States
+                    price: 10.00
+                  }
+                ]
+              }
+            ]
+          }
+        }
+
+        const createProductResponse = await fetch(`https://${SHOP}/api/company/v1/products`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${DIT_TOKEN}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(productPayload)
+        })
+
+        if (!createProductResponse.ok) {
+          const errorText = await createProductResponse.text()
+          throw new Error(`Failed to create test product: ${createProductResponse.status} - ${errorText}`)
+        }
+
+        const productData = await createProductResponse.json() as any
+        fastify.log.info(`✅ Product created successfully! ID: ${productData.product?.id}`)
+
+        return reply.send({
+          success: true,
+          message: 'Test product created successfully! The webhook should arrive shortly.',
+          data: {
+            shop: SHOP,
+            productId: productData.product?.id,
+            productTitle: productData.product?.title,
+            productResponse: productData,
+            webhookNote: 'Webhook delivery may take 5-30 seconds. Check your backend logs for webhook delivery.',
+            troubleshooting: 'If the product does not appear after 30 seconds, check that webhooks are configured in your Fluid droplet settings.'
+          }
+        })
+      } catch (error: any) {
+        fastify.log.error(`Error creating test product: ${error.message}`)
+        return reply.status(500).send({
+          success: false,
+          message: `Failed to create test product: ${error.message}`
+        })
+      }
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to create test webhook product'
+      })
+    }
+  })
+
+  // Test webhook by creating an order in Fluid
+  fastify.post('/api/test-webhook/:installationId/order', async (request, reply) => {
+    try {
+      const { installationId } = request.params as { installationId: string }
+
+      // Get installation details
+      const installationResult = await prisma.$queryRaw`
+        SELECT i.*, c.name as "companyName", c."logoUrl" as "companyLogoUrl", c."fluidShop"
+        FROM installations i
+        JOIN companies c ON i."companyId" = c.id
+        WHERE i."fluidId" = ${installationId} AND i."isActive" = true
+        LIMIT 1
+      `
+      const installation = Array.isArray(installationResult) && installationResult.length > 0
+        ? installationResult[0]
+        : null
+
+      if (!installation) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Installation not found or inactive'
+        })
+      }
+
+      if (!(installation as any).authenticationToken) {
+        return reply.status(400).send({
+          success: false,
+          message: 'No authentication token available for this installation'
+        })
+      }
+
+      // Get company subdomain from stored fluidShop
+      const fluidShop = (installation as any).fluidShop
+      if (!fluidShop) {
+        return reply.status(400).send({
+          success: false,
+          message: 'Company Fluid shop domain not found. Please reinstall the droplet.'
+        })
+      }
+
       const SHOP = fluidShop
       const DIT_TOKEN = (installation as any).authenticationToken
       const API_HOST = 'https://api.fluid.app'

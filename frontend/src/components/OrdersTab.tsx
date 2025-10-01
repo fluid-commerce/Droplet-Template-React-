@@ -138,7 +138,7 @@ export function OrdersTab({ installationId, brandGuidelines, onSyncMessage }: Or
       setWebhookResponse(null)
       onSyncMessage(null)
 
-      const response = await apiClient.post(`/api/test-webhook/${installationId}`)
+      const response = await apiClient.post(`/api/test-webhook/${installationId}/order`)
       const data = response.data
 
       if (data.success) {
