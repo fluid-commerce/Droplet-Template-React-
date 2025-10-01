@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ProductsTab } from './ProductsTab'
 import { OrdersTab } from './OrdersTab'
+import { RepsTab } from './RepsTab'
 
 interface ProductsSectionProps {
   installationId: string
+  fluidShop?: string
   brandGuidelines?: {
     name: string
     logo_url?: string
@@ -12,9 +14,20 @@ interface ProductsSectionProps {
   }
 }
 
-export function ProductsSection({ installationId, brandGuidelines }: ProductsSectionProps) {
-  const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products')
+export function ProductsSection({ installationId, fluidShop, brandGuidelines }: ProductsSectionProps) {
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'reps'>('products')
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
+
+  // Auto-clear sync message after 3 seconds
+  useEffect(() => {
+    if (syncMessage) {
+      const timer = setTimeout(() => {
+        setSyncMessage(null)
+      }, 3000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [syncMessage])
 
   // Helper function to format colors
   const formatColor = (color: string | null | undefined) => {
@@ -22,7 +35,7 @@ export function ProductsSection({ installationId, brandGuidelines }: ProductsSec
     return color.startsWith('#') ? color : `#${color}`
   }
 
-  const handleTabChange = (tab: 'products' | 'orders') => {
+  const handleTabChange = (tab: 'products' | 'orders' | 'reps') => {
     setActiveTab(tab)
     setSyncMessage(null) // Clear sync message when switching tabs
   }
@@ -68,6 +81,24 @@ export function ProductsSection({ installationId, brandGuidelines }: ProductsSec
           >
             Orders
           </button>
+          <button
+            onClick={() => handleTabChange('reps')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === 'reps'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+            style={{
+              ...(activeTab === 'reps' && brandGuidelines?.color
+                ? {
+                    borderColor: formatColor(brandGuidelines.color),
+                    color: formatColor(brandGuidelines.color)
+                  }
+                : {})
+            }}
+          >
+            Reps
+          </button>
         </nav>
       </div>
 
@@ -90,11 +121,16 @@ export function ProductsSection({ installationId, brandGuidelines }: ProductsSec
           brandGuidelines={brandGuidelines}
           onSyncMessage={setSyncMessage}
         />
-      ) : (
+      ) : activeTab === 'orders' ? (
         <OrdersTab
           installationId={installationId}
           brandGuidelines={brandGuidelines}
           onSyncMessage={setSyncMessage}
+        />
+      ) : (
+        <RepsTab
+          installationId={installationId}
+          fluidShop={fluidShop || ''}
         />
       )}
     </div>

@@ -271,15 +271,6 @@ export function ProductsTab({ installationId, brandGuidelines, onSyncMessage }: 
             </button>
           </div>
           <div className="p-4">
-            <div className="flex items-start space-x-2 mb-3">
-              <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="text-sm text-gray-700">
-                <p className="font-medium mb-1">Product created in Fluid!</p>
-                <p>The webhook should arrive in 5-30 seconds and the product will appear automatically. If not, click the refresh button above or check your backend logs for webhook delivery.</p>
-              </div>
-            </div>
             <details className="group">
               <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center">
                 <svg className="w-4 h-4 mr-1 group-open:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

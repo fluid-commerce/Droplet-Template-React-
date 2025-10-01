@@ -557,4 +557,110 @@ export async function testWebhookRoutes(fastify: FastifyInstance) {
       })
     }
   })
+
+  // Test webhook by creating a rep in Fluid
+  fastify.post('/api/test-webhook/:installationId/rep', async (request, reply) => {
+    try {
+      const { installationId } = request.params as { installationId: string }
+
+      // Get installation details
+      const installationResult = await prisma.$queryRaw`
+        SELECT i.*, c.name as "companyName", c."logoUrl" as "companyLogoUrl", c."fluidShop"
+        FROM installations i
+        JOIN companies c ON i."companyId" = c.id
+        WHERE i."fluidId" = ${installationId} AND i."isActive" = true
+        LIMIT 1
+      `
+      const installation = Array.isArray(installationResult) && installationResult.length > 0
+        ? installationResult[0]
+        : null
+
+      if (!installation) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Installation not found or inactive'
+        })
+      }
+
+      if (!(installation as any).authenticationToken) {
+        return reply.status(400).send({
+          success: false,
+          message: 'No authentication token available for this installation'
+        })
+      }
+
+      // Get company subdomain from stored fluidShop
+      const fluidShop = (installation as any).fluidShop
+      if (!fluidShop) {
+        return reply.status(400).send({
+          success: false,
+          message: 'Company Fluid shop domain not found. Please reinstall the droplet.'
+        })
+      }
+
+      const SHOP = fluidShop
+      const DIT_TOKEN = (installation as any).authenticationToken
+
+      fastify.log.info(`Creating test rep for ${SHOP} using token ${DIT_TOKEN.substring(0, 15)}...`)
+
+      try {
+        // Create a test rep
+        const timestamp = Date.now()
+        const repPayload = {
+          rep: {
+            first_name: 'Test',
+            last_name: `Rep${timestamp}`,
+            email: `test.rep.${timestamp}@example.com`,
+            phone: '+1234567890',
+            active: true,
+            username: `test_rep_${timestamp}`,
+            country_code: 'US',
+            language_code: 'en'
+          }
+        }
+
+        const createRepResponse = await fetch(`https://${SHOP}/api/v2/reps`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${DIT_TOKEN}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(repPayload)
+        })
+
+        if (!createRepResponse.ok) {
+          const errorText = await createRepResponse.text()
+          throw new Error(`Failed to create test rep: ${createRepResponse.status} - ${errorText}`)
+        }
+
+        const repData = await createRepResponse.json() as any
+        fastify.log.info(`✅ Rep created successfully! ID: ${repData.rep?.id}`)
+
+        return reply.send({
+          success: true,
+          message: 'Test rep created successfully!',
+          data: {
+            shop: SHOP,
+            repId: repData.rep?.id,
+            repName: `${repData.rep?.first_name} ${repData.rep?.last_name}`,
+            repEmail: repData.rep?.computed_email || repData.rep?.email,
+            repResponse: repData
+          }
+        })
+      } catch (error: any) {
+        fastify.log.error(`Error creating test rep: ${error.message}`)
+        return reply.status(500).send({
+          success: false,
+          message: `Failed to create test rep: ${error.message}`
+        })
+      }
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to create test webhook rep'
+      })
+    }
+  })
 }

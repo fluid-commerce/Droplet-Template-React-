@@ -649,36 +649,11 @@ export function DropletDashboard() {
                         You can pull products from Fluid's API and store them in your database.
                       </p>
                       
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <h4 className="font-semibold text-gray-900 mb-2 flex items-center text-sm">
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{
-                            color: dashboardData?.brandGuidelines?.color 
-                              ? formatColor(dashboardData.brandGuidelines.color)
-                              : '#2563eb'
-                          }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          Products Sync Example
-                        </h4>
-                        <p className="text-xs text-gray-700 mb-3 leading-relaxed">
-                          Click the "Sync from Fluid" button below to fetch products from Fluid's API 
-                          and store them in your droplet's database. This demonstrates the complete 
-                          integration workflow.
-                        </p>
-                        <div className="text-xs text-gray-600 bg-white rounded p-3 border border-gray-200">
-                          <p className="font-medium text-gray-700 mb-1">How it works:</p>
-                          <ul className="space-y-1 text-gray-600">
-                            <li>• Uses your company's authentication token (dit_)</li>
-                            <li>• Calls Fluid's /api/v1/products endpoint</li>
-                            <li>• Stores products in your PostgreSQL database</li>
-                            <li>• Displays them in a beautiful table below</li>
-                          </ul>
-                        </div>
-                      </div>
                       
                       {/* Products Section */}
-                      <ProductsSection 
-                        installationId={dashboardData?.installationId || ''} 
+                      <ProductsSection
+                        installationId={dashboardData?.installationId || ''}
+                        fluidShop={dashboardData?.fluidShop}
                         brandGuidelines={dashboardData?.brandGuidelines}
                       />
                     </div>
