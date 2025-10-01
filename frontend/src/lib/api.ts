@@ -2,9 +2,10 @@ import axios from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://droplet-template-backend.onrender.com'
 
-// Debug logging
+// Debug logging - Force rebuild
 console.log('API_BASE_URL:', API_BASE_URL)
 console.log('VITE_API_BASE_URL env var:', import.meta.env.VITE_API_BASE_URL)
+console.log('Build timestamp:', new Date().toISOString())
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
