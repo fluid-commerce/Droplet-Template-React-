@@ -33,7 +33,7 @@ export function RepsTab({ installationId }: RepsTabProps) {
   const [webhookResponse, setWebhookResponse] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
+  const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://droplet-template-backend.onrender.com'
 
   useEffect(() => {
     fetchReps()
