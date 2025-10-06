@@ -16,8 +16,8 @@ export function createFastifyInstance() {
     'http://localhost:3000',
     'https://fluid.app',
     'https://*.fluid.app',
-    'https://droplet-frontend-go5d.onrender.com',
-    'https://droplet-backend-go5d.onrender.com',
+    'https://droplet-template-frontend.onrender.com',
+    'https://droplet-template-backend.onrender.com',
     process.env.FRONTEND_URL
   ].filter(Boolean);
 
