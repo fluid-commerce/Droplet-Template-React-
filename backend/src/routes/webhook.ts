@@ -367,13 +367,13 @@ export async function webhookRoutes(fastify: FastifyInstance) {
 
             fastify.log.info('✅ Droplet installation completed successfully')
           } catch (error) {
-            fastify.log.error('❌ Async installation processing failed:', error)
-            fastify.log.error('❌ Installation data that failed:', JSON.stringify({
+            fastify.log.error(`❌ Async installation processing failed: ${error}`)
+            fastify.log.error(`❌ Installation data that failed: ${JSON.stringify({
               company: company.name,
               installation_uuid: company.droplet_installation_uuid,
               fluid_shop: company.fluid_shop,
               auth_token: company.authentication_token ? company.authentication_token.substring(0, 15) + '...' : 'None'
-            }, null, 2))
+            }, null, 2)}`)
           }
         });
 

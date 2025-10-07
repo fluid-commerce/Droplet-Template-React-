@@ -263,7 +263,7 @@ export async function dropletRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error) {
-      fastify.log.error('Manual installation failed:', error);
+      fastify.log.error(`Manual installation failed: ${error}`);
       return reply.status(500).send({ error: 'Failed to create installation' });
     }
   });
