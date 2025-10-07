@@ -54,6 +54,16 @@ export class WebhookRegistrationService {
       { resource: 'product', event: 'updated' },
       { resource: 'product', event: 'destroyed' },
 
+      // Customer events
+      { resource: 'customer', event: 'created' },
+      { resource: 'customer', event: 'updated' },
+      { resource: 'customer', event: 'destroyed' },
+
+      // Rep events
+      { resource: 'rep', event: 'created' },
+      { resource: 'rep', event: 'updated' },
+      { resource: 'rep', event: 'destroyed' },
+
       // Droplet lifecycle events
       { resource: 'droplet', event: 'installed' },
       { resource: 'droplet', event: 'uninstalled' }

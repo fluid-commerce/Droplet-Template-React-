@@ -200,6 +200,84 @@ export async function dropletRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Debug endpoint to check registered webhooks
+  fastify.get('/api/droplet/debug/webhooks/:installationId', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { installationId } = request.params as { installationId: string };
+
+      // Get installation details
+      const installation = await prisma.$queryRaw`
+        SELECT i.id, i."fluidId", i."authenticationToken", c.name as "companyName", c."fluidShop"
+        FROM installations i
+        JOIN companies c ON i."companyId" = c.id
+        WHERE i."fluidId" = ${installationId} AND i."isActive" = true
+        LIMIT 1
+      ` as any[];
+
+      if (!installation || installation.length === 0) {
+        return reply.status(404).send({ 
+          error: 'Installation not found',
+          installationId: installationId
+        });
+      }
+
+      const install = installation[0];
+      const authToken = install.authenticationToken;
+
+      if (!authToken) {
+        return reply.status(400).send({ 
+          error: 'No authentication token available',
+          installationId: installationId
+        });
+      }
+
+      // Try to list webhooks from Fluid API
+      try {
+        const subdomain = install.fluidShop.replace('.fluid.app', '');
+        const webhookUrl = `https://${subdomain}.fluid.app/api/company/webhooks`;
+        
+        const response = await fetch(webhookUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const webhooks = await response.json();
+          return reply.send({
+            success: true,
+            installationId: installationId,
+            companyName: install.companyName,
+            fluidShop: install.fluidShop,
+            webhookUrl: webhookUrl,
+            registeredWebhooks: webhooks,
+            webhookCount: Array.isArray(webhooks) ? webhooks.length : 0
+          });
+        } else {
+          const errorText = await response.text();
+          return reply.status(response.status).send({
+            error: 'Failed to fetch webhooks from Fluid API',
+            status: response.status,
+            response: errorText,
+            webhookUrl: webhookUrl
+          });
+        }
+      } catch (apiError) {
+        return reply.status(500).send({
+          error: 'Failed to call Fluid API',
+          details: apiError,
+          webhookUrl: `https://${install.fluidShop.replace('.fluid.app', '')}.fluid.app/api/company/webhooks`
+        });
+      }
+
+    } catch (error) {
+      fastify.log.error(`Webhook debug failed: ${error}`);
+      return reply.status(500).send({ error: 'Internal server error' });
+    }
+  });
+
   // Manual installation endpoint - fallback for when webhooks fail
   fastify.post('/api/droplet/install/:installationId', async (request: FastifyRequest, reply: FastifyReply) => {
     try {

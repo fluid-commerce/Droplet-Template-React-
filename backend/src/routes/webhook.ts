@@ -180,6 +180,149 @@ export async function webhookRoutes(fastify: FastifyInstance) {
         }
       }
 
+      // Handle customer webhooks - automatically save to database
+      const isCustomerWebhook = body.resource === 'customer' || 
+        ['customer.created', 'customer.updated', 'customer.destroyed'].includes(body.event);
+
+      if (isCustomerWebhook) {
+        fastify.log.info('👤 === CUSTOMER WEBHOOK DETECTED ===');
+        fastify.log.info(`📋 Customer event: ${body.event}`);
+        fastify.log.info(`📋 Event identifier: ${body.event_identifier || 'N/A'}`);
+        fastify.log.info(`📋 Resource: ${body.resource}`);
+
+        if (body.customer) {
+          fastify.log.info(`👤 Customer data: ${JSON.stringify(body.customer, null, 2)}`);
+          fastify.log.info(`📧 Customer email: ${body.customer.email || 'N/A'}`);
+          fastify.log.info(`🏷️ Customer tags: ${JSON.stringify(body.customer.tags || [])}`);
+
+          // Try to save customer to database automatically
+          try {
+            const fluidShop = request.headers['x-fluid-shop'] as string;
+            if (fluidShop) {
+              const installation = await prisma.$queryRaw`
+                SELECT i.id, i."fluidId", c.name as "companyName"
+                FROM installations i
+                JOIN companies c ON i."companyId" = c.id
+                WHERE c."fluidShop" = ${fluidShop} AND i."isActive" = true
+                LIMIT 1
+              ` as any[];
+
+              if (installation && installation.length > 0) {
+                const install = installation[0];
+                // Save customer data to database
+                await prisma.$executeRaw`
+                  INSERT INTO customers (
+                    id, "installationId", "fluidCustomerId", email, "firstName", "lastName",
+                    phone, "externalId", tags, "createdAt", "updatedAt"
+                  ) VALUES (
+                    gen_random_uuid(), ${install.id}, ${body.customer.id.toString()}, 
+                    ${body.customer.email || null}, ${body.customer.first_name || null}, 
+                    ${body.customer.last_name || null}, ${body.customer.phone || null},
+                    ${body.customer.external_id || null}, ${JSON.stringify(body.customer.tags || [])},
+                    NOW(), NOW()
+                  )
+                  ON CONFLICT ("installationId", "fluidCustomerId")
+                  DO UPDATE SET
+                    email = EXCLUDED.email,
+                    "firstName" = EXCLUDED."firstName",
+                    "lastName" = EXCLUDED."lastName",
+                    phone = EXCLUDED.phone,
+                    "externalId" = EXCLUDED."externalId",
+                    tags = EXCLUDED.tags,
+                    "updatedAt" = NOW()
+                `;
+                fastify.log.info(`✅ Customer ${body.customer.id} automatically saved to database for ${install.companyName}`);
+              } else {
+                fastify.log.warn(`⚠️ No installation found for fluid shop: ${fluidShop}`);
+              }
+            } else {
+              fastify.log.warn(`⚠️ No x-fluid-shop header found in webhook`);
+            }
+          } catch (dbError) {
+            fastify.log.error(`❌ Failed to save customer webhook to database: ${dbError}`);
+          }
+        }
+      }
+
+      // Handle rep webhooks - automatically save to database
+      const isRepWebhook = body.resource === 'rep' || 
+        ['rep.created', 'rep.updated', 'rep.destroyed'].includes(body.event);
+
+      if (isRepWebhook) {
+        fastify.log.info('👥 === REP WEBHOOK DETECTED ===');
+        fastify.log.info(`📋 Rep event: ${body.event}`);
+        fastify.log.info(`📋 Event identifier: ${body.event_identifier || 'N/A'}`);
+        fastify.log.info(`📋 Resource: ${body.resource}`);
+
+        if (body.rep) {
+          fastify.log.info(`👥 Rep data: ${JSON.stringify(body.rep, null, 2)}`);
+          fastify.log.info(`📧 Rep email: ${body.rep.email || 'N/A'}`);
+          fastify.log.info(`👤 Rep name: ${body.rep.first_name || ''} ${body.rep.last_name || ''}`);
+
+          // Try to save rep to database automatically
+          try {
+            const fluidShop = request.headers['x-fluid-shop'] as string;
+            if (fluidShop) {
+              const installation = await prisma.$queryRaw`
+                SELECT i.id, i."fluidId", c.name as "companyName"
+                FROM installations i
+                JOIN companies c ON i."companyId" = c.id
+                WHERE c."fluidShop" = ${fluidShop} AND i."isActive" = true
+                LIMIT 1
+              ` as any[];
+
+              if (installation && installation.length > 0) {
+                const install = installation[0];
+                // Save rep data to database
+                await prisma.$executeRaw`
+                  INSERT INTO reps (
+                    id, "installationId", "fluidRepId", "firstName", "lastName", email, phone,
+                    active, "externalId", username, "shareGuid", "imageUrl", roles,
+                    "countryCode", "languageCode", "computedFullName", "computedEmail",
+                    "customerId", "createdAt", "updatedAt"
+                  ) VALUES (
+                    gen_random_uuid(), ${install.id}, ${body.rep.id.toString()},
+                    ${body.rep.first_name}, ${body.rep.last_name}, ${body.rep.email || null},
+                    ${body.rep.phone || null}, ${body.rep.active ?? true},
+                    ${body.rep.external_id || null}, ${body.rep.username || null},
+                    ${body.rep.share_guid || null}, ${body.rep.image_url || null},
+                    ${body.rep.roles || 'user'}, ${body.rep.country_code || null},
+                    ${body.rep.language_code || null}, ${body.rep.computed_full_name || null},
+                    ${body.rep.computed_email || null}, ${body.rep.customer_id || null},
+                    NOW(), NOW()
+                  )
+                  ON CONFLICT ("installationId", "fluidRepId")
+                  DO UPDATE SET
+                    "firstName" = EXCLUDED."firstName",
+                    "lastName" = EXCLUDED."lastName",
+                    email = EXCLUDED.email,
+                    phone = EXCLUDED.phone,
+                    active = EXCLUDED.active,
+                    "externalId" = EXCLUDED."externalId",
+                    username = EXCLUDED.username,
+                    "shareGuid" = EXCLUDED."shareGuid",
+                    "imageUrl" = EXCLUDED."imageUrl",
+                    roles = EXCLUDED.roles,
+                    "countryCode" = EXCLUDED."countryCode",
+                    "languageCode" = EXCLUDED."languageCode",
+                    "computedFullName" = EXCLUDED."computedFullName",
+                    "computedEmail" = EXCLUDED."computedEmail",
+                    "customerId" = EXCLUDED."customerId",
+                    "updatedAt" = NOW()
+                `;
+                fastify.log.info(`✅ Rep ${body.rep.id} automatically saved to database for ${install.companyName}`);
+              } else {
+                fastify.log.warn(`⚠️ No installation found for fluid shop: ${fluidShop}`);
+              }
+            } else {
+              fastify.log.warn(`⚠️ No x-fluid-shop header found in webhook`);
+            }
+          } catch (dbError) {
+            fastify.log.error(`❌ Failed to save rep webhook to database: ${dbError}`);
+          }
+        }
+      }
+
       // Check for authentication headers and verify webhook authenticity
       const authHeader = request.headers['auth-token'] || request.headers['x-auth-token'] || request.headers['authorization'];
       if (authHeader) {
