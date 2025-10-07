@@ -200,6 +200,74 @@ export async function dropletRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Manual installation endpoint - fallback for when webhooks fail
+  fastify.post('/api/droplet/install/:installationId', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { installationId } = request.params as { installationId: string };
+      const { fluid_api_key, company_name, fluid_shop } = request.body as { 
+        fluid_api_key: string; 
+        company_name: string; 
+        fluid_shop: string; 
+      };
+
+      if (!fluid_api_key || !company_name || !fluid_shop) {
+        return reply.status(400).send({ 
+          error: 'Missing required fields: fluid_api_key, company_name, fluid_shop' 
+        });
+      }
+
+      // Check if installation already exists
+      const existingInstallation = await prisma.$queryRaw`
+        SELECT i.id, i."fluidId", i."isActive"
+        FROM installations i
+        WHERE i."fluidId" = ${installationId}
+      ` as any[];
+
+      if (existingInstallation && existingInstallation.length > 0) {
+        return reply.send({ 
+          success: true, 
+          message: 'Installation already exists',
+          installationId: installationId
+        });
+      }
+
+      // Create company
+      const companyRecord = await prisma.$queryRaw`
+        INSERT INTO companies (id, "fluidId", name, "logoUrl", "fluidShop", "createdAt", "updatedAt")
+        VALUES (gen_random_uuid(), ${Math.floor(Math.random() * 1000000000)}, ${company_name}, null, ${fluid_shop}, NOW(), NOW())
+        RETURNING id, "fluidId", name, "fluidShop"
+      ` as any[];
+
+      const companyData = companyRecord[0];
+
+      // Create installation
+      const installationResult = await prisma.$queryRaw`
+        INSERT INTO installations (
+          id, "companyId", "fluidId", "authenticationToken",
+          "webhookVerificationToken", "companyDropletUuid", "isActive", "createdAt", "updatedAt"
+        )
+        VALUES (
+          gen_random_uuid(), ${companyData.id}, ${installationId}, ${fluid_api_key},
+          null, null, true, NOW(), NOW()
+        )
+        RETURNING id, "fluidId", "isActive"
+      ` as any[];
+
+      fastify.log.info(`✅ Manual installation created: ${installationId} for ${company_name}`);
+
+      return reply.send({ 
+        success: true, 
+        message: 'Installation created successfully',
+        installationId: installationId,
+        companyName: company_name
+      });
+
+    } catch (error) {
+      fastify.log.error('Manual installation failed:', error);
+      return reply.status(500).send({ error: 'Failed to create installation' });
+    }
+  });
+
   // Get company dashboard data
   fastify.get('/api/droplet/dashboard/:installationId', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
@@ -234,7 +302,12 @@ export async function dropletRoutes(fastify: FastifyInstance) {
 
       if (!installation || installation.length === 0) {
         fastify.log.warn(`Installation not found: ${installationId}`);
-        return reply.status(404).send({ error: 'Installation not found' });
+        return reply.status(404).send({ 
+          error: 'Installation not found',
+          message: 'This installation was not found in our database. This usually means the installation webhook was not received or failed to process.',
+          installationId: installationId,
+          suggestion: 'Try reinstalling the droplet from the Fluid marketplace, or contact support if the issue persists.'
+        });
       }
 
       const installData = installation[0];

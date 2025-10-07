@@ -194,6 +194,11 @@ export async function webhookRoutes(fastify: FastifyInstance) {
       if (body.event === 'installed') {
         const { company } = body;
 
+        fastify.log.info('🎉 === DROPLET INSTALLATION WEBHOOK RECEIVED ===');
+        fastify.log.info(`🏢 Company: ${company.name} (${company.fluid_shop})`);
+        fastify.log.info(`🆔 Installation UUID: ${company.droplet_installation_uuid}`);
+        fastify.log.info(`🔑 Auth Token: ${company.authentication_token ? company.authentication_token.substring(0, 15) + '...' : 'None'}`);
+
         // IMMEDIATE SUCCESS RESPONSE TO FLUID - Fix timing issue
         reply.send({ success: true, message: 'Droplet installation started' });
 
@@ -362,7 +367,13 @@ export async function webhookRoutes(fastify: FastifyInstance) {
 
             fastify.log.info('✅ Droplet installation completed successfully')
           } catch (error) {
-            fastify.log.error(error as any, '❌ Async installation processing failed')
+            fastify.log.error('❌ Async installation processing failed:', error)
+            fastify.log.error('❌ Installation data that failed:', JSON.stringify({
+              company: company.name,
+              installation_uuid: company.droplet_installation_uuid,
+              fluid_shop: company.fluid_shop,
+              auth_token: company.authentication_token ? company.authentication_token.substring(0, 15) + '...' : 'None'
+            }, null, 2))
           }
         });
 
