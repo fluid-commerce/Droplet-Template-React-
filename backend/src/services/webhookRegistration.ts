@@ -40,34 +40,7 @@ export class WebhookRegistrationService {
     webhookEndpointUrl: string,
     logger: Logger
   ): Promise<{ success: number; failed: number; errors: string[] }> {
-    const webhooksToRegister: Omit<WebhookConfig, 'url'>[] = [
-      // Order events
-      { resource: 'order', event: 'created' },
-      { resource: 'order', event: 'updated' },
-      { resource: 'order', event: 'completed' },
-      { resource: 'order', event: 'shipped' },
-      { resource: 'order', event: 'cancelled' },
-      { resource: 'order', event: 'refunded' },
-
-      // Product events
-      { resource: 'product', event: 'created' },
-      { resource: 'product', event: 'updated' },
-      { resource: 'product', event: 'destroyed' },
-
-      // Customer events
-      { resource: 'customer', event: 'created' },
-      { resource: 'customer', event: 'updated' },
-      { resource: 'customer', event: 'destroyed' },
-
-      // Rep events
-      { resource: 'rep', event: 'created' },
-      { resource: 'rep', event: 'updated' },
-      { resource: 'rep', event: 'destroyed' },
-
-      // Droplet lifecycle events
-      { resource: 'droplet', event: 'installed' },
-      { resource: 'droplet', event: 'uninstalled' }
-    ]
+    const webhooksToRegister: Omit<WebhookConfig, 'url'>[] = []
 
     let successCount = 0
     let failedCount = 0
